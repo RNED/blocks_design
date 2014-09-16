@@ -50,7 +50,7 @@ achieved A-efficiency of each blocks stratum in the design together with an A-ff
 bounds, where available.
 }
 \examples{
-# incidences for 2 replicates of 3 treatments, 4 replicates of 2 treatments and 3 replicates of 4 treatments in a completely randomized design
+# incidences for 2 replicates of 3 treatments, 4 replicates of 2 treatments and 3 replicates of 4 treatments in single randomized layout
 blocks(treatments=c(3,2,4),replicates=c(2,4,3))$Incidences[[1]]
 
 # 4 replicates of 50 treatments in complete randomized blocks

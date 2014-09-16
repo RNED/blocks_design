@@ -72,7 +72,6 @@
 #' blocks(19,9,19,searches=1000)
 #' 
 #' @export
-#' @importFrom crossdes MOLS
 #' 
 blocks=function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(4096/nunits))) {
   if (missing(treatments) | missing(replicates) )  return(" Treatments or replicates not defined ")   
@@ -172,7 +171,7 @@ blocks=function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(409
         prime=c(2,2,2,2,2,2,   3,3,3,  5,7)[which(pp_trts==ntrts)]
         ppower=c(2,3,4,5,6,7,   2,3,4,  2,2)[which(pp_trts==ntrts)]
         mols=c( rep(sample(0:(v-1)),v),rep(sample(v:(2*v-1)),each=v))	
-        fullmols=MOLS(prime,ppower)[sample(rep(1:v)),sample(rep(1:v)),]	
+        fullmols=crossdes::MOLS(prime,ppower)[sample(rep(1:v)),sample(rep(1:v)),]	
         for (i in 1: (regreps-2)) mols=c(mols,(as.numeric(fullmols[,,i]) + v*(i+1) -1))
         Trts=rep((1:(v*v)),regreps)[order(mols)]
         rand=sample(1:(v*v*regreps))

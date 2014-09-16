@@ -3,4 +3,3 @@
 export(A_efficiency)
 export(blocks)
 export(upper_bounds)
-importFrom(crossdes,MOLS)
