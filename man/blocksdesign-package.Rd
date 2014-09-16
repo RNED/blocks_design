@@ -17,7 +17,9 @@ Version: \tab 1.0\cr
 Date: \tab 2014-09-16\cr
 License: \tab GPL(>= 2)\cr
 }
-The main function in the \pkg{blocksdesign} package is \code{\link{blocks}} which provides functionality for building general nested block designs for unstructured treatment sets where treatments can have arbitrary replication and blocks can be nested to any arbitrary depth of nesting. Block sizes in the same stratum are as equal as possible in size and never differ by more than a single plot. Each nested blocks stratum is optimized subject to the treatments in the preceding higher strata remaining unchanged. In general, block designs are  optimized algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality) but certain special lattice designs (see vignette) are constructed algebraically.
+The main function in the \pkg{blocksdesign} package is \code{\link{blocks}} which provides functionality for building general nested block designs for unstructured treatment sets where treatments can have arbitrary levels of replication and blocks can be nested to any arbitrary depth of nesting. Block sizes in the same stratum are always as equal as possible in size and never differ by more than a single plot. Each nested blocks stratum is optimized subject to the treatments in the preceding higher blocks strata remaining unchanged. General block designs are optimized algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality) but certain special lattice designs (see vignette) are constructed algebraically using the \pkg{crossdes} package. 
+
+Design outputs include tables showing the treatments allocation to blocks, the treatments-by-blocks incidence matrices for each blocks stratum and the A-efficiency of the optimized design together with upper efficiency bounds where available (see John and Williams 1995, Chapter 2).
 }
 \author{
 R. N. Edmondson
@@ -25,9 +27,8 @@ R. N. Edmondson
 Maintainer: R. N. Edmondson <rodney.edmondson@gmail.com>
 }
 \references{
-EDMONDSON, R. N. (1998). Trojan square and incomplete Trojan square designs for crop research. Journal of Agricultural Science, Cambridge, 131, 135-142\cr
-EDMONDSON, R. N. (2002) Generalised incomplete Trojan square designs. Biometrika, 89, 877-891\cr
-JOHN, J. A. & WILLIAMS, E. R. (1995). Cyclic and Computer Generated Designs. Monographs on Statistics and Applied Probability 38. Chapman and Hall.\cr
+
+JOHN, J. A. & WILLIAMS, E. R. (1995). Cyclic and Computer Generated Designs.Second Edition. Monographs on Statistics and Applied Probability 38. Chapman and Hall.\cr
 }
 \keyword{ design }
 
