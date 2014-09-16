@@ -1,0 +1,17 @@
+Package: blocksdesign
+Type: Package
+Title: Nested block designs for unstructured treatments
+Version: 1.0
+Date: 2014-09-16
+Author: R. N. Edmondson
+Maintainer: Rodney Edmondson <rodney.edmondson@gmail.com>
+Description: Constructs nested block designs for unstructured treatment sets
+    where blocks can be repeatedly nested and treatments can have different
+    levels of replication. Block sizes are equal when possible or differ by at
+    most one unit in any one stratum. Blocks strata are optimized in sequence
+    from top to bottom with the blocks in each nested stratum optimized within
+    the blocks of the next higher stratum. The design output is a data table
+    giving a randomised allocation of treatments to blocks with the achieved
+    A-efficiency for each stratum and an upper bound where feasible (equal
+    replication and equal block sizes)
+License: GPL(>= 2)
