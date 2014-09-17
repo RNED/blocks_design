@@ -2,30 +2,31 @@
 #' 
 #' @description
 #' 
-#' \code{blocks} Block designs for unstructured treatments with arbitrary depth of nesting
+#' \code{blocks} Block designs for unstructured treatments with arbitrary replication and arbitrary depth of nesting
 #' 
 #' @details
 #' 
-#' Constructs nested block designs for unstructured treatment sets where treatments can have arbitrary replication
-#' and blocks can be nested to any arbitrary depth of nesting. Block sizes in the same stratum 
-#' are as equal as possible in size and never differ by more than a single plot. Each nested blocks stratum is optimized subject to the treatments in the
-#' preceding higher strata remaining unchanged. In general, block designs are  optimized algorithmically by a swapping algorithm that maximizes the determinant of
+#' Constructs nested block designs for unstructured treatment sets where treatments can have arbitrary replication 
+#' and blocks can be nested to any feasible depth of nesting. Block sizes in the same stratum 
+#' are as equal as possible and never differ by more than a single plot. Blocks strata are optimized hierarchically with the blocks of each new set
+#' optimized within the blocks of the preceding set with the constraint that the treatments of the existing blocks remain unchanged. 
+#' 
+#' In general, blocks are  optimized algorithmically by a swapping algorithm that maximizes the determinant of
 #' the information matrix (D-optimality) but certain special lattice designs (see vignette) are constructed algebraically.
-#' Lattice designs with number of treatments equal to the square of a prime-power are constructed by using the 'crossdes' package.
+#' Lattice designs with number of treatments equal to the square of a prime-power are constructed using results from the \code{\link{crossdes}} package.
 #' 
-#' The treatments parameter list and the replications parameter list comprise matching pairs of numbers that define the number of treatments and the
-#' number of replicates in each replication set. Treatments are numbered consecutively according to the ordering
-#' of the treatment sets in the parameter lists (see the first blockdesigns example below).
+#' The treatment design is any combination of treatment sets with arbitrary levels of replication where the treatment numbers and replication levels for 
+#' each treatment sets are matching pairs of numbers from treatment and replication parameter lists. Treatments are numbered consecutively according to 
+#' the ordering of the treatment sets in the parameter lists (see the first example below).
 #' 
-#' All designs are fully randomized within the constraints of the nested block structure.
+#' Treatments are fully randomized within the bottom blocks of the design and each set of nested blocks is randomized within the levels of the
+#' next higher set of blocks.
 #' 
-#' The design outputs are a data frame for the allocation of treatments to blocks, a design plan, tables 
-#' showing the blocks-by-treatments incidence matrix for each nested stratum of the design and a table showing the 
-#' achieved A-efficiency of each blocks stratum in the design together with an A-fficiency upper 
-#' bounds, where available.
+#' The outputs include the achieved A-efficiency of each blocks stratum and where available, an A-efficiency upper bound. Where achieved efficiency is less 
+#' than the upper-bound or where no bound is available the design optimization should be repeated a number of times to examine the stability of the
+#'  achieved efficiencies.   
 #' 
 #' @param treatments A list of treatment replication sets showing the number of treatments in each replication set of the design. 
-#' 
 #' 
 #' @param replicates A list of replication numbers for each replication set in the design. 
 #' The treatments and replications lists must be equal in length and each matching pair represents
