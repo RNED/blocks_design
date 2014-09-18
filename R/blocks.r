@@ -353,6 +353,7 @@ blocks=function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(409
       desMat[,r]=rep(facMat[,r],fullblocksizes)
     blocksizes=fullblocksizes	
     ortho=0
+    ntrts=sum(treatments)	   
   }	
   rand=sample(1:nunits)
   Trts=Trts[rand][order(desMat[,strata][rand])]	
@@ -384,5 +385,26 @@ blocks=function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(409
   for (i in 1:max(blocksizes)) plannames=c(plannames,paste("Plot",i))	
   Plan=as.data.frame(cbind(blank,facMat[,c(2:ncol(facMat))],blank,plots))
   colnames(Plan)=plannames
-  list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=A_efficiency(Design))
+  
+  bounds=rep(0,(strata-1))
+  r=1/sqrt(tabulate(Trts))
+  
+  aeff=c(rep(0,(strata-1)))
+  for (i in 1:(strata-1)) {	
+    k=1/sqrt(tabulate(Design[,i]))
+    U=crossprod(t(crossprod(diag(r,nrow = length(r)),table(Trts,Design[,i]))),diag(k,nrow = length(k)))
+    A=diag(length(r))-crossprod(t(U))
+    aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:length(r)-1])
+    if (max(replicates)==min(replicates))
+      bounds[i]=upper_bounds(nunits,ntrts,cumblocklevs[i+1]) 
+    else
+      bounds[i]=NA
+  }
+  effic_dataframe=as.data.frame(cbind( cumblocklevs[2:strata], aeff, bounds))
+  rnames=c("Main")
+  if (strata>2)
+    for (i in 1 : (strata-2)) rnames=c(rnames,paste("Sub",i))
+  colnames(effic_dataframe)=c("Blocks","A-Efficiencies", "Upper Bounds")
+  rownames(effic_dataframe)=rnames
+  list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=effic_dataframe          )
 } 

@@ -22,56 +22,55 @@
 #' @export
 #'  
 upper_bounds=function(nplots,ntrts,nblocks){
-	if (ntrts>nplots | nblocks>nplots) return(NA)
-	if (nplots%%ntrts != 0) return(NA)
-	nreps = nplots/ntrts #replication
-	if (nplots%%nblocks != 0) return(NA)
-	bsize = nplots/nblocks #block size			
-	if ((ntrts == 1) | (nblocks == 1) | nreps%%nblocks == 0 ) return(1)			
-	# this bound is for non-binary designs where bsize>ntrts and can be improved - see John and Williams page 44
-	if (bsize > ntrts) return(round( 1 - (bsize%%ntrts)*(ntrts - bsize%%ntrts)/(bsize*bsize*(ntrts - 1)) , 5))			
-	# binary designs with bsize<=ntrts
-	dual=ntrts>nblocks
-	if (dual)
-	{
-		temp = nblocks
-		nblocks = ntrts
-		ntrts = temp
-		nreps = nplots/ntrts
-		bsize = nplots/nblocks
-	}	
-	ebar =  ntrts*(bsize - 1)/(bsize*(ntrts - 1))
-	lambda = nreps*(bsize - 1)/(ntrts - 1)
-    if (isTRUE(all.equal(lambda,floor(lambda)))) 
-		bound=ebar
-	else
-	{
-		alpha = lambda - floor(lambda) # fractional part of lambda
-		s2=ntrts*(ntrts-1)*alpha*(1-alpha)/((nreps*bsize)**2)
-		s=sqrt(s2/((ntrts-1)*(ntrts-2)))
-		if ( alpha < ntrts/(2*(ntrts - 1)) )
-			z = alpha*((ntrts + 1)*alpha - 3)
-			else
-			z = (1 - alpha)*(ntrts - (ntrts + 1)*alpha)
-				
-		s31 = alpha*ntrts*(ntrts - 1)*z/((nreps*bsize)**3)
-		if (floor(lambda)==0)  # integer part of lambda
-			s32 = alpha*ntrts*(ntrts - 1)*(  (ntrts + 1)*alpha*alpha - 3*alpha - bsize + 2)/((nreps*bsize)**3)
-			else
-			s32=s31
-			
-		U1= ebar - (ntrts - 2)*s*s/(ebar + (ntrts - 3)*s)
-		U2= ebar - (1 - ebar)*s2/((1 - ebar)*(ntrts - 1) - s2)
-		U3= ebar - s2*s2/((ntrts - 1)*(s31+ ebar*s2))	
-		U4= ebar - s2*s2/((ntrts - 1)*(s32+ ebar*s2)) 	
-		bound=min(U1,U2,U3,U4,na.rm = TRUE)	
-	}	
-	if (dual) {
-		temp = nblocks
-		nblocks = ntrts
-		ntrts = temp
-		bound = (ntrts - 1)/((ntrts - nblocks) + (nblocks - 1)/bound)
-	}			
-	round(bound,5)
+  if (ntrts>nplots | nblocks>nplots) return(NA)
+  if (nplots%%ntrts != 0) return(NA)
+  nreps = nplots/ntrts #replication
+  if (nplots%%nblocks != 0) return(NA)
+  bsize = nplots/nblocks #block size			
+  if ((ntrts == 1) | (nblocks == 1) | nreps%%nblocks == 0 ) return(1)			
+  # this bound is for non-binary designs where bsize>ntrts and can be improved - see John and Williams page 44
+  if (bsize > ntrts) return(round( 1 - (bsize%%ntrts)*(ntrts - bsize%%ntrts)/(bsize*bsize*(ntrts - 1)) , 5))			
+  # binary designs with bsize<=ntrts
+  dual=ntrts>nblocks
+  if (dual)
+  {
+    temp = nblocks
+    nblocks = ntrts
+    ntrts = temp
+    nreps = nplots/ntrts
+    bsize = nplots/nblocks
+  }	
+  ebar =  ntrts*(bsize - 1)/(bsize*(ntrts - 1))
+  lambda = nreps*(bsize - 1)/(ntrts - 1)
+  if (isTRUE(all.equal(lambda,floor(lambda)))) 
+    bound=ebar
+  else
+  {
+    alpha = lambda - floor(lambda) # fractional part of lambda
+    s2=ntrts*(ntrts-1)*alpha*(1-alpha)/((nreps*bsize)**2)
+    s=sqrt(s2/((ntrts-1)*(ntrts-2)))
+    if ( alpha < ntrts/(2*(ntrts - 1)) )
+      z = alpha*((ntrts + 1)*alpha - 3)
+    else
+      z = (1 - alpha)*(ntrts - (ntrts + 1)*alpha)
+    
+    s31 = alpha*ntrts*(ntrts - 1)*z/((nreps*bsize)**3)
+    if (floor(lambda)==0)  # integer part of lambda
+      s32 = alpha*ntrts*(ntrts - 1)*(  (ntrts + 1)*alpha*alpha - 3*alpha - bsize + 2)/((nreps*bsize)**3)
+    else
+      s32=s31
+    
+    U1= ebar - (ntrts - 2)*s*s/(ebar + (ntrts - 3)*s)
+    U2= ebar - (1 - ebar)*s2/((1 - ebar)*(ntrts - 1) - s2)
+    U3= ebar - s2*s2/((ntrts - 1)*(s31+ ebar*s2))	
+    U4= ebar - s2*s2/((ntrts - 1)*(s32+ ebar*s2)) 	
+    bound=min(U1,U2,U3,U4,na.rm = TRUE)	
+  }	
+  if (dual) {
+    temp = nblocks
+    nblocks = ntrts
+    ntrts = temp
+    bound = (ntrts - 1)/((ntrts - nblocks) + (nblocks - 1)/bound)
+  }			
+  round(bound,5)
 }	
-
