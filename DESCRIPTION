@@ -15,5 +15,6 @@ Description: Constructs nested block designs for unstructured treatment sets
     A-efficiency for each stratum and an upper bound where feasible (equal
     replication and equal block sizes)
 License: GPL(>= 2)
+VignetteBuilder: knitr
 Imports:
     crossdes
