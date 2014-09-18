@@ -1,26 +1,42 @@
 <!--
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{An Introduction to the blockdesigns package}
+%\VignetteIndexEntry{An Introduction to the blocksdesign package}
 -->
 ---
-title: "blocksdesign"
+title: "Nested block designs"
 author: "R. N. Edmondson"
 date: "18/09/2014"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+### Introduction 
 
-```{r}
-summary(cars)
-```
+Block designs provide a method of grouping experimental units into homogeneous blocks that compare treatments with maximum precision within blocks. The most basic type of block design is the complete randomised blocks design that has one or more complete sets of treatment replicates randomized within each experimental block. Complete block designs estimate all treatment effects with maximum efficiency and can provide excellent designs for small or medium size experiments. For large designs, however, complete blocks may be too large to provide homogeneous comparisons within blocks and then methods for controlling or reducing the within-block variability of complete block designs may be required.
 
-You can also embed plots, for example:
+One method of improving control of variability within large complete blocks is to subdivide the complete blocks into smaller incomplete blocks that are more likely to be homogeneous. In an early paper on block designs, Yates (1936) introduced a class of incomplete block designs called balanced lattice block designs. These designs subdivide each complete block of a design for v x v equally replicated treatments into v incomplete blocks of size v. Balanced lattice designs have a high degree of balance and are highly efficient for estimating treatments effects but they exist only for certain specific treatment numbers, specific replication numbers and specific block sizes and are of very limited availability. 
 
-```{r, echo=FALSE}
-plot(cars)
-```
+With the introduction of modern electronic computers, opportunities arose for the use of much more general types of block designs. An important development was the use of algorithmic methods for the construction of efficient block designs for arbitrary number of treatments, arbitrary replication and arbitrary block sizes. A good design algorithm will fit a design to the experimental requirements and will normally give a design close to optimal for any required design and any chosen optimality criteria. Much work has been done on the development of block design algorithms and Cook, R. D. and Nachtsheim, C. J. (1980) give a review of some of the earlier work up to about 1980. Other developments include the use of cyclic designs for efficient block design (see John, J.A. and Williams, E.R. 1995). 
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Incomplete block designs improve within-blocks precision but they also confound information between blocks and therefore require recovery of inter-block information for an efficient analysis. However, modern methods of analysis such as the mixed model analysis methods available in the R packages lme4 and lmerTest packages make the routine analysis of even very complex nested block designs routine.  
+
+Reducing the block size will normally increase the within-blocks precision but it will also increase the between-block variability. Small blocks confound substantial treatment information between blocks therefore for large designs there is a conflict between the need to use small blocks to improve within-block precision and the need to recover between-block treatment information. Patterson and Hunter (1983) examined the choice of optimum blocks
+
+
+size for medium sized nested block designs assuming conventional resolvable block designs with a single set of nested blocks within resolvable main blocks. One way to improve the recovery of inter-block information is to use repeated nesting so that block size can be progressively reduced by successive levels of nesting. The variance of each nested set of blocks will then be determined by the stratum in which the blocks occur and this will normally be reduced for each successive level of nesting.  
+
+This paper will examine the design and analysis of nested block experiments with more than one level of nesting. The methodology is intended to improve precision of estimation of treatment effects especially for large field experiments with many treatments. The motivation of the paper is to show that traditional block experiments can be generalized by the use of modern computer software while still retaining the essential simplicity and robustness of the traditional block design model. 
+
+### References
+
+Alexandra Kuznetsova, Per Bruun Brockhoff and Rune Haubo Bojesen Christensen (2014). lmerTest: Tests for random and fixed effects for linear mixed effect models (lmer objects of lme4 package). R package version 2.0-6. http://CRAN.R-project.org/package=lmerTest
+
+Bates, D., Maechler, M., Bolker, B. and Walker, S. (2014). lme4: Linear mixed-effects models using Eigen and S4. R package version 1.1-6. http://CRAN.R-project.org/package=lme4
+
+Cook, R. D. and Nachtsheim, C. J. (1980). A comparison of algorithms for constructing exact D-optimal designs, Technometrics 22: 315-324.
+
+Patterson H.D., Hunter E.A., (1983). The efficiency of incomplete block designs in National List and Recommended List cereal variety trials. J. Agric. Sci. Camb., 101, pp. 427-433.
+
+R Core Team (2014). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL http://www.R-project.org/.
+
+Yates, F. (1936). A new method of arranging variety trials involving a large number of varieties. Journal of Agricultural Science, Vol. 26, pp. 424-455.

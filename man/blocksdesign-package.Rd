@@ -29,6 +29,8 @@ Maintainer: R. N. Edmondson <rodney.edmondson@gmail.com>
 \references{
 
 JOHN, J. A. & WILLIAMS, E. R. (1995). Cyclic and Computer Generated Designs.Second Edition. Monographs on Statistics and Applied Probability 38. Chapman and Hall.\cr
+
+Patterson H.D., Hunter E.A., (1983). The efficiency of incomplete block designs in National List and Recommended List cereal variety trials. J. Agric. Sci. Camb., 101, pp. 427-433.\cr
 }
 \keyword{ design }
 
