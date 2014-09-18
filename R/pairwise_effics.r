@@ -1,7 +1,7 @@
 #' @title Pairwise efficiencies
 #' 
 #' @description
-#' \code{pairwise_effics} Pairwise efficiencies of an existing design
+#' \code{pairwise_efficiencies} Pairwise efficiencies of an existing design
 #' @details
 #'  Pairwise efficiencies for nested blocks design in a data frame with a
 #'  column of block factor levels for the total blocks in each 
@@ -10,15 +10,15 @@
 #'  each stratum showing the total blocks, the A-efficiency factor and the 
 #'  upper bound where available for each stratum of the design
 #' 
-#' @param Design A block design data frame such as returned by \code{\link{blocks}}
+#' @param Design A block design data frame such as returned by \code{\link{blocks_design}}
 #' 
 #' @examples 
 #' 
 #' # 4 replicates of 50 treatments in complete randomized blocks 
 #' 
-#' pairwise_effics(blocks(treatments=50,replicates=4,blocklevels=c(4,5))$Design)
+#' pairwise_efficiencies(blocks_design(treatments=50,replicates=4,blocklevels=c(4,5))$Design)
 #' @export
-pairwise_effics=function(Design){
+pairwise_efficiencies=function(Design){
   nunits=nrow(Design)	
   strata=ncol(Design)-1
   pairwise_effics=vector(mode="list",length=strata)	

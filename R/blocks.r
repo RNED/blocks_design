@@ -2,7 +2,7 @@
 #' 
 #' @description
 #' 
-#' \code{blocks} Block designs for unstructured treatments with arbitrary replication and arbitrary depth of nesting
+#' \code{blocks_design} Block designs for unstructured treatments with arbitrary replication and arbitrary depth of nesting
 #' 
 #' @details
 #' 
@@ -49,32 +49,32 @@
 #' @examples
 #' 
 #' # incidences for 2 replicates of 3 treatments, 4 replicates of 2 treatments and 3 replicates of 4 treatments in single randomized layout
-#' blocks(treatments=c(3,2,4),replicates=c(2,4,3))$Incidences[[1]]
+#' blocks_design(treatments=c(3,2,4),replicates=c(2,4,3))$Incidences[[1]]
 #' 
 #' # 4 replicates of 50 treatments in complete randomized blocks 
-#' blocks(treatments=50,replicates=4)
+#' blocks_design(treatments=50,replicates=4)
 #' 
 # as above but with 4 main blocks and 5 nested blocks in each main block 
-#' blocks(treatments=50,replicates=4,blocklevels=c(4,5))
+#' blocks_design(treatments=50,replicates=4,blocklevels=c(4,5))
 #' 
 #' # as above but with 20 additional single replicate treatments
-#' blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
+#' blocks_design(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 #' 
 #' # tabulation of 4 replicates of 4 treatments and 8 replicates of 1 treatment with 4 main blocks and 8 nested blocks in each main block
-#' table(blocks(treatments=c(4,1),replicates=c(4,8))$Design)
+#' table(blocks_design(treatments=c(4,1),replicates=c(4,8))$Design)
 #' 
 #' # concurrences for 3 replicates of 36 treatments with 3 main blocks and 6 nested blocks
-#' crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
+#' crossprod(blocks_design(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
 #' 
 #' # 4 replicates of 64 treatments with 4 main blocks and five 2-level nesting factors   
-#' blocks(treatments=64,replicates=4,blocklevels=c(4,2,2,2,2,2))
+#' blocks_design(treatments=64,replicates=4,blocklevels=c(4,2,2,2,2,2))
 #' 
 #' # 9 replicates of 19 treatments in 19 blocks with extra searches (may require even more for a BIB solution)
-#' blocks(19,9,19,searches=1000)
+#' blocks_design(19,9,19,searches=1000)
 #' 
 #' @export
 #' 
-blocks=function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(4096/nunits))) {
+blocks_design=function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(4096/nunits))) {
   if (missing(treatments) | missing(replicates) )  return(" Treatments or replicates not defined ")   
   if (is.null(treatments) | is.null(replicates))  return(" Treatments or replicates list is empty ") 	
   if (anyNA(treatments) | anyNA(replicates) ) return(" NA values not allowed")
