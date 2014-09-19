@@ -18,7 +18,7 @@ Version: \tab 1.0\cr
 Date: \tab 2014-09-16\cr
 License: \tab GPL(>= 2)\cr
 }
-The main function in the \pkg{blocksdesign} package is \code{\link{blocks_design}} which provides functionality for building
+The main function in the \pkg{blocksdesign} package is \code{\link{blocks}} which provides functionality for building
 general nested block designs for unstructured treatment sets where treatments can have any arbitrary levels of replication and
 blocks can be nested to any depth of nesting. Blocks in the same stratum are always as equal in size as possible and never
 differ by more than a single unit. Each nested blocks stratum is optimized subject to the treatments in the preceding higher
