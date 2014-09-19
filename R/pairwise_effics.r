@@ -10,13 +10,13 @@
 #'  each stratum showing the total blocks, the A-efficiency factor and the 
 #'  upper bound where available for each stratum of the design
 #' 
-#' @param Design A block design data frame such as returned by \code{\link{blocks_design}}
+#' @param Design A block design data frame such as returned by \code{\link{blocks}}
 #' 
 #' @examples 
 #' 
 #' # 4 replicates of 50 treatments in complete randomized blocks 
 #' 
-#' pairwise_efficiencies(blocks_design(treatments=50,replicates=4,blocklevels=c(4,5))$Design)
+#' pairwise_efficiencies(blocks(treatments=50,replicates=4,blocklevels=c(4,5))$Design)
 #' @export
 pairwise_efficiencies=function(Design){
   nunits=nrow(Design)	
