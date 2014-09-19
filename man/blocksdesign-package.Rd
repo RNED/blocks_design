@@ -18,7 +18,7 @@ Version: \tab 1.0\cr
 Date: \tab 2014-09-16\cr
 License: \tab GPL(>= 2)\cr
 }
-The main function in the \pkg{blocksdesign} package is \code{\link{blocks}} which provides functionality for building
+The main function in the \pkg{blocksdesign} package is \code{\link[blocksdesign]{blocks}} which provides functionality for building
 general nested block designs for unstructured treatment sets where treatments can have any arbitrary levels of replication and
 blocks can be nested to any depth of nesting. Blocks in the same stratum are always as equal in size as possible and never
 differ by more than a single unit. Each nested blocks stratum is optimized subject to the treatments in the preceding higher
@@ -27,7 +27,7 @@ the determinant of the information matrix (D-optimality) but certain special lat
 algebraically using the \pkg{crossdes} package function \code{\link[crossdes]{MOLS}}. 
 Design outputs include a design data frame, tables showing the treatments allocation to blocks, table showing the incidence
 matrices for each blocks stratum and a table showing the A-efficiency of the optimized design together with upper efficiency
-bounds where available (see John and Williams 1995, Chapter 2). An additional function, \code{\link{pairwise_efficiencies}}, can
+bounds where available (see John and Williams 1995, Chapter 2). An additional function, \code{\link[blocksdesign]{pairwise_efficiencies}}, can
 be used to process the ouput from the blocks_design function to provide tables showing the efficiency factors for each pairwise
 treatment comparison, if required. 
 }
