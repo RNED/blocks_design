@@ -6,7 +6,7 @@
 pairwise_efficiencies(Design)
 }
 \arguments{
-\item{Design}{A block design data frame such as returned by \code{\link{blocks_design}}}
+\item{Design}{A block design data frame such as returned by \code{\link{blocks}}}
 }
 \description{
 \code{pairwise_efficiencies} Pairwise efficiencies of an existing design
@@ -22,6 +22,6 @@ Pairwise efficiencies for nested blocks design in a data frame with a
 \examples{
 # 4 replicates of 50 treatments in complete randomized blocks
 
-pairwise_efficiencies(blocks_design(treatments=50,replicates=4,blocklevels=c(4,5))$Design)
+pairwise_efficiencies(blocks(treatments=50,replicates=4,blocklevels=c(4,5))$Design)
 }
 

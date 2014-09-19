@@ -24,7 +24,7 @@ blocks can be nested to any depth of nesting. Blocks in the same stratum are alw
 differ by more than a single unit. Each nested blocks stratum is optimized subject to the treatments in the preceding higher
 blocks stratum remaining unchanged. General block designs are optimized algorithmically by a swapping algorithm that maximizes
 the determinant of the information matrix (D-optimality) but certain special lattice designs (see vignette) are constructed
-algebraically using the \pkg{crossdes} package. 
+algebraically using the \pkg{crossdes} package function \code{\link[crossdes]{MOLS}}. 
 Design outputs include a design data frame, tables showing the treatments allocation to blocks, table showing the incidence
 matrices for each blocks stratum and a table showing the A-efficiency of the optimized design together with upper efficiency
 bounds where available (see John and Williams 1995, Chapter 2). An additional function, \code{\link{pairwise_efficiencies}}, can
