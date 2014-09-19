@@ -3,11 +3,10 @@
 \alias{blocksdesign}
 \docType{package}
 \title{
-Block designs package
+Blocks design package
 }
 \description{
-The blocksdesign package provides for the construction of block designs for unstructured treatment
-sets with arbitrary levels of replication not necessarily all equal and arbitrary depth of nesting. 
+The blocksdesign package provides functionality for the construction of block designs for unstructured treatment sets with arbitrary levels of replication not necessarily all equal and arbitrary depth of nesting. 
 }
 
 \details{
@@ -18,18 +17,12 @@ Version: \tab 1.0\cr
 Date: \tab 2014-09-16\cr
 License: \tab GPL(>= 2)\cr
 }
-The main function in the \pkg{blocksdesign} package is \code{\link[blocksdesign]{blocks}} which provides functionality for building
-general nested block designs for unstructured treatment sets where treatments can have any arbitrary levels of replication and
-blocks can be nested to any depth of nesting. Blocks in the same stratum are always as equal in size as possible and never
-differ by more than a single unit. Each nested blocks stratum is optimized subject to the treatments in the preceding higher
-blocks stratum remaining unchanged. General block designs are optimized algorithmically by a swapping algorithm that maximizes
-the determinant of the information matrix (D-optimality) but certain special lattice designs (see vignette) are constructed
-algebraically using the \pkg{crossdes} package function \code{\link[crossdes]{MOLS}}. 
-Design outputs include a design data frame, tables showing the treatments allocation to blocks, table showing the incidence
-matrices for each blocks stratum and a table showing the A-efficiency of the optimized design together with upper efficiency
-bounds where available (see John and Williams 1995, Chapter 2). An additional function, \code{\link[blocksdesign]{pairwise_efficiencies}}, can
-be used to process the ouput from the blocks_design function to provide tables showing the efficiency factors for each pairwise
-treatment comparison, if required. 
+\code{\link[blocksdesign]{blocks}} provides functionality for building general nested block designs for unstructured treatment sets where treatments can have any number of levels of replication and blocks can be nested to any depth of nesting. Blocks in the same stratum are always as equal in size as possible and never differ by more than a single unit. The function optimizes nested blocks hierarchically with each nested set of blocks optimized within the blocks of the preceding stratum. General block designs are optimized algorithmically by a swapping algorithm that finds a locally D-optimal design but certain special lattice designs are constructed algebraically by using MOLS from the \pkg{crossdes} package function \code{\link[crossdes]{MOLS}}. Design outputs include the block and treatment design as a dataframe, a table plan showing the treatments allocation to blocks, tables showing the blocks-by-treatmnets incidence matrices for each stratum and a table showing the A-efficiencies together with upper efficiency bounds for each stratum, where available (see John and Williams 1995, Chapter 2).
+
+\code{\link[blocksdesign]{pairwise_efficiencies}} is a secondary function which can process the design dataframe to provide tables of efficiency factors for each pairwise treatment comparison, if required.
+
+\code{\link[blocksdesign]{upper_bounds}} is a subsidiary function that provides A-efficiency upper bounds for regular block designs with equally replicated treatments and equal block sizes. 
+
 }
 
 \author{
@@ -39,7 +32,7 @@ Maintainer: R. N. Edmondson <rodney.edmondson@gmail.com>
 }
 \references{
 
-JOHN, J. A. & WILLIAMS, E. R. (1995). Cyclic and Computer Generated Designs.Second Edition. Monographs on Statistics and Applied Probability 38. Chapman and Hall.\cr
+John, J. A. & Williams, E. R. (1995). Cyclic and Computer Generated Designs.Second Edition. Monographs on Statistics and Applied Probability 38. Chapman and Hall.\cr
 
 Patterson H.D., Hunter E.A., (1983). The efficiency of incomplete block designs in National List and Recommended List cereal variety trials. J. Agric. Sci. Camb., 101, pp. 427-433.\cr
 }
