@@ -42,7 +42,7 @@
 #' 
 #' @return  
 #' \item{Design}{Data frame showing block and treatment factors for each plot}
-#' \item{Plan}{Data frame showing treatments allocation to plots for each block}
+#' \item{Plan}{Data frame showing treatments allocation to plots for each block in the bottom stratum}
 #' \item{Incidences[[i]]}{Blocks by treatments incidence matrices  i=1... for each stratum in the design}
 #' \item{Efficiencies}{Data frame showing the A-efficiency and an upper bound, where available, for each stratum in the design}
 #' 
