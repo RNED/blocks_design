@@ -6,18 +6,20 @@
 pairwise_efficiencies(Design)
 }
 \arguments{
-\item{Design}{A block design data frame such as returned by \code{\link{blocks}}}
+\item{Design}{A block design data frame as returned by \code{\link{blocks}}}
+}
+\value{
+\item{Incidences[[i]]}{Blocks by treatments incidence matrices  i=1... for each stratum in the design}
 }
 \description{
-\code{pairwise_efficiencies} Pairwise efficiencies of an existing design
+\code{pairwise_efficiencies} Efficiencies of pairwise treatment differences
 }
 \details{
-Pairwise efficiencies for nested blocks design in a data frame with a
- column of block factor levels for the total blocks in each
- nested blocks stratum and a final column containing the treatment
- factor levels. The function returns a data frame with a row for
- each stratum showing the total blocks, the A-efficiency factor and the
- upper bound where available for each stratum of the design
+Efficiencies of pairwise treatment differences of a design built by using the \code{blocks} function.
+ The output is a two-way table showing the efficiency of the treatment difference for every pair
+ of treatments in a design and provides detail about the efficiency of a design for each individual
+ treatment comparison. for equi-replicate designs the harmonic mean of the pairwise efficienct factors
+ should equal the A-efficiency factor give by the \code{blocks} function.
 }
 \examples{
 # 4 replicates of 50 treatments in complete randomized blocks
