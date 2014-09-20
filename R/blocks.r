@@ -6,39 +6,36 @@
 #' 
 #' @details
 #' 
-#' Constructs nested block designs for unstructured treatment sets where treatments can have arbitrary replication 
+#' \code{blocks} constructs nested block designs for unstructured treatment sets where treatments can have arbitrary replication 
 #' and blocks can be nested to any feasible depth of nesting. Block sizes in the same stratum 
-#' will be as near equal as possible and will never differ by more than one unit. Blocks strata are optimized hierarchically with the blocks 
+#' will be as near equal as possible and will never differ by more than a single unit. Blocks strata are optimized hierarchically with the blocks 
 #' of each new set optimized within the blocks of the preceding set. 
 #' 
-#' In general, blocks are  optimized algorithmically by a swapping algorithm that maximizes the determinant of
-#' the information matrix (D-optimality) but certain special lattice designs (see vignette) are constructed algebraically.
-#' Lattice designs with number of treatments equal to the square of a prime-power are constructed using results from the \code{\link{crossdes}} package.
+#' In general, \code{blocks} optimizes designs algorithmically by a swapping algorithm that maximizes the determinant of
+#' the information matrix (D-optimality). However, certain special lattice designs (see vignette) are constructed algebraically 
+#' using mutually orthogonal latin squares (MOLS).  Lattice designs with a number of treatments equal to the square of a prime-power and with more than three replicates are constructed 
+#' using MOLS from the \code{\link{crossdes}} package.
 #' 
-#' The treatment design can be any combination of treatment sets with arbitrary levels of replication where the treatment number and replication for 
-#' each treatment sets is a matching pair of numbers in the treatments and replicates parameter lists. 
+#' The treatment design can be any combination of treatment sets with arbitrary levels of replication where the treatment number and replication of 
+#' a treatment set is a matching pair of numbers in the treatments and replicates parameter lists. 
+#' 
 #' Treatments are numbered consecutively according to the ordering of the treatment sets in the parameter lists (see the first example).
 #' 
 #' Treatment designs are fully randomized with treatments randomized within the bottom blocks of the design and each set of nested blocks
-#'  randomized within the preceding set of blocks.
+#' randomized within the preceding set of blocks.
+#'  
+#' @param treatments A list of the number of treatments in each replication set of the design. 
 #' 
-#' The outputs include the achieved A-efficiency of each blocks stratum and where available, an A-efficiency upper bound. Where achieved efficiency is less 
-#' than the upper-bound or where no bound is available the design optimization should be repeated a number of times to examine the stability of the
-#'  achieved efficiencies.   
-#' 
-#' @param treatments A list of treatment replication sets showing the number of treatments in each replication set of the design. 
-#' 
-#' @param replicates A list of replication numbers for each replication set in the design. 
-#' The treatments and replications lists must be equal in length and each matching pair represents
-#' a set of treatments with a given replication. 
+#' @param replicates A list of the replication numbers for each replication set in the design. 
+#' The treatments and replications lists must be equal in length and must contain matching pair of numbers for each treatment replication set.
 #' 
 #' @param blocklevels An optional list of nested blocks. 
 #' The numbers in the list define the number of nested blocks in each blocks stratum with the first number 
 #' giving the number of main blocks and the succesive numbers, if any, giving the number of nested 
-#' blocks in each preceding block. The default is a maximal set of complete orthogonal randomised blocks. 
+#' blocks in each preceding block. The default is a maximal set of complete randomised blocks equal to the hcf of the replication numbers.
 #' 
 #' @param searches An optional parameter for the number of local optima searched during 
-#' a design optimization. The default setting decreases with increasing design size.
+#' a design optimization. The default number of searches decreases as the design size increases.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing block and treatment factors for each plot}
@@ -48,13 +45,13 @@
 #' 
 #' @examples
 #' 
-#' # incidences for 2 replicates of 3 treatments, 4 replicates of 2 treatments and 3 replicates of 4 treatments in single randomized layout
-#' blocks(treatments=c(3,2,4),replicates=c(2,4,3))$Incidences[[1]]
+#' # 2 replicates of 3 treatments, 4 replicates of 2 treatments and 3 replicates of 4 treatments in a completely randomised design where = hcf(2,4,3) = 1
+#' blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 #' 
-#' # 4 replicates of 50 treatments in complete randomized blocks 
+#' # 4 replicates of 50 treatments in 4 complete randomized blocks where hcf(4) = 4
 #' blocks(treatments=50,replicates=4)
 #' 
-# as above but with 4 main blocks and 5 nested blocks in each main block 
+#' # as above but with 4 main blocks and 5 nested blocks in each main block 
 #' blocks(treatments=50,replicates=4,blocklevels=c(4,5))
 #' 
 #' # as above but with 20 additional single replicate treatments
@@ -69,8 +66,8 @@
 #' # 4 replicates of 64 treatments with 4 main blocks and five 2-level nesting factors   
 #' blocks(treatments=64,replicates=4,blocklevels=c(4,2,2,2,2,2))
 #' 
-#' # 9 replicates of 19 treatments in 19 blocks with extra searches (may require even more for a BIB solution)
-#' blocks(19,9,19,searches=1000)
+#' # 4 replicates of 13 treatments in 13 blocks with extra searches (should guarantee a BIB solution)
+#' blocks(13,4,13,searches=100)
 #' 
 #' @export
 #' 

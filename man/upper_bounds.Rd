@@ -18,8 +18,9 @@ upper_bounds(nplots, ntrts, nblocks)
 \details{
 Upper bounds for the A-efficiency of regular nested block designs
 (see Chapter 2.8 of John and Williams 1995). The treatments must have
-equal replication and the block sizes must be equal therefore the number of treatments
-and the number of blocks must exactly divides the number of plots.
+equal replication and the block must have equal sizes
+therefore the function calculates a bound only if the number of treatments
+and the number of blocks exactly divides the number of plots.
 }
 \examples{
 # 50 plots, 10 treatments and 10 blocks for a design with 5 replicates and blocks of size 5

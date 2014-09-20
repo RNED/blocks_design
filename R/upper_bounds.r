@@ -5,8 +5,9 @@
 #' @details
 #' Upper bounds for the A-efficiency of regular nested block designs 
 #' (see Chapter 2.8 of John and Williams 1995). The treatments must have
-#' equal replication and the block sizes must be equal therefore the number of treatments 
-#' and the number of blocks must exactly divides the number of plots. 
+#' equal replication and the block must have equal sizes
+#' therefore the function calculates a bound only if the number of treatments 
+#' and the number of blocks exactly divides the number of plots.   
 #' 
 #' @param nplots The total number of plots in the design 
 #' 
@@ -22,12 +23,11 @@
 #' @export
 #'  
 upper_bounds=function(nplots,ntrts,nblocks){
-  if (ntrts>nplots | nblocks>nplots) return(NA)
-  if (nplots%%ntrts != 0) return(NA)
+  if (ntrts+nblocks-1>nplots) return(NA)
   nreps = nplots/ntrts #replication
-  if (nplots%%nblocks != 0) return(NA)
-  bsize = nplots/nblocks #block size			
-  if ((ntrts == 1) | (nblocks == 1) | nreps%%nblocks == 0 ) return(1)			
+  bsize = nplots/nblocks #block size		
+  if (nplots%%ntrts != 0 | nplots%%nblocks != 0 | ntrts == 1 | nblocks == 1 | nreps%%nblocks == 0 ) return(1)	
+  
   # this bound is for non-binary designs where bsize>ntrts and can be improved - see John and Williams page 44
   if (bsize > ntrts) return(round( 1 - (bsize%%ntrts)*(ntrts - bsize%%ntrts)/(bsize*bsize*(ntrts - 1)) , 5))			
   # binary designs with bsize<=ntrts

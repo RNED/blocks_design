@@ -15,10 +15,10 @@ efficiencies(Design)
 \code{efficiencies} Efficiencies of pairwise treatment differences
 }
 \details{
-Efficiencies of pairwise treatment differences of a design built by using the \code{blocks} function.
- The output is a two-way table showing the efficiency of each pairwise treatment difference
- in a design. For equi-replicate designs, the harmonic mean of the pairwise efficienct factors
- should equal the A-efficiency factor give by the \code{blocks} function.
+Efficiencies of pairwise treatment differences for a design built by using the \code{blocks} function.
+ The function calculates a two-way table showing the efficiency of each pairwise treatment difference.
+ For equi-replicate designs only, the harmonic mean of the pairwise efficiency factors
+ should equal the A-efficiency factor calculated by the \code{blocks} function.
 }
 \examples{
 # 4 replicates of 50 treatments in complete randomized blocks
