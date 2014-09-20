@@ -1,13 +1,12 @@
-#' @title Pairwise efficiencies
+#' @title Efficiencies of pairwise differences
 #' 
 #' @description
-#' \code{pairwise_efficiencies} Efficiencies of pairwise treatment differences
+#' \code{efficiencies} Efficiencies of pairwise treatment differences
 #' 
 #' @details
 #'  Efficiencies of pairwise treatment differences of a design built by using the \code{blocks} function. 
-#'  The output is a two-way table showing the efficiency of the treatment difference for every pair
-#'  of treatments in a design and provides detail about the efficiency of a design for each individual 
-#'  treatment comparison. for equi-replicate designs the harmonic mean of the pairwise efficienct factors 
+#'  The output is a two-way table showing the efficiency of each pairwise treatment difference 
+#'  in a design. For equi-replicate designs, the harmonic mean of the pairwise efficienct factors 
 #'  should equal the A-efficiency factor give by the \code{blocks} function. 
 #'  
 #' @param Design A block design data frame as returned by \code{\link{blocks}}
@@ -19,9 +18,9 @@
 #' 
 #' # 4 replicates of 50 treatments in complete randomized blocks 
 #' 
-#' pairwise_efficiencies(blocks(treatments=50,replicates=4,blocklevels=c(4,5))$Design)
+#' efficiencies(blocks(treatments=50,replicates=4,blocklevels=c(4,5))$Design)
 #' @export
-pairwise_efficiencies=function(Design){
+efficiencies=function(Design){
   nunits=nrow(Design)	
   strata=ncol(Design)-1
   pairwise_effics=vector(mode="list",length=strata)	
