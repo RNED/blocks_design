@@ -4,10 +4,9 @@
 #' \code{upper_bounds} Finds upper A-efficiency bounds for regular block designs.
 #' @details
 #' Upper bounds for the A-efficiency of regular nested block designs 
-#' (see Chapter 2.8 of John and Williams 1995). The treatments must have
-#' equal replication and the block must have equal sizes
-#' therefore the function calculates a bound only if the number of treatments 
-#' and the number of blocks exactly divides the number of plots.   
+#' (see Chapter 2.8 of John and Williams 1995). Non-trivial bounds
+#' are calculated only for regular block designs with equal block sizes 
+#'  and equal replication. All other designs return 1.    
 #' 
 #' @param nplots The total number of plots in the design 
 #' 
