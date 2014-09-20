@@ -2,7 +2,7 @@
 #' 
 #' @description
 #' 
-#' \code{blocks} Block designs for unstructured treatment sets with arbitrary replication and arbitrary depth of nesting
+#' \code{blocks} constructs nested block designs for unstructured treatment sets with arbitrary replication and arbitrary depth of nesting
 #' 
 #' @details
 #' 
@@ -14,8 +14,7 @@
 #' In general, \code{blocks} optimizes designs algorithmically by a swapping algorithm that maximizes the determinant of
 #' the information matrix (D-optimality). However, certain special lattice designs (see vignette) are constructed algebraically 
 #' using mutually orthogonal latin squares (MOLS).  Lattice designs with a number of treatments equal to the square of a prime-power and with more than three replicates are constructed 
-#' using MOLS from the \code{\link{crossdes}} package.
-#' 
+#' using MOLS from the \code{crossdes} package.
 #' The treatment design can be any combination of treatment sets with arbitrary levels of replication where the treatment number and replication of 
 #' a treatment set is a matching pair of numbers in the treatments and replicates parameter lists. 
 #' 
@@ -26,7 +25,7 @@
 #'  
 #' @param treatments A list of the number of treatments in each replication set of the design. 
 #' 
-#' @param replicates A list of the replication numbers for each replication set in the design. 
+#' @param replicates A list of the replication number for each replication set in the design. 
 #' The treatments and replications lists must be equal in length and must contain matching pair of numbers for each treatment replication set.
 #' 
 #' @param blocklevels An optional list of nested blocks. 
