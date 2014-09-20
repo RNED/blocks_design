@@ -33,10 +33,10 @@ pairwise_efficiencies=function(Design){
     BF=as.factor(Design[,i])
     B=matrix(0,nrow=nunits,ncol=nlevels(BF))
     B[cbind(rep(1:nunits),BF)]=1
-    B=B[ , (1:(ncol(B)-1)) ]
-    B=crossprod(t(B),diag(1/sqrt(apply(B, 2, sum))))
+    B=B[ , (1:(ncol(B)-1)),drop=FALSE ]
+    B=crossprod(t(B),diag(1/sqrt(apply(B, 2, sum)),nrow=ncol(B)))
     V=solve(diag(r,nrow = length(r))-crossprod(crossprod(B,T)))
-    D= crossprod( t(rep(1,nlevels(TF)))  ,t(diag(V)))   +  crossprod( t(diag(V)), t(rep(1,nlevels(TF)))) - 2*V		
+    D= crossprod( t(rep(1,nlevels(TF)))  ,t(diag(V,nrow = nrow(V))))   +  crossprod( t(diag(V,nrow = nrow(V))), t(rep(1,nlevels(TF)))) - 2*V		
     N= crossprod( t(rep(1,nlevels(TF)))  ,1/t(r))       +  crossprod( 1/t(r), t(rep(1,nlevels(TF))))
     E=N/D
     E[upper.tri(E,diag=TRUE)] = NA
