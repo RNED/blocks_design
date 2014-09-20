@@ -5,8 +5,8 @@
 #' @details
 #' Upper bounds for the A-efficiency of regular nested block designs 
 #' (see Chapter 2.8 of John and Williams 1995). Non-trivial bounds
-#' are calculated only for regular block designs with equal block sizes 
-#'  and equal replication. All other designs return 1.    
+#' are calculated for regular block designs with equal block sizes 
+#' and equal replication. All other designs return NA.    
 #' 
 #' @param nplots The total number of plots in the design 
 #' 
@@ -22,11 +22,10 @@
 #' @export
 #'  
 upper_bounds=function(nplots,ntrts,nblocks){
-  if (ntrts+nblocks-1>nplots) return(NA)
+  if (nplots%%ntrts != 0 | nplots%%nblocks != 0 | ntrts == 1 | nblocks == 1 | (ntrts+nblocks-1)>nplots ) return(NA) 
+  if (nplots%%(nblocks*ntrts) == 0 ) return(1)  
   nreps = nplots/ntrts #replication
-  bsize = nplots/nblocks #block size		
-  if (nplots%%ntrts != 0 | nplots%%nblocks != 0 | ntrts == 1 | nblocks == 1 | nreps%%nblocks == 0 ) return(1)	
-  
+  bsize = nplots/nblocks #block size	
   # this bound is for non-binary designs where bsize>ntrts and can be improved - see John and Williams page 44
   if (bsize > ntrts) return(round( 1 - (bsize%%ntrts)*(ntrts - bsize%%ntrts)/(bsize*bsize*(ntrts - 1)) , 5))			
   # binary designs with bsize<=ntrts
