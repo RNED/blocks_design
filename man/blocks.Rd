@@ -4,7 +4,7 @@
 \title{Block designs}
 \usage{
 blocks(treatments, replicates, blocklevels = hcf, searches = min(64,
-  floor(4096/nunits)))
+  floor(4096/nunits)), seed = NULL)
 }
 \arguments{
 \item{treatments}{A list of the treatment numbers for each treatment set of the design. The list should contain one set of treatment numbers
@@ -20,6 +20,8 @@ blocks in each preceding block. The default is the hcf of the replication number
 
 \item{searches}{An optional parameter for the number of local optima searched during
 a design optimization. The default gives a reasonably short search time in most situations.}
+
+\item{seed}{An optional integer seed for the random number generator}
 }
 \value{
 \item{Design}{Data frame showing block and treatment factors for each plot}

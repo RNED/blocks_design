@@ -38,6 +38,8 @@
 #' @param searches An optional parameter for the number of local optima searched during 
 #' a design optimization. The default gives a reasonably short search time in most situations.
 #' 
+#' @param seed An optional integer seed for initializing the random number generator
+#' 
 #' @return  
 #' \item{Design}{Data frame showing block and treatment factors for each plot}
 #' \item{Plan}{Data frame showing treatments allocation to plots for each block}
@@ -72,12 +74,15 @@
 #' 
 #' @export
 #' 
-blocks = function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(4096/nunits))) {
+blocks = function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(4096/nunits)),seed=NULL) {
+  
   if (missing(treatments) | missing(replicates) )  return(" Treatments or replicates not defined ")   
   if (is.null(treatments) | is.null(replicates))  return(" Treatments or replicates list is empty ") 	
   if (anyNA(treatments) | anyNA(replicates) ) return(" NA values not allowed")
   if (!all(is.finite(treatments)) | !all(is.finite(replicates)) | !all(!is.nan(treatments)) | !all(!is.nan(replicates))) return(" Treatments and replicates must contain only finite integers ")
   if ( length(treatments)!=length(replicates) ) return(paste("The number of treatments sets = " , length(treatments) , " does not equal the number of replication sets = " , length(replicates)))
+ 
+  set.seed(seed)
   # omit any single replicate treatments here unless all single replicate	
   if (all(replicates==1)) {
     treatlevs=treatments
