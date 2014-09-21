@@ -16,9 +16,8 @@ efficiencies(Design)
 }
 \details{
 Tabulates the efficiency of each pairwise treatment difference for each statum of a design built by the \code{blocks} function.
- The table can be extracted and used for comparison of different designs. For example with equi-replicate designs,
- the harmonic mean of the pairwise efficiency factors
- will equal the A-efficiency factor calculated by the \code{blocks} function.
+ The table can be extracted and used for comparison of the properties of different designs. For example, with equi-replicate designs
+ the harmonic mean of the pairwise efficiency factors  will equal the A-efficiency factor calculated by the \code{blocks} function.
 }
 \examples{
 # 4 replicates of 50 treatments in complete randomized blocks
