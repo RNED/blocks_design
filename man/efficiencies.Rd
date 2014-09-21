@@ -12,7 +12,7 @@ efficiencies(Design)
 \item{Incidences[[i]]}{Blocks by treatments incidence matrices  i=1... for each stratum in the design}
 }
 \description{
-\code{efficiencies} Efficiencies of pairwise treatment differences
+\code{efficiencies} finds efficiencies of pairwise treatment differences
 }
 \details{
 Efficiencies of pairwise treatment differences for a design built by using the \code{blocks} function.

@@ -6,45 +6,47 @@
 #' 
 #' @details
 #' 
-#' \code{blocks} constructs nested block designs for unstructured treatment sets where treatments can have arbitrary replication 
-#' and blocks can be nested to any feasible depth of nesting. Block sizes in the same stratum 
-#' will be as near equal as possible and will never differ by more than a single unit. Blocks strata are optimized hierarchically with the blocks 
-#' of each new set optimized within the blocks of the preceding set. 
+#' \code{blocks} constructs nested block designs for unstructured treatment sets where treatments can have any arbitrary replication 
+#' and blocks can be nested to any feasible depth of nesting. 
 #' 
-#' In general, \code{blocks} optimizes designs algorithmically by a swapping algorithm that maximizes the determinant of
+#' Treatment and replication numbers are defined by \code{treatments} and \code{replicates} parameter lists where matching pairs of numbers in the two lists
+#' represent sets of treatments with that number of treatments and that level of replication. Any number of treatment sets are allowed
+#' and treatments are  numbered consecutively according to the ordering of the treatment sets in the parameter lists (see the first example).
+#'  
+#' Block sizes in the same stratum will be equal whenever possible and will never differ by more than a single unit. 
+#' Blocks strata are optimized hierarchically with the blocks of each new set optimized within the blocks of the preceding set. 
+#' 
+#' \code{blocks} optimizes general designs algorithmically by a swapping algorithm that maximizes the determinant of
 #' the information matrix (D-optimality). However, certain special lattice designs (see vignette) are constructed algebraically 
-#' using mutually orthogonal latin squares (MOLS).  Lattice designs with a number of treatments equal to the square of a prime-power and with more than three replicates are constructed 
-#' using MOLS from the \code{crossdes} package.
-#' The treatment design can be any combination of treatment sets with arbitrary levels of replication where the treatment number and replication of 
-#' a treatment set is a matching pair of numbers in the treatments and replicates parameter lists. 
-#' 
-#' Treatments are numbered consecutively according to the ordering of the treatment sets in the parameter lists (see the first example).
+#' using mutually orthogonal latin squares (MOLS).  Lattice designs with a number of treatments equal to the square of a prime-power 
+#' and with more than three replicates are constructed by using the MOLS function of the \code{crossdes} package.
 #' 
 #' Treatment designs are fully randomized with treatments randomized within the bottom blocks of the design and each set of nested blocks
-#' randomized within the preceding set of blocks.
+#' randomized within each preceding set of blocks.
 #'  
-#' @param treatments A list of the number of treatments in each replication set of the design. 
+#' @param treatments A list of the treatment numbers for each treatment set of the design. The list should contain one set of treatment numbers 
+#' for each replication level in the design. Treatments are numbered consecutively according to the ordering of the treatment sets.
 #' 
-#' @param replicates A list of the replication number for each replication set in the design. 
-#' The treatments and replications lists must be equal in length and must contain matching pair of numbers for each treatment replication set.
+#' @param replicates A list of the replication numbers for each treatment set in the design. 
+#' The treatments and replications lists must be equal in length and must contain matching pair of numbers, one pair for each treatment replication set.
 #' 
 #' @param blocklevels An optional list of nested blocks. 
 #' The numbers in the list define the number of nested blocks in each blocks stratum with the first number 
 #' giving the number of main blocks and the succesive numbers, if any, giving the number of nested 
-#' blocks in each preceding block. The default is a maximal set of complete randomised blocks equal to the hcf of the replication numbers.
+#' blocks in each preceding block. The default is the hcf of the replication numbers.
 #' 
 #' @param searches An optional parameter for the number of local optima searched during 
-#' a design optimization. The default number of searches decreases as the design size increases.
+#' a design optimization. The default gives a reasonably short search time in most situations.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing block and treatment factors for each plot}
-#' \item{Plan}{Data frame showing treatments allocation to plots for each block in the bottom stratum}
-#' \item{Incidences[[i]]}{Blocks by treatments incidence matrices  i=1... for each stratum in the design}
+#' \item{Plan}{Data frame showing treatments allocation to plots for each block}
+#' \item{Incidences[[i]]}{Blocks-by-treatments incidence matrix for each stratum in the design where (i = 1... strata) }
 #' \item{Efficiencies}{Data frame showing the A-efficiency and an upper bound, where available, for each stratum in the design}
 #' 
 #' @examples
 #' 
-#' # 2 replicates of 3 treatments, 4 replicates of 2 treatments and 3 replicates of 4 treatments in a completely randomised design where = hcf(2,4,3) = 1
+#' # 2 replicates of 3 treatments, 4 replicates of 2 treatments and 3 replicates of 4 treatments in a completely randomised design where hcf(2,4,3) = 1
 #' blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 #' 
 #' # 4 replicates of 50 treatments in 4 complete randomized blocks where hcf(4) = 4
@@ -65,8 +67,8 @@
 #' # 4 replicates of 64 treatments with 4 main blocks and five 2-level nesting factors   
 #' blocks(treatments=64,replicates=4,blocklevels=c(4,2,2,2,2,2))
 #' 
-#' # 4 replicates of 13 treatments in 13 blocks with extra searches (should guarantee a BIB solution)
-#' blocks(13,4,13,searches=100)
+#' # concurrences for 4 replicates of 13 treatments in 13 blocks with 13 added single replicate treatments 
+#' crossprod(blocks(c(13,13),c(4,1),13,searches=100)$Incidences[[1]])
 #' 
 #' @export
 #' 
