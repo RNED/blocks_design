@@ -12,14 +12,18 @@ output: html_document
 
 ### Introduction 
 
-Block designs group experimental units into homogeneous blocks to provide the maximum precision for treatment comparisons. The most basic type of blocks are complete randomised blocks where each block contains one or more complete sets of treatments. Complete blocks estimate all treatment effects with maximum efficiency and provide excellent designs for small or medium size experiments but for large designs, complete blocks are usually too large to provide homogeneous comparisons within the same block. Then methods for the further reduction of within-block variability may be required.
+Block designs group experimental units into homogeneous blocks to provide maximum precision for treatment comparisons. The most basic type of blocks are complete randomised blocks where each block contains one or more complete sets of treatments. Complete blocks estimate all treatment effects with maximum efficiency and provide excellent designs for small or medium size experiments; however for large designs, complete blocks are usually too large to provide homogeneous comparisons within the same block.
 
-One method of reducing the variability of large complete blocks is to subdivide each main block into smaller incomplete blocks that are fully nested within individual main block.  Yates (1936), in an early paper on block designs, introduced a class of incomplete block designs called balanced lattice block designs. These designs subdivided each complete block of a design for v x v equally replicated treatments into v incomplete blocks of size v. Balanced lattice designs have a high degree of balance and are highly efficient for estimating treatments effects but they exist only for certain specific treatment numbers, specific replication numbers and specific block sizes and are of limited availability. 
+One method of reducing the variability of large complete blocks is to subdivide each main block into smaller incomplete blocks that are fully nested within the main blocks.  Yates (1936), in an early paper on block designs, introduced a class of incomplete block designs called balanced lattice designs. Assuming a square number of treatments v x v and not more than 3 replicates, a balanced lattice design based on a v x v Latin square exists for v incomplete blocks of size v nested in each main block of size v x v. Further, if v is prime or prime power then v-1 mutually orthogonal latin sqaures exist and balanced lattice designs for up to v+1 replicates exist. Although balanced lattice designs have a high degree of balance and are highly efficient their limited availability and applicability make them of limited practical value.
 
-With the introduction of modern electronic computers, opportunities arose for the use of much more general methods of block designs. An important development was the use of algorithmic methods for the construction of efficient block designs for arbitrary number of treatments, arbitrary replication and arbitrary block sizes. A good design algorithm will fit a design to the experimental requirements and will normally give a good design close to optimal for any required design and any chosen optimality criteria. Much work has been done on the development of block design algorithms and Cook, R. D. and Nachtsheim, C. J. (1980) gave a review of some of the earlier work up to about 1980. Other developments include the use of cyclic designs for efficient block design (see John, J.A. and Williams, E.R. 1995). 
+Following the development of resolvable lattice block designs, incomplete block designs were generalized in a number of ways and many other classes of incomplete block designs were introduced (see Cochran and Cox 1957). A major requirement of these early designs was that results had to be hand-calculated and a number of designs with special properties of balance, such as the partially balanced incomplete block designs (PBIB’s) of Clatworthy (1956), were developed to simplify analysis. However, it is now known that some PBIB designs can be very inefficient for certain treatment comparisons and such designs are not now used. Other developments include the use of cyclic designs for efficient block design (see John, J.A. and Williams, E.R. 1995). 
+
+
+###Algorithmic design
+
+With the introduction of modern electronic computers, opportunities arose for the development of much more general methods of block designs. One important development was the use of algorithmic methods for the construction of efficient block designs for arbitrary number of treatments, arbitrary replication and arbitrary block sizes. A good design algorithm will fit a design to the experimental requirements and will normally give a good design close to optimal for any required design and any chosen optimality criteria. Much work has been done on the development of block design algorithms and Cook, R. D. and Nachtsheim, C. J. (1980) gave a review of some of the earlier work up to about 1980. 
 
 ###Block size
-
 
 Reducing block size will normally increase the within-blocks precision but it will also increase the between-block variability. Small blocks confound substantial treatment information between blocks therefore for large designs there is a conflict between the need to use small blocks to improve within-block precision and the need to recover between-block treatment information. Patterson and Hunter (1983) examined the choice of optimum blocks
 
@@ -55,6 +59,10 @@ Alexandra Kuznetsova, Per Bruun Brockhoff and Rune Haubo Bojesen Christensen (20
 Bates, D., Maechler, M., Bolker, B. and Walker, S. (2014). lme4: Linear mixed-effects models using Eigen and S4. R package version 1.1-6. http://CRAN.R-project.org/package=lme4
 
 Cook, R. D. and Nachtsheim, C. J. (1980). A comparison of algorithms for constructing exact D-optimal designs, Technometrics 22: 315-324.
+
+Clatworthy, W. H. (1956). On partially balanced incomplete block designs with two associate classes. United States: National Bureau of Standards. Applied mathematics series 47.
+
+Cochran, W. G. And G. M. Cox (1957) Experimental designs 2nd ed. New York: Wiley
 
 Patterson H.D., Hunter E.A., (1983). The efficiency of incomplete block designs in National List and Recommended List cereal variety trials. J. Agric. Sci. Camb., 101, pp. 427-433.
 
