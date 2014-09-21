@@ -341,9 +341,14 @@ blocks = function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(4
       }
       fullblocksizes=subSizes
     }
-    # reorder full Trts in full blocks
+    # append and reorder full Trts in full blocks
     Trts=c(Trts,sample(c((ntrts+1):(ntrts+sum(treatments[replicates==1])))))
     Trts=Trts[order(c( rep( 1:length(blocksizes),blocksizes),  rep( 1:length(blocksizes),(fullblocksizes-blocksizes) ) ) )]
+    # single replicates are appended at the end of the new treatments but may need re-ordering according to the treatments list order
+    newlabels=c( rep(1:sum(treatments))[ rep((replicates>1),treatments) ],rep(1:sum(treatments))[rep((replicates==1),treatments)])
+    for (i in 1 :length(Trts)) 
+      Trts[i]=newlabels[Trts[i]]	
+    
     desMat= matrix(1,nrow=nunits,ncol=strata)
     for (r in 1 : strata) 
       desMat[,r]=rep(facMat[,r],fullblocksizes)
