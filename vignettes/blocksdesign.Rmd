@@ -2,6 +2,7 @@
 %\VignetteEngine{knitr::knitr}
 %\VignetteIndexEntry{An Introduction to the blocksdesign package}
 -->
+
 ---
 title: "Nested block designs"
 author: "R. N. Edmondson"
