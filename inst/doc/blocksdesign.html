@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
-<title>  html_document:</title>
+<title>Hierarchically nested block designs</title>
 
 <script type="text/javascript">
 window.onload = function() {
@@ -168,13 +168,6 @@ hr {
 %\VignetteIndexEntry{An Introduction to the blocksdesign package}
 -->
 
-<hr/>
-
-<p>title: &ldquo;Sample Document&rdquo;
-output:</p>
-
-<h2>  html_document:</h2>
-
 <h1>Hierarchically nested block designs</h1>
 
 <p>R. N. Edmondson<br/>
@@ -184,147 +177,219 @@ output:</p>
 
 <p>Block designs group experimental units into homogeneous blocks to provide maximum precision for treatment comparisons. The most basic type of blocks are complete randomised blocks where each block contains one or more complete sets of treatments. Complete blocks estimate all treatment effects with maximum efficiency and provide excellent designs for small or medium size experiments; however for large designs, complete blocks are usually too large to provide homogeneous comparisons within the same block.</p>
 
-<p>One method of reducing the variability of large complete blocks is to subdivide each main block into smaller incomplete blocks that are fully nested within each main block.  Yates (1936), in an early paper on block designs, introduced a class of incomplete block designs called balanced lattice designs. These exist if the treatment number is the square of a prime  or prime power v and the nested block size is v and the number of replications not more than v+1. Although balanced lattice designs have a high degree of balance and are highly efficient, their limited availability and applicability make them of limited practical value.</p>
+<p>One method of reducing the variability of large complete blocks is to subdivide each complete block into smaller incomplete blocks that are fully nested within each main block.  Yates (1936), in an early paper on block designs, introduced a class of incomplete block designs called balanced lattice designs. These exist if the treatment number is the square of a prime  or prime power v and the nested block size is v and the number of replications is not more than v+1. Although balanced lattice designs have a high degree of balance and are highly efficient, their limited availability and applicability make them of limited practical value.</p>
 
-<p>Following the development of resolvable balanced lattice designs, incomplete block designs were generalized in a number of ways and many other classes of incomplete block designs were introduced (see Cochran and Cox 1957). A major requirement of these early designs was that results had to be hand-calculated and a number of the early designs, such as the partially balanced incomplete block designs (PBIB) of Clatworthy (1956), were developed to simplify analysis. However, it is now known that some PBIB designs are very inefficient for certain treatment comparisons therefore such designs should not now be used. Other developments include the use of cyclic designs for incomplete blocks, John (1966) and John, J.A. and Williams, E.R. (1995). </p>
+<p>Following the development of resolvable balanced lattice designs, incomplete block designs were generalized in a number of ways and many other classes of incomplete block designs were introduced (see Cochran and Cox 1957). A major requirement of these early designs was that results had to be hand-calculated and a number of the early designs, such as the partially balanced incomplete block designs (PBIB) of Clatworthy (1956), were developed to simplify analysis. However, it is now known that some PBIB designs are very inefficient for certain treatment comparisons therefore such designs are not now much used. Other developments included cyclic designs for incomplete blocks, see John (1966) and John, J.A. and Williams, E.R. (1995). </p>
 
 <h3>Analysis software</h3>
 
-<p>Incomplete block designs improve the within-blocks precision of treatment estimates but they also confound treatment information between blocks therefore an efficient analysis must take proper account of all the different sources of variability in the analysis of treatment effects. Before the development of modern computers and modern software, the complexity of the analysis was a major restriction on the choice of incomplete block design. Nowadays, however, the availability of modern analysis methods such as mixed model analysis available in the R packages &#39;lme4&#39; and &#39;lmerTest&#39; have largely removed this restriction. Modern computer software is capable of routine analysis of very general designs and the problem now is no longer the complexity of the data analysis but rather the requirement that designs should be sufficiently general to cope with the large and unpredictable sources of variability sometimes found in modern experimental designs.</p>
+<p>Incomplete block designs improve the within-blocks precision but they also confound treatment information between blocks therefore an efficient analysis must take full account of all the different sources of variability when estimating treatment effects. Before the development of modern computers and modern software, the complexity of this analysis was a major restriction on the choice of incomplete block design but nowadays the availability of modern analysis methods such as mixed model estimation methods available in the R packages &#39;lme4&#39; and &#39;lmerTest&#39; have largely removed this restriction. Modern computer software is capable of routine analysis of very general block designs so the opportunity now exists to construct very general block designs designs that can cope with the multiple sources of variability often found in large experimental designs.</p>
 
 <h3>Design algorithms</h3>
 
-<p>Modern electronic computers also gave rise to the development of much more general methods of block design and much work has been done on the development of efficient block design algorithms. Cook, R. D. and Nachtsheim, C. J. (1980) gave a review of some of the earlier work up to about 1980. One important development has been the use of algorithmic methods for the construction of efficient block designs for arbitrary number of treatments, arbitrary replication and arbitrary block sizes. A good general purpose design algorithm will fit a design to any experimental requirements and will give a good design close to optimal for any required design and any chosen optimality criteria. There are a number of optimality criteria available for block designs but the most common are probabaly A-optimality which maximizes the harmonic mean and D-optimality which maximises the geometric mean of the eigenvalues of the design information matrix. Usually the two criteria seem to give similar although not always identical designs. A-optimality seems to have a more direct interpretation than D-optimality (John and Williams 1995 Chapter 2) but D-optimality seems to be more tractable for manipulation and optimization. </p>
+<p>Much work has been done on the development of computer algorithms for efficient block design. Cook, R. D. and Nachtsheim, C. J. (1980) give a review of some of the earlier work up to about 1980. One important development has been the use of swapping algorithms for the construction of efficient block designs for arbitrary number of treatments, arbitrary replication and arbitrary block sizes. Swapping algorithms work by swapping treatments at random between different nested blocks within the same nesting blocks with improving swaps retained until no further improvement is possible. A good general purpose swapping algorithm will fit a design to any experimental requirements and will give a good design close to optimal for any required design and any chosen optimality criteria. There are a number of optimality criteria available for block designs but the most common are probabaly A-optimality which maximizes the harmonic mean and D-optimality which maximises the geometric mean of the eigenvalues of the design information matrix. Usually the two criteria seem to give similar although not always identical designs. A-optimality seems to have a more direct interpretation than D-optimality (John and Williams 1995 Chapter 2) whereas D-optimality seems to be more tractable for manipulation and optimization. </p>
 
 <h3>Block sizes</h3>
 
-<p>Patterson and Hunter (1983) reviewed 244 cereal variety trials arranged as generalized incomplete block designs and found the mean improvement in yield efficiency relative to complete randomized blocks was 1.43. Results varied greatly from one trial to another, however, with the distribution of efficiencies positively skewed across the set of trials. Precision was more than doubled in one tenth of the trials and in another tenth the lattice arrangement had little effect on accuracy. Nevertheless, in half the trials the efficiency was 1.23 or more. They also modelled the background field variability of 166 of the trials assuming an empirical exponential variance function. Assuming 2*phi(x) is the estimated variance of the difference between two plots separated by a distance x, they calculated the exponential function that best fitted the observed variances was:</p>
+<p>Patterson and Hunter (1983) reviewed 244 cereal variety trials arranged as generalized incomplete block designs and found the mean improvement in yield efficiency relative to complete randomized blocks was 1.43. Results varied greatly from one trial to another, however, and the distribution of efficiencies was positively skewed across the set of trials. Precision was more than doubled in one tenth of the trials and in another tenth the lattice arrangement had little effect on accuracy. Nevertheless, in half the trials the efficiency was 1.23 or more. They also modelled the background field variability of 166 of the trials assuming an empirical exponential variance function. Letting 2*phi(x) represent the estimated variance of the difference between two plots separated by a distance x, they calculated the semi-variance phi(x) that best fitted the observed variances as:</p>
 
-<p>phi(x) = 0.209 * (1 - 0.725 * 0.942<sup>x</sup>)        (1)</p>
+<hr/>
 
-<p>They then considered an example block design for 48 varieties in three replicate blocks and used the estimate of phi(x) to estimate theoretical variances of incomplete blocks of sizes 4, 6 or 8. and found the relative variances of these estimates compared with the variance of complete randomized blocks. They used the reciprocals of the relative variances to estimate the intra-block efficiencies of the different sizes of incomplete blocks and then estimated the overall efficiency of the designs including inter-block information. They estimated that with block sizes of 4, 6 or 8 the estimated efficiencies were 1.460, 1.523 and 1.500 respectively. They concluded that for trials with up to about 64 treatments, the nested block size should be approximately equal to the square root of the number of treatments.</p>
+<pre><code>  phi(x) = 0.209 * (1 - 0.725 * 0.942^x^)     (1)
+</code></pre>
 
-<p>Numerous other studies of block and plot sizes for efficient treatment estimation have been undertaken and a good source of data for the study of variabilty in agricultural trials is the &#39;agridat&#39; package by Wright (2014). </p>
+<hr/>
+
+<p>They then considered an example block design for 48 varieties in three replicate blocks and used equation (1) to estimate the theoretical variances of incomplete blocks of sizes 4, 6 or 8. and compared these estimates with the variance of a complete randomized blocks design. They used the reciprocals of the relative variances to estimate the intra-block efficiencies of the different sizes of incomplete blocks and then estimated the overall efficiency of the designs including inter-block information. They estimated that with block sizes of 4, 6 or 8 the estimated efficiencies were 1.460, 1.523 and 1.500 respectively. They concluded that for trials with up to about 64 treatments, the nested block size should be approximately equal to the square root of the number of treatments.</p>
+
+<p>Numerous other studies of block and plot sizes for efficient treatment estimation have been undertaken and a good source of data for the study of plot and block variabilty in agricultural trials is the &#39;agridat&#39; package by Wright (2014). </p>
 
 <h3>Hierarchical nesting</h3>
 
-<p>Although classical field experiments often have only a single set of incomplete blocks nested within main replicate blocks, there is no reason why blocks should not be nested hierarchically down to any feasible size of nested block. The advantage of hierarchical nesting is that it provides for efficient model fitting of the data according to the actual observed data. For example, in the Patterson and Hunter (1983) study, it is not necessary to choose between blocks of size 8 or blocks of size 4 as a design accommodating both sizes of block can be constructed by hierarchically nesting blocks of size 4 within blocks of size 8. The constraints imposed by the larger blocks on the choice of the smaller blocks may result in a small loss of efficiency on the smaller blocks compared with an unconstrained design but for medium to large designs any loss of efficiency due to hierarchical nesting is usually negligible. In the example of 3 replicates of 48 treatments, the upper efficiency bound for blocks of size 4 is .69012 and the best achieved efficiency for the unconstrained efficiency of blocks of size 4 using the the &#39;blocksdesign&#39; package was .68804 whereas the best achieved efficiency for the hierarchically nested blocks of size 4 was .6867 which gave an efficiency loss due to the hierarchical constraints of less than 0.2%. </p>
+<p>Usually, classical field experiments have only a single level of nesting within main replicate blocks but there is no reason why blocks should not be nested hierarchically down to any feasible level of nesting. One advantage of hierarchical nesting is that it allows the choice of an efficient block size to be fitted according to the actual observed data. For example, in the Patterson and Hunter (1983) study, it is not necessary to choose between designs with blocks of size 8 or designs with blocks of size 4 as a design accommodating both block sizes can be constructed by hierarchically nesting blocks of size 4 within blocks of size 8. The constraints imposed by the larger blocks on the smaller blocks may result in a very slight loss of efficiency on the smaller blocks but our experience is that for medium to large designs the loss of efficiency due to hierarchical nesting is usually negligible. In the Patterson and Hunter trial for example, the upper efficiency bound for blocks of size 4 is .69012 and the best achieved efficiency for unconstrained blocks of size 4 using the &#39;blocksdesign&#39; package was .68804 whereas the best achieved efficiency for the hierarchically nested blocks of size 4 was .6867. Thus the loss of efficiency on the hierarchic blocks of size 4 nested within blocks of size 8 compared with conventional blocks of size 4 nested within main blocks of size 48 was less than 0.2%. </p>
 
-<p>The following table shows 20 simulations using data generated by the variance function phi(x) given by Patterson and Hunter showing the estimated relative efficiency of the treatment comparisons for the two block sizes. The analysis was done by using the &#39;lmerTest&#39; package by Kuznetsova et al (2014) and the lme4 package by Bates et. al. (2014) and the program shown below in Appendix 1. The results of the simulations show that even though all the simulations are based on the same data distribution the optimum block size is unpredictable and that the choice of optimum block size for an analysis will depend on the propertiesof particular data set. For this reason alone, hierarchically nested blocks with two or more levels of nesting should be used for large designs with many plots.   </p>
+<p>The following table shows 20 simulations using data generated by the variance function given by Patterson and Hunter in equation (1). The results show the estimated relative efficiency of treatment comparisons for the two block sizes assuming an optimized hierarchical design with three main replicate blocks, six blocks of size 8 within each main block and two blocks of size 4 within each block of size 8. The analysis was done by using the &#39;lmerTest&#39; package by Kuznetsova et al (2014) and the lme4 package by Bates et. al. (2014) and the program is shown below in Appendix 1. The results of the simulations show that the optimum block size was sometimes 8 and sometimes 4 with about equal frequency. Thus, even when based on the same assumed data distribution, prediction of the optimum block size are highly variable and cannot be made with confidence before the experimental data has been analysed. In real situations, the error structure will be unknown and the achoice of an optimum block size will become even more problematic.</p>
 
-<table cellpadding="5">
-  <tr>
-    <td width=80>Simulation</br>number</td>
-    <td width=80>Block Size</br>8</td>
-    <td width=80>Block Size</br>4</td>
-  </tr>
-  <tr>
-    <td>1</td>
-    <td>1.315</td>
-    <td>1.169</td>
-  </tr>
-   <tr>
-    <td>2</td>
-    <td>1.074</td>
-    <td>1.130</td>
-  </tr>   
-  <tr>
-    <td>3</td>
-    <td>1.413</td>
-    <td>1.328</td>
-  </tr>  
-  <tr>
-    <td>4</td>
-    <td>2.559</td>
-    <td>2.543</td>
-  </tr>  
-  <tr>
-   <td>5</td>
-    <td>1.183</td>
-    <td>1.150</td>
-  </tr>  
-  <tr>
-    <td>6</td>
-    <td>1.163</td>
-    <td>1.128</td>
-  </tr>
-  <tr>
-    <td>7</td>
-    <td>1.408</td>
-    <td>1.371</td>
-  </tr>  
-  <tr>
-    <td>8</td>
-    <td>1.721</td>
-    <td>1.897</td>
-  </tr>  
-  <tr>
-    <td>9</td>
-    <td>1.500</td>
-    <td>1.393</td>    
-  </tr>  
-  <tr>
-    <td>10</td>
-    <td>2.014</td>
-    <td>2.141</td>
-  </tr>  
-  <tr>
-    <td>11</td>
-    <td>1.099</td>
-    <td>1.099</td>
-  </tr>  
-  <tr>
-    <td>12</td>
-    <td>1.431</td>
-    <td>1.402</td>
-  </tr>
-  <tr>
-    <td>13</td>
-    <td>2.088</td>
-    <td>1.960</td>
-  </tr>  
-  <tr>
-    <td>14</td>
-    <td>2.770</td>
-    <td>3.096</td>
-  </tr>  
-  <tr>
-    <td>15</td>
-    <td>1.479</td>
-    <td>1.365</td>    
-  </tr>  
-  <tr>
-    <td>16</td>
-    <td>2.465</td>
-    <td>2.530</td>
-  </tr>
-  <tr>
-    <td>17</td>
-    <td>2.002</td>
-    <td>1.935</td>
-  </tr>  
-  <tr>
-    <td>18</td>
-    <td>1.688</td>
-    <td>1.971</td>
-  </tr>  
-  <tr>
-    <td>19</td>
-    <td>2.087</td>
-    <td>2.249</td>
-  </tr>  
-  <tr>
-    <td>20</td>
-    <td>1.114</td>
-    <td>1.159</td>
-  </tr>   
-</table> 
+<table><thead>
+<tr>
+<th>Simulation number</th>
+<th>Block size 8</th>
+<th>Block size 4</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>1</td>
+<td>1.315</td>
+<td>1.169</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1.074</td>
+<td>1.130</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1.413</td>
+<td>1.328</td>
+</tr>
+<tr>
+<td>4</td>
+<td>2.559</td>
+<td>2.543</td>
+</tr>
+<tr>
+<td>5</td>
+<td>1.183</td>
+<td>1.150</td>
+</tr>
+<tr>
+<td>6</td>
+<td>1.163</td>
+<td>1.128</td>
+</tr>
+<tr>
+<td>7</td>
+<td>1.408</td>
+<td>1.371</td>
+</tr>
+<tr>
+<td>8</td>
+<td>1.721</td>
+<td>1.897</td>
+</tr>
+<tr>
+<td>9</td>
+<td>1.500</td>
+<td>1.393</td>
+</tr>
+<tr>
+<td>10</td>
+<td>2.014</td>
+<td>2.141</td>
+</tr>
+<tr>
+<td>11</td>
+<td>1.099</td>
+<td>1.099</td>
+</tr>
+<tr>
+<td>12</td>
+<td>1.431</td>
+<td>1.402</td>
+</tr>
+<tr>
+<td>13</td>
+<td>2.088</td>
+<td>1.960</td>
+</tr>
+<tr>
+<td>14</td>
+<td>2.770</td>
+<td>3.096</td>
+</tr>
+<tr>
+<td>15</td>
+<td>1.479</td>
+<td>1.365</td>
+</tr>
+<tr>
+<td>16</td>
+<td>2.465</td>
+<td>2.530</td>
+</tr>
+<tr>
+<td>17</td>
+<td>2.002</td>
+<td>1.935</td>
+</tr>
+<tr>
+<td>18</td>
+<td>1.688</td>
+<td>1.971</td>
+</tr>
+<tr>
+<td>19</td>
+<td>2.087</td>
+<td>2.249</td>
+</tr>
+<tr>
+<td>20</td>
+<td>1.114</td>
+<td>1.159</td>
+</tr>
+</tbody></table>
 
-<h3>Analysis of hierarchically nested designs</h3>
+<h3>Design and analysis for hierarchic block designs</h3>
 
-<p>In the previous example it was shown that hierarchically nested block designs can be used to help choose the most efficient block size for a conventional nested block analysis of a nested block design. However, for large designs with two or more levels of hierarchical nesting there is the opportunity for a mixed model analysis including more than a single stratum in the analysis. Model building strategies for the inclusion or exclusion of random effects in a model have been extensively researched (see West et al 2014) and the software package &#39;lmerTest&#39; has an option for backward elimination of non-significant random effects from a model. Discussion of model fitting for random effects is beyond the scope of this vignette but when planning a large design consideration should be given to the possibility of improved precision of analysis by inclusion of two or more nested blocks strata in the same model. Further study is needed to examine possible issues of over-fitting etc but it seems likely that multi-stratum mixed model analysis of hierarchically nested block designs has the potential for significant improvement in precision of analysis without loss of the traditional robustness of randomized block designs.    </p>
+<p>Although the analysis in the previous section was concerned twith the efficiency of the two possible nested block sizes when considered separately, it is normal when fitting data with multiple sources of random variation to fit models that include all the significant random error terms based on some appropriate measure of model fit (see West et al 2014). Hence, for large designs with two or more levels of hierarchical nesting there is the opportunity for a mixed model analysis including more than a single stratum in the analysis. Model building strategies for the inclusion or exclusion of random effects in a model have been extensively researched and the software package &#39;lmerTest&#39; has an option for backward elimination of non-significant random effects from a model. Equally, where blocks strata have been deliberately included in a design there is an argument that all model terms should be included automatically irrespective of whether the terms appear significant in the analysis.   </p>
 
-<h3>References</h3>
+<p>Further research is needed for a full understanding of hierarchical nesting in large experiments but the &#39;blocksdesign&#39; package can be used as a tool for exploring some of the implications empirically. For example it is easy to compare the efficiency of optimized nested blocks in a hierarchic design with the efficiency of comparable optimized blocks in a design with a single level of nesting.  then there can be little loss of efficiency due to design constraints whereas there may be substantial gains due to efficient estimation of multiple sources of variation. </p>
+
+<p>It seems likely therefore that multi-stratum mixed model analysis of hierarchically nested block designs has the potential for significant improvement in precision of analysis without loss of the traditional robustness of randomized block designs.    </p>
+
+<table><thead>
+<tr>
+<th>Block numbers</th>
+<th>Hierarchic model</th>
+<th>Separate models</th>
+<th>Upper bounds</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>2</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>4</td>
+<td>0.99222</td>
+<td>0.99222</td>
+<td>0.99415</td>
+</tr>
+<tr>
+<td>8</td>
+<td>0.97701</td>
+<td>0.97701</td>
+<td>0.97982</td>
+</tr>
+<tr>
+<td>16</td>
+<td>0.94796</td>
+<td>0.94796</td>
+<td>0.95089</td>
+</tr>
+<tr>
+<td>32</td>
+<td>0.89474</td>
+<td>0.89474</td>
+<td>0.89474</td>
+</tr>
+<tr>
+<td>64</td>
+<td>0.77021</td>
+<td>0.77117</td>
+<td>0.77382</td>
+</tr>
+<tr>
+<td>128</td>
+<td>0.52477</td>
+<td>0.52603</td>
+<td>0.55578</td>
+</tr>
+<tr>
+<td>256</td>
+<td>0.01167</td>
+<td>0.01167</td>
+<td>0.25296</td>
+</tr>
+</tbody></table>
+
+<h4>Acknowledgement</h4>
+
+<p>This project was partly supported by a DEFRA UK grant HH3811SX <a href="http://randd.defra.gov.uk/Default.aspx?Menu=Menu&amp;amp;Module=More&amp;amp;Location=None&amp;amp;ProjectID=12783&amp;amp;FromSearch=Y&amp;amp;Status=3&amp;amp;Publisher=1&amp;amp;SearchText=statistics&amp;20&amp;amp;SortString=ProjectCode&amp;amp;SortOrder=Asc&amp;amp;Paging=10#Description">DEFRA UK</a></p>
+
+<h4>References</h4>
 
 <p>Alexandra Kuznetsova, Per Bruun Brockhoff and Rune Haubo Bojesen Christensen (2014). lmerTest: Tests for random and fixed effects for linear mixed effect models (lmer objects of lme4 package). R package version 2.0-6. <a href="http://CRAN.R-project.org/package=lmerTest">http://CRAN.R-project.org/package=lmerTest</a></p>
 
@@ -350,7 +415,7 @@ output:</p>
 
 <p>Yates, F. (1936). A new method of arranging variety trials involving a large number of varieties. Journal of Agricultural Science, Vol. 26, pp. 424-455.</p>
 
-<h4>Appendix 1: Simulated efficiencies for 3 replicates of 48 treatments in nested blocks of size 8 amd size 4</h4>
+<h4>Appendix 1: Simulated efficiencies for 3 replicates of 48 treatments in nested blocks of size 8 and size 4</h4>
 
 <pre><code>    Expvar = function(n = 48, s2 = .209, lambda= .725, rho = .942) {  
     V= ( diag(n)*(1-lambda) + lambda*rho**abs(row(diag(n)) -  col(diag(n))))*s2  
