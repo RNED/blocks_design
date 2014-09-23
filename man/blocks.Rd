@@ -52,7 +52,7 @@ Treatment designs are fully randomized with treatments randomized within the bot
 randomized within each preceding set of blocks.
 }
 \examples{
-# 2 replicates of 3 treatments, 4 replicates of 2 treatments and 3 replicates of 4 treatments in a completely randomised design where hcf(2,4,3) = 1
+# 2 reps of 3 treatments, 4 reps of 2 treatments and 3 reps of 4 treatments with hcf(2,4,3) = 1
 blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 
 # 4 replicates of 50 treatments in 4 complete randomized blocks where hcf(4) = 4
@@ -64,7 +64,7 @@ blocks(treatments=50,replicates=4,blocklevels=c(4,5))
 # as above but with 20 additional single replicate treatments
 blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 
-# tabulation of 4 replicates of 4 treatments and 8 replicates of 1 treatment with 4 main blocks and 8 nested blocks in each main block
+# tabulation of 4 reps of 4 treatments and 8 reps of 1 treatment with 8 nested blocks per main block
 table(blocks(treatments=c(4,1),replicates=c(4,8))$Design)
 
 # concurrences for 3 replicates of 36 treatments with 3 main blocks and 6 nested blocks
@@ -73,7 +73,7 @@ crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
 # 4 replicates of 64 treatments with 4 main blocks and five 2-level nesting factors
 blocks(treatments=64,replicates=4,blocklevels=c(4,2,2,2,2,2))
 
-# concurrences for 4 replicates of 13 treatments in 13 blocks with 13 added single replicate treatments
+# concurrences for 4 reps of 13 treatments in 13 blocks with 13 added single rep treatments
 crossprod(blocks(c(13,13),c(4,1),13,searches=100)$Incidences[[1]])
 }
 
