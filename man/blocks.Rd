@@ -7,73 +7,82 @@ blocks(treatments, replicates, blocklevels = hcf, searches = min(64,
   floor(4096/nunits)), seed = NULL)
 }
 \arguments{
-\item{treatments}{A list of the treatment numbers for each treatment set of the design. The list should contain one set of treatment numbers
-for each replication level in the design. Treatments are numbered consecutively according to the ordering of the treatment sets.}
+\item{treatments}{A list of the number of treatments for each treatment replication set in the design. Each treatment number must have a matching
+replication number in the \code{replicates} list}
 
-\item{replicates}{A list of the replication numbers for each treatment set in the design.
-The treatments and replications lists must be equal in length and must contain matching pair of numbers, one pair for each treatment replication set.}
+\item{replicates}{A list of the number of replicates for each treatment replication set in the design. Each replication number must
+have a matching treatment number in the \code{treatments} list}
 
-\item{blocklevels}{An optional list of nested blocks.
-The numbers in the list define the number of nested blocks in each blocks stratum with the first number
-giving the number of main blocks and the succesive numbers, if any, giving the number of nested
-blocks in each preceding block. The default is the hcf of the replication numbers.}
+\item{blocklevels}{A hierarchical list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
+are the numbers of blocks nested in each preceding block. The default is the hcf of the replication numbers.}
 
-\item{searches}{An optional parameter for the number of local optima searched during
-a design optimization. The default gives a reasonably short search time in most situations.}
+\item{searches}{The number of local optima searched during
+a design optimization. The default is the minimum of 64 or 4096/(number of plots) rounded down to the nearest integer.}
 
-\item{seed}{An optional integer seed for initializing the random number generator}
+\item{seed}{An integer seed for initializing the random number generator. The default is a random seed.}
 }
 \value{
-\item{Design}{Data frame showing block and treatment factors for each plot}
-\item{Plan}{Data frame showing treatments allocation to plots for each block}
-\item{Incidences[[i]]}{Blocks-by-treatments incidence matrix for each stratum in the design where (i = 1... strata) }
-\item{Efficiencies}{Data frame showing the A-efficiency and an upper bound, where available, for each stratum in the design}
+\item{Design}{Data frame showing the block and treatment factors for each plot}
+\item{Plan}{Data frame showing the allocation of treatments to plots for each block in the design}
+\item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum in the design}
+\item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum in the design together with an upper bound, where available}
+\item{seed}{Design seed for random number generator}
 }
 \description{
-\code{blocks} constructs nested block designs for unstructured treatment sets with arbitrary replication and arbitrary depth of nesting
+\code{blocks} function constructs nested blocks for unstructured treatments with arbitrary levels of replication and arbitrary depth of nesting
 }
 \details{
-\code{blocks} constructs nested block designs for unstructured treatment sets where treatments can have any arbitrary replication
+\code{blocks} constructs nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal,
 and blocks can be nested to any feasible depth of nesting.
 
-Treatment and replication numbers are defined by \code{treatments} and \code{replicates} parameter lists where matching pairs of numbers in the two lists
-represent sets of treatments with that number of treatments and that level of replication. Any number of treatment sets are allowed
-and treatments are  numbered consecutively according to the ordering of the treatment sets in the parameter lists (see the first example).
+Treatment and replication numbers are defined by the \code{treatments} and \code{replicates} parameter lists. These lists must be of equal length
+and the matching pair of numbers in the two lists represent treatment sets where the treatment list gives the number of treatments and
+the replication list gives the replication for each treatment set.
 
-Block sizes in the same stratum will be equal whenever possible and will never differ by more than a single unit.
-Blocks strata are optimized hierarchically with the blocks of each new set optimized within the blocks of the preceding set.
+Any number of treatment sets is allowed and the treatments are numbered consecutively according to the ordering of the treatment sets in the parameter lists
+(see the examples).
 
-\code{blocks} optimizes general designs algorithmically by a swapping algorithm that maximizes the determinant of
-the information matrix (D-optimality). However, certain special lattice designs (see vignette) are constructed algebraically
-using mutually orthogonal latin squares (MOLS).  Lattice designs with a number of treatments equal to the square of a prime-power
-and with more than three replicates are constructed by using the MOLS function of the \code{crossdes} package.
+Blocks are defined by the \code{blocklevels} list which is an hierarchical list of nested blocks. The first number is the number of main blocks
+and each succesive number is the number of blocks nested in each preceding block where the product of the numbers is the total number of blocks
+in the design. The default value for \code{blocklevels} is the highest common factor (hcf) of the replication numbers which gives an orthogonal
+blocks design with the maximum possible number of othogonal blocks.
 
-Treatment designs are fully randomized with treatments randomized within the bottom blocks of the design and each set of nested blocks
-randomized within each preceding set of blocks.
+Block sizes in the same stratum are always equal if the number of blocks exactly divides the number of plots otherwise
+they are as equal as possible and never differ by more than a single unit.
+
+Nested designs are optimized hierarchically with the blocks of each new nested set optimized within the blocks of the preceding set.
+General designs are  optimized by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality).
+Balanced lattice designs where the treatment number is the square of a prime or prime power v and the nested block size
+is v and the number of replications is not more than v+1, are constructed algebraicallly by using the properties of mutually orthogonal
+Latin squares (MOLS). Lattice designs with number of treatments equal to the square of a prime-power are
+constructed by using the MOLS function of the \code{crossdes} package.
+
+Designs are fully randomized with treatments randomized within blocks and with each set of nested blocks randomized within each
+preceding set of blocks.
 }
 \examples{
-# 2 reps of 3 treatments, 4 reps of 2 treatments and 3 reps of 4 treatments with hcf(2,4,3) = 1
+# 3 treatments with 2 reps, 2 treatments with 4 reps and 4 treatments with 3 reps
+# the default block design is a single randomized block as the  hcf of c(2,4,3) is 1
 blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 
-# 4 replicates of 50 treatments in 4 complete randomized blocks where hcf(4) = 4
+# 50 treatments with 4 reps in 4 complete randomized blocks
 blocks(treatments=50,replicates=4)
 
 # as above but with 4 main blocks and 5 nested blocks in each main block
 blocks(treatments=50,replicates=4,blocklevels=c(4,5))
 
 # as above but with 20 additional single replicate treatments
+# single replicate treatments are always allocated individually to blocks
 blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 
-# tabulation of 4 reps of 4 treatments and 8 reps of 1 treatment with 8 nested blocks per main block
-table(blocks(treatments=c(4,1),replicates=c(4,8))$Design)
-
-# concurrences for 3 replicates of 36 treatments with 3 main blocks and 6 nested blocks
-crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
-
-# 4 replicates of 64 treatments with 4 main blocks and five 2-level nesting factors
+# 64 treatments with 4 reps and 4 main blocks and five 2-level nesting factors
 blocks(treatments=64,replicates=4,blocklevels=c(4,2,2,2,2,2))
 
-# concurrences for 4 reps of 13 treatments in 13 blocks with 13 added single rep treatments
+#' # 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
+# crossproducts of the incidence matrices are concurrence matrices
+crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
+
+# concurrences for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks
 crossprod(blocks(c(13,13),c(4,1),13,searches=100)$Incidences[[1]])
 }
 
