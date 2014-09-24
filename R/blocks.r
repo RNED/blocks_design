@@ -46,18 +46,18 @@
 #' @param searches The number of local optima searched during 
 #' a design optimization. The default is the minimum of 64 or 4096/(number of plots) rounded down to the nearest integer.
 #' 
-#' @param seed An integer seed for initializing the random number generator. The default is a random seed.
+#' @param seed An integer seed for initializing the random number generator if a design must be reproducible. The default is a random seed.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the block and treatment factors for each plot}
 #' \item{Plan}{Data frame showing the allocation of treatments to plots for each block in the design}
 #' \item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum in the design}
 #' \item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum in the design together with an upper bound, where available}
-#' \item{seed}{Design seed for random number generator}
+#' 
 #' @examples
 #' 
-#' # 3 treatments with 2 reps, 2 treatments with 4 reps and 4 treatments with 3 reps
-#' # the default block design is a single randomized block as the  hcf of c(2,4,3) is 1
+#' # 3 treatments with 2 reps, 2 treatments with 4 reps and 4 treatments with 3 reps 
+#' # the hcf of c(2,4,3) is 1 and the default design is a completely randomized design 
 #' blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 #' 
 #' # 50 treatments with 4 reps in 4 complete randomized blocks 
@@ -66,15 +66,14 @@
 #' # as above but with 4 main blocks and 5 nested blocks in each main block 
 #' blocks(treatments=50,replicates=4,blocklevels=c(4,5))
 #' 
-#' # as above but with 20 additional single replicate treatments
-#' # single replicate treatments are always allocated individually to blocks 
+#' # as above but with 20 additional single replicate treatments, one to each block
 #' blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 #' 
-#' # 64 treatments with 4 reps and 4 main blocks and five 2-level nesting factors   
+#' # 64 treatments with 4 reps and 4 main blocks and five 2-level nested factors   
 #' blocks(treatments=64,replicates=4,blocklevels=c(4,2,2,2,2,2))
 #' 
-#' #' # 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
-#' # crossproducts of the incidence matrices are concurrence matrices
+#' # 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
+#' # crossproducts of incidence matrices are concurrence matrices
 #' crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
 #' 
 #' # concurrences for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks 
@@ -422,5 +421,5 @@ blocks = function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(4
     for (i in 1 : (strata-2)) rnames=c(rnames,paste("Sub",i))
   colnames(effics)=c("Blocks","A-Efficiencies", "Upper Bounds")
   rownames(effics)=rnames
-  list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=effics,seed=seed)
+  list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=effics)
 } 
