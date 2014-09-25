@@ -8,12 +8,12 @@ Maintainer: Rodney Edmondson <rodney.edmondson@gmail.com>
 Description: Nested block designs for unstructured treatment sets where blocks
     can be repeatedly nested and treatments can have different levels of
     replication. Blocks strata are optimized hierarchically with each set of
-    nested blocks optimized conditionally within the levels of the preceding
-    set of blocks. Block sizes are always equal where possible or differ by at
-    most one unit in any one stratum. The design output is a data table giving
-    a randomised allocation of treatments to blocks together with a plan table
-    showing treatments in blocks and a set of blocks-by-treatments incidence
-    matrices, one for each blocks stratum.
+    nested blocks optimized within the levels of the preceding set. Block sizes
+    are equal if the number of blocks exactly divides the number of plots,
+    otherwise they differ by at most one plot. The design output is a data
+    table giving a randomised allocation of treatments to blocks together with
+    a plan table showing treatments in blocks and a set of blocks-by-treatments
+    incidence matrices, one for each blocks stratum.
 License: GPL(>= 2)
 Suggests:
     knitr
