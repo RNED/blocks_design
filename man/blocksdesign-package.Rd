@@ -19,13 +19,19 @@ Date: \tab 2014-09-16\cr
 License: \tab GPL(>= 2)\cr
 }
 
-\code{\link[blocksdesign]{blocks}} builds general nested block designs for unstructured treatment sets where treatments can have any number of levels of replication and blocks can be nested to any depth of nesting. Blocks in the same stratum are always  equal in size if the number of blocks exactly divides the number of plots otherwise they never differ by more than a single unit. Nested blocks are optimized hierarchically whereby each succesive set of nested blocks is optimized conditionally within the blocks of the preceding set. General block designs are optimized algorithmically by a swapping algorithm that finds a local D-optimal design but for certain special design sizes, block designs are constructed algebraically by using MOLS from the \pkg{crossdes} package function \code{\link[crossdes]{MOLS}}. See the vignette for further discussion of block designs.
+The purpose of block designs is to group experimental units into homogeneous blocks to provide maximum precision for treatment comparisons (see Edmondson 2005). The \code{blocksdesign} package supports the design of block experiments for unstructured treatment sets and provides a general purpose tool for the construction of practical nested block designs.
 
-Design outputs include a dataframe containing the treatment design, a table containing the treatment allocations to blocks, tables showing the blocks-by-treatments stratum incidence matrices and a table showing the A-efficiencies for each stratum together with efficiency upper bounds, where available (see John and Williams 1995, Chapter 2).
+The function \code{\link[blocksdesign]{blocks}} builds general nested block designs for unstructured treatment sets where treatments can have any number of levels of replication and blocks can be nested to any feasible depth of nesting. If the number of blocks exactly divides the number of plots the blocks are always  equal in size, otherwise they never differ by more than a single unit. Where designs have one or more levels of nesting, blocks are optimized hierarchically with each successive set of nested blocks optimized within the blocks of the preceding set. General block designs are optimized algorithmically by a swapping algorithm that finds a locally D-optimal design. Special designs where the number of treatments t = v*v is equal to the square of the block size, the number of replicates is k+1 and there are k mutually orthogonal latin squares (MOLS) of size v x v, are constructed algebraically from the rows, columns and letters of the latin squares. If v is a prime-power, the MOLS are constructed using the \pkg{crossdes} package function \code{\link[crossdes]{MOLS}}. 
 
-\code{\link[blocksdesign]{efficiencies}} is a secondary function which takes the design dataframe output from \code{blocks} and constructs tables of efficiency factors for each pairwise treatment difference in each stratum, if required.
+Design efficiency is assessed by an A-optimality criterion which can be compared with an upper-bound when designs have equal block sizes and equal replication (see John and Williams 1995, Chapter 2).  
 
-\code{\link[blocksdesign]{upper_bounds}} is a subsidiary function that provides A-efficiency upper bounds for regular block designs with equally replicated treatments and equal block sizes. 
+Design outputs comprise a dataframe showing the treatment design, a table showing the treatment allocations to blocks, tables showing the blocks-by-treatments incidence matrices for each stratum in the design and a table showing the A-efficiencies for each stratum together with efficiency upper bounds, where available.
+
+The \code{\link[blocksdesign]{efficiencies}} function is a secondary function which takes the design dataframe output from \code{blocks} and constructs tables of efficiency factors for each pairwise treatment difference in each stratum, if required.
+
+The \code{\link[blocksdesign]{upper_bounds}} function is a subsidiary function that provides A-efficiency upper bounds for regular block designs with equally replicated treatments and equal block sizes. 
+
+The vignette associated with the  package provides additional discussion of block designs and .
 }
 
 \author{
@@ -35,9 +41,9 @@ Maintainer: R. N. Edmondson <rodney.edmondson@gmail.com>
 }
 \references{
 
-John, J. A. & Williams, E. R. (1995). Cyclic and Computer Generated Designs.Second Edition. Monographs on Statistics and Applied Probability 38. Chapman and Hall.\cr
+Edmondson, R. N. (2005) Past developments and future opportunities in the design and analysis of crop experiments. The Journal of Agricultural Science, Cambridge, 143, pp 27-33\cr
 
-Patterson H.D., Hunter E.A., (1983). The efficiency of incomplete block designs in National List and Recommended List cereal variety trials. J. Agric. Sci. Camb., 101, pp. 427-433.\cr
+John, J. A. and Williams, E. R. (1995). Cyclic and Computer Generated Designs. Chapman and Hall, London
 }
 \keyword{ design }
 

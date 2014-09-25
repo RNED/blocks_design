@@ -7,31 +7,30 @@
 #' @details
 #' 
 #' \code{blocks} constructs nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal, 
-#' and blocks can be nested to any feasible depth of nesting.
+#' and blocks can have any feasible depth of nesting.
 #' 
 #' Treatment and replication numbers are defined by the \code{treatments} and \code{replicates} parameter lists. These lists must be of equal length
-#' and the matching pair of numbers in the two lists represent treatment sets where the treatment list gives the number of treatments and 
-#' the replication list gives the replication for each treatment set.
+#' and each matching pair of numbers in the two lists represents a treatment set where the \code{treatments} list gives the number of treatments in each set and 
+#' the \code{replicates} list gives the replication for each set.
 #'  
 #' Any number of treatment sets is allowed and the treatments are numbered consecutively according to the ordering of the treatment sets in the parameter lists
 #' (see the examples). 
 #'  
-#' Blocks are defined by the \code{blocklevels} list which is an hierarchical list of nested blocks. The first number is the number of main blocks 
-#' and each succesive number is the number of blocks nested in each preceding block where the product of the numbers is the total number of blocks
-#' in the design. The default value for \code{blocklevels} is the highest common factor (hcf) of the replication numbers which gives an orthogonal
-#' blocks design with the maximum possible number of othogonal blocks.   
+#' Blocks are defined by the \code{blocklevels} list which is a hierarchical list of nested blocks. The first number is the number of main blocks 
+#' and the succesive numbers, if any, are the numbers of blocks nested in each preceding block. The cumulative product of the levels for any stratum
+#' is the total number of blocks in that stratum. The default value for the \code{blocklevels} list is a single number equal to the highest common factor (hcf) of
+#' the replication numbers which gives an orthogonal blocks design with the maximum possible number of othogonal blocks.   
 #'  
-#' Block sizes in the same stratum are always equal if the number of blocks exactly divides the number of plots otherwise
-#' they are as equal as possible and never differ by more than a single unit. 
+#' Block sizes in any given stratum are equal if the cumulative number of blocks exactly divides the number of plots otherwise
+#' they are as near equal as possible and never differ by more than a single unit. 
 #' 
 #' Nested designs are optimized hierarchically with the blocks of each new nested set optimized within the blocks of the preceding set.
 #' General designs are  optimized by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality). 
-#' Balanced lattice designs where the treatment number is the square of a prime or prime power v and the nested block size 
+#' Special lattice designs where the treatment number is the square of a prime or prime-power v and the nested block size 
 #' is v and the number of replications is not more than v+1, are constructed algebraicallly by using the properties of mutually orthogonal
-#' Latin squares (MOLS). Lattice designs with number of treatments equal to the square of a prime-power are
-#' constructed by using the MOLS function of the \code{crossdes} package.
+#' Latin squares (MOLS). If v is a prime-power the MOLS are constructed by using the MOLS function of the \code{crossdes} package.
 #'  
-#' Designs are fully randomized with treatments randomized within blocks and with each set of nested blocks randomized within each
+#' Designs are fully randomized with treatments randomized within blocks and each set of nested blocks randomized within the
 #' preceding set of blocks.
 #'  
 #' @param treatments A list of the number of treatments for each treatment replication set in the design. Each treatment number must have a matching
@@ -44,15 +43,16 @@
 #' are the numbers of blocks nested in each preceding block. The default is the hcf of the replication numbers.
 #' 
 #' @param searches The number of local optima searched during 
-#' a design optimization. The default is the minimum of 64 or 4096/(number of plots) rounded down to the nearest integer.
+#' a design optimization. The default is the minimum of 64 or the integer quotient of 4096 divided by the number of plots.
 #' 
-#' @param seed An integer seed for initializing the random number generator if a design must be reproducible. The default is a random seed.
+#' @param seed An integer seed for initializing the random number generator if the design must be reproducible. The default is a random seed.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the block and treatment factors for each plot}
 #' \item{Plan}{Data frame showing the allocation of treatments to plots for each block in the design}
 #' \item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum in the design}
 #' \item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum in the design together with an upper bound, where available}
+#' \item{seed}{Numerical seed for random number generator}
 #' 
 #' @examples
 #' 
@@ -88,7 +88,7 @@ blocks = function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(4
   if (anyNA(treatments) | anyNA(replicates) ) return(" NA values not allowed")
   if (!all(is.finite(treatments)) | !all(is.finite(replicates)) | !all(!is.nan(treatments)) | !all(!is.nan(replicates))) return(" Treatments and replicates must contain only finite integers ")
   if ( length(treatments)!=length(replicates) ) return(paste("The number of treatments sets = " , length(treatments) , " does not equal the number of replication sets = " , length(replicates)))
- 
+  if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed)
   # omit any single replicate treatments here unless all single replicate	
   if (all(replicates==1)) {
@@ -421,5 +421,5 @@ blocks = function(treatments,replicates,blocklevels=hcf,searches=min(64, floor(4
     for (i in 1 : (strata-2)) rnames=c(rnames,paste("Sub",i))
   colnames(effics)=c("Blocks","A-Efficiencies", "Upper Bounds")
   rownames(effics)=rnames
-  list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=effics)
+  list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=effics,seed=seed)
 } 
