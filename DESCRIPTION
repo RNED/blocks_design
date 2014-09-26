@@ -15,6 +15,7 @@ Description: Nested block designs for unstructured treatment sets where blocks
     a plan table showing treatments in blocks and a set of blocks-by-treatments
     incidence matrices, one for each blocks stratum.
 License: GPL(>= 2)
+URL: http://www.expdesigns.co.uk
 Suggests:
     knitr
 VignetteBuilder: knitr
