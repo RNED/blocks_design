@@ -45,9 +45,6 @@
 #' Bates, D., Maechler, M., Bolker, B. and Walker, S. (2014). lme4: Linear mixed-effects models using Eigen and S4. 
 #' R package version 1.1-6. http://CRAN.R-project.org/package=lme4
 #' 
-#' Edmondson, R. N. (2005) Past developments and future opportunities in the design and analysis of crop experiments. 
-#' The Journal of Agricultural Science, Cambridge, 143, pp 27-33
-#' 
 #' John, J. A. and Williams, E. R. (1995). Cyclic and Computer Generated Designs. Chapman and Hall, London.
 #' 
 #' Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes
