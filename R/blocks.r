@@ -10,8 +10,8 @@
 #' and blocks can have any feasible depth of nesting.
 #' 
 #' Treatment and replication numbers are defined by the \code{treatments} and \code{replicates} parameter lists. These lists must be of equal length
-#' and each matching pair of numbers in the two lists represents a treatment set where the \code{treatments} list gives the number of treatments in each set and 
-#' the \code{replicates} list gives the replication for each set.
+#' and each matching pair of numbers in the two lists will represent a treatment set where the \code{treatments} list gives the number of treatments in the individual sets and 
+#' the \code{replicates} list gives the replication of the individual sets.
 #'  
 #' Any number of treatment sets is allowed and the treatments are numbered consecutively according to the ordering of the treatment sets in the parameter lists
 #' (see the examples). 
@@ -19,24 +19,24 @@
 #' Blocks are defined by the \code{blocklevels} list which is a hierarchical list of nested blocks. The first number is the number of main blocks 
 #' and the succesive numbers, if any, are the numbers of blocks nested in each preceding block. The cumulative product of the levels for any stratum
 #' is the total number of blocks in that stratum. The default value for the \code{blocklevels} list is a single number equal to the highest common factor (hcf) of
-#' the replication numbers which gives an orthogonal blocks design with the maximum possible number of othogonal blocks.   
+#' the replication numbers, which gives an orthogonal blocks design with the maximum possible number of othogonal blocks.   
 #'  
 #' Block sizes in any given stratum are equal if the cumulative number of blocks exactly divides the number of plots otherwise
 #' they are as near equal as possible and never differ by more than a single unit. 
 #' 
 #' Nested designs are optimized hierarchically with the blocks of each new nested set optimized within the blocks of the preceding set.
 #' General designs are  optimized by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality). 
-#' Special lattice designs where the treatment number is the square of a prime or prime-power v and the nested block size 
+#' Special lattice designs, where the treatment number is the square of a prime or prime-power v, the nested block size 
 #' is v and the number of replications is not more than v+1, are constructed algebraicallly by using the properties of mutually orthogonal
-#' Latin squares (MOLS). If v is a prime-power the MOLS are constructed by using the MOLS function of the \code{crossdes} package.
+#' Latin squares (MOLS). If v is a prime-power, the MOLS are constructed by using the MOLS function of the \code{crossdes} package.
 #'  
 #' Designs are fully randomized with treatments randomized within blocks and each set of nested blocks randomized within the
 #' preceding set of blocks.
 #'  
-#' @param treatments A list of the number of treatments for each treatment replication set in the design. Each treatment number must have a matching
+#' @param treatments A list of the number of treatments for each treatment set in the design. Each treatment number must have a matching
 #' replication number in the \code{replicates} list
 #' 
-#' @param replicates A list of the number of replicates for each treatment replication set in the design. Each replication number must 
+#' @param replicates A list of the number of replicates for each treatment set in the design. Each replication number must 
 #' have a matching treatment number in the \code{treatments} list
 #' 
 #' @param blocklevels A hierarchical list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
@@ -45,7 +45,7 @@
 #' @param searches The number of local optima searched during 
 #' a design optimization. The default is the minimum of 64 or the integer quotient of 4096 divided by the number of plots.
 #' 
-#' @param seed An integer seed for initializing the random number generator if the design must be reproducible. The default is a random seed.
+#' @param seed An integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the block and treatment factors for each plot}
@@ -69,11 +69,10 @@
 #' # as above but with 20 additional single replicate treatments, one to each block
 #' blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 #' 
-#' # 64 treatments with 4 reps and 4 main blocks and five 2-level nested factors   
+#' # 64 treatments with 4 reps and 4 main blocks and five 2-level multi-stratum nested factors   
 #' blocks(treatments=64,replicates=4,blocklevels=c(4,2,2,2,2,2))
 #' 
-#' # 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
-#' # crossproducts of incidence matrices are concurrence matrices
+#' # concurrence matrices of 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
 #' crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
 #' 
 #' # concurrences for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks 
