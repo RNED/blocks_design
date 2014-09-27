@@ -17,10 +17,10 @@
 #' The complexity of design and analysis of designs with more than a single stratum of nesting has made multi-stratum nesting infeasible for 
 #' practical experiments. However, modern software such as the \code{lme4} mixed model analysis package and the availability of
 #' modern design algorithms have eliminated these restrictions and the use of multi-stratum nesting for large block designs is now
-#' entirely feasible . 
+#' entirely feasible. 
 #' 
 #' The advantage of multi-stratum nesting is that random variability can be captured across
-#' a range of block sizes which allows for more realistic modelling of block effects compared with single stratum nesting. 
+#' a range of block sizes and this allows for more realistic modelling of block effects compared with single stratum nesting. 
 #' The \code{blocksdesign} package is a general purpose tool that provides for the construction of general block designs where
 #' treatments can have any number of levels of replication and blocks can be nested to any feasible depth of nesting. 
 #' Where designs have one or more levels of nesting, blocks are optimized hierarchically with each successive set of nested blocks

@@ -2,6 +2,7 @@
 #' 
 #' @description
 #' \code{upper_bounds} finds upper A-efficiency bounds for regular block designs.
+#' 
 #' @details
 #' Upper bounds for the A-efficiency of regular nested block designs 
 #' (see Chapter 2.8 of John and Williams 1995). Non-trivial bounds

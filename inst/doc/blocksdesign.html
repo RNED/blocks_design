@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
-<title>Hierarchic nested block designs</title>
+<title>Multi-stratum nested block designs</title>
 
 <script type="text/javascript">
 window.onload = function() {
@@ -168,7 +168,7 @@ hr {
 %\VignetteIndexEntry{An Introduction to the blocksdesign package}
 -->
 
-<h1>Hierarchic nested block designs</h1>
+<h1>Multi-stratum nested block designs</h1>
 
 <p>R. N. Edmondson<br/>
 18/09/2014  </p>
@@ -383,11 +383,11 @@ hr {
 
 <h3>Analysis</h3>
 
-<p>It was shown in the simulation study of the Patterson and Hunter (1983) example that the best block size for an efficient nested block analysis was not predictable and that a multi-stratum design with hierarchical nesting could be used to help select the best single block size for any particular data set. However, it is normal when fitting data with multiple sources of random variation to select a model that includes all the significant random error terms based on an appropriate measure of model fit (see West et al 2014). For large designs with hierarchical multi-stratum nesting, mixed model analysis including more than a single stratum in the analysis may be an appropriate method of analysis. Model building strategies for the inclusion or exclusion of random effects in a model have been extensively researched and the software package &#39;lmerTest&#39; has an option for backward elimination of non-significant random effects from a model. </p>
+<p>It was shown in the simulation of the Patterson and Hunter (1983) example that the best block size for an efficient nested block analysis was not predictable and that a multi-stratum design with hierarchical nesting could be used to help select the best single block size for any particular data set. However, it is normal when fitting data with multiple sources of random variation to select a model that includes all the significant random error terms based on an appropriate measure of model fit (see West et al 2014). For large designs, mixed model analysis including more than a single stratum in the analysis may be an appropriate method of analysis. Model building strategies for the inclusion or exclusion of random effects in a model have been extensively researched and the software package &#39;lmerTest&#39; has an option for backward elimination of non-significant random effects from a model. </p>
 
-<p>Further discussion of model fitting for large multi-stratum nested block designs is beyond the scope of this vignette and further research is needed for a full understanding of hierarchical nesting in large experiments. However, the &#39;blocksdesign&#39; package can be used as a tool for exploring some of the implications empirically. For example, as shown above, it is easy to compare the efficiency of optimized nested blocks in a hierarchic nested block design with the efficiency of comparable optimized blocks in a design with a single level of nesting. This approach could be extended to provide power studies to compare designs with different multi-stratum nesting schemes. For example, in the Patterson and Hunter design for 3 replicates of 48 treatments, a design with four nested strata and blocks of size 48, 16, 8, 4 and 2 could be simulated and tested. It is important to ensure that a sufficient number of blocks is available for estimation of the stratum variances at each level of nesting and this scheme provides 9, 18, 36 and 72 blocks for the four nested levels, which seems adequate.        </p>
+<p>Further discussion of model fitting for large multi-stratum nested block designs is beyond the scope of this vignette and further research is needed for a full understanding of hierarchical nesting in large experiments. However, the &#39;blocksdesign&#39; package can be used as a tool for exploring some of the design implications. For example, as shown above, it is easy to compare the efficiency of optimized nested blocks in a hierarchic nested block design with the efficiency of comparable optimized blocks in a design with a single level of nesting. This approach could be extended to provide power studies to compare designs with different multi-stratum nesting schemes. For example, in the Patterson and Hunter example, there were for 3 replicates of 48 treatments so a design with four nested strata and blocks of size 48, 16, 8, 4 and 2 could be simulated and tested. It is important to ensure that a sufficient number of blocks is available for estimation of the stratum variances at each level of nesting and in this scheme there are 9, 18, 36 and 72 blocks for the four nested levels, which seems adequate.        </p>
 
-<p>In conclusion, it can be assumed that provided the constraints of multi-stratum nesting do not cause any meaningful loss of blocks efficiency, a hierarchical multi-stratum design together with an appropriate mixed model analysis of the data has the potential for significant improvement in precision of estimation of large block designs without loss of the traditional robustness of randomized block designs. 
+<p>In conclusion, it can be assumed that provided the constraints of multi-stratum nesting do not cause substantive loss of blocks efficiency, a hierarchical multi-stratum design together with an appropriate mixed model analysis of the data has the potential for significant improvement in precision of estimation of large block designs without loss of the traditional robustness of the randomized block design. 
 <br/> <br/> </p>
 
 <h4>Acknowledgement</h4>
