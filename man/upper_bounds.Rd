@@ -25,4 +25,7 @@ and equal replication. All other designs return NA.
 # 50 plots, 10 treatments and 10 blocks for a design with 5 replicates and blocks of size 5
 upper_bounds(nplots=50,ntrts=10,nblocks=10)
 }
+\references{
+John, J. A. and Williams, E. R. (1995). Cyclic and Computer Generated Designs. Chapman and Hall, London.
+}
 

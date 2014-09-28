@@ -36,8 +36,8 @@ a design optimization. The default is the minimum of 64 or the integer quotient 
 and blocks can have any feasible depth of nesting.
 
 Treatment and replication numbers are defined by the \code{treatments} and \code{replicates} parameter lists. These lists must be of equal length
-and each matching pair of numbers in the two lists will represent a treatment set where the \code{treatments} list gives the number of treatments in the individual sets and
-the \code{replicates} list gives the replication of the individual sets.
+and each matching pair of numbers in the two lists represents a treatment set where the \code{treatments} list gives the number of treatments in the set and
+the \code{replicates} list gives the replication of the set.
 
 Any number of treatment sets is allowed and the treatments are numbered consecutively according to the ordering of the treatment sets in the parameter lists
 (see the examples).
@@ -47,14 +47,17 @@ and the succesive numbers, if any, are the numbers of blocks nested in each prec
 is the total number of blocks in that stratum. The default value for the \code{blocklevels} list is a single number equal to the highest common factor (hcf) of
 the replication numbers, which gives an orthogonal blocks design with the maximum possible number of othogonal blocks.
 
-Block sizes in any given stratum are equal if the cumulative number of blocks exactly divides the number of plots otherwise
-they are as near equal as possible and never differ by more than a single unit.
+Block sizes in any given stratum will be equal if the cumulative number of blocks exactly divides the number of plots otherwise
+they will be as near equal as possible and will never differ by more than a single unit.
 
-Nested designs are optimized hierarchically with the blocks of each new nested set optimized within the blocks of the preceding set.
-General designs are  optimized by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality).
-Special lattice designs, where the treatment number is the square of a prime or prime-power v, the nested block size
-is v and the number of replications is not more than v+1, are constructed algebraicallly by using the properties of mutually orthogonal
-Latin squares (MOLS). If v is a prime-power, the MOLS are constructed by using the MOLS function of the \code{crossdes} package.
+Lattice designs where the number of treatments is the square of the block size v and the number of replicates is k+2 or less and k mutually
+orthogomal latin squares (MOLS) of size v*v exist are constructed algebraically. Lattice designs exist for any
+v if k = 1 and for any prime or prime power v if k < v and for v = 10 and k = 2. Prime-power MOLS are constructed by using the MOLS
+function of the \code{crossdes} package (Sailer 2013).
+
+All other designs are constructed algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality).
+
+Designs are optimized hierarchically with the blocks of each new set optimized within the blocks of the preceding set.
 
 Designs are fully randomized with treatments randomized within blocks and each set of nested blocks randomized within the
 preceding set of blocks.
@@ -81,5 +84,8 @@ crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
 
 # concurrences for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks
 crossprod(blocks(c(13,13),c(4,1),13,searches=100)$Incidences[[1]])
+}
+\references{
+Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes
 }
 

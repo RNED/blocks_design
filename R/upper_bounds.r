@@ -15,6 +15,10 @@
 #' 
 #' @param nblocks The total number of blocks in the design
 #' 
+#' @references
+#' 
+#' John, J. A. and Williams, E. R. (1995). Cyclic and Computer Generated Designs. Chapman and Hall, London.
+#' 
 #' @examples 
 #' 
 #' # 50 plots, 10 treatments and 10 blocks for a design with 5 replicates and blocks of size 5 
