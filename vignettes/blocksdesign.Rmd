@@ -89,17 +89,19 @@ For this example, there was virtually no loss of efficiency in any stratum due t
  
 ### Analysis
 
-It was shown in the simulations for the Patterson and Hunter (1983) example that the best block size for an efficient nested block analysis was not predictable. By using a multi-stratum design with an appropriate analysis it is possible to select the single best block size from a range of block sizes. However, it is normal when fitting data with multiple sources of random variation to select models that include all significant random error terms in the model therefore for large designs, a mixed model analysis including all the significant random error terms might be an appropriate method of analysis. Model building strategies for the inclusion or exclusion of random effects in a model have been extensively researched and the software package 'lmerTest' has an option for backward elimination of non-significant random effects from a model. 
+It was shown in the simulations for the Patterson and Hunter (1983) example that the best block size for an efficient nested block analysis is not always predictable. By using a multi-stratum design, it is possible to select the single best block size from a range of block sizes. However, it is normal when fitting data with multiple random sources of variation to select a model that includes all significant random error terms (see West et. al. 2014). So, for a large multi-stratum design with a range of block sizes a mixed model including all significant random error terms might be more appropriate than a single stratum model. Model building strategies for the inclusion or exclusion of random effects in a model have been extensively researched and the software package 'lmerTest' has an option for backward elimination of non-significant random effects from a model. 
 
-Further discussion of model fitting is beyond the scope of this vignette and further research is needed for a better understanding of multi-stratum nested designs in large experiments. However, the 'blocksdesign' package can be used as an empirical tool for exploring some of the design implications. For example, as shown above, it is easy to compare the efficiency of optimized nested blocks in a multi-stratum nested block design with the efficiency of comparable optimized blocks in a design with a single level of nesting. This approach could be extended to provide power studies to compare designs with different multi-stratum nesting schemes. In the Patterson and Hunter example, there were for 3 replicates of 48 treatments so a design with four nested strata and blocks of size 48, 16, 8, 4 and 2 could be simulated and tested. It is important to ensure that a sufficient number of blocks is available for estimation of the stratum variances at each level of nesting and in this scheme there are 9, 18, 36 and 72 blocks for the four nested levels, which seems adequate.        
+Further discussion of model fitting is beyond the scope of this vignette and further research is needed for a better understanding of multi-stratum nested designs in large experiments. However, it is suggested that the 'blocksdesign' package provides an empirical tool that can be used to explore some of the practical aspects of multi-stratum designs. For example, as shown above, it is easy to compare the efficiency of optimized nested blocks in a multi-stratum nested block design with the efficiency of comparable optimized blocks in a design with a single level of nesting. This approach could be extended to provide power studies to compare designs with different multi-stratum nesting schemes. In the Patterson and Hunter example, there were for 3 replicates of 48 treatments so a design with four nested strata and blocks of size 48, 16, 8, 4 and 2 could easily be simulated and tested. It is important to ensure that a sufficient number of blocks is available for estimation of the stratum variances at each level of nesting and in this scheme there are 9, 18, 36 and 72 blocks for the four nested levels, which seems adequate.        
 
-In conclusion, provided the constraints of multi-stratum nesting do not cause substantive loss of blocks efficiency, a hierarchical multi-stratum design together with an appropriate mixed model analysis of the data has the potential for significant improvement in precision of estimation of large block designs without loss of the traditional robustness of the randomized block design. 
-<br/> <br/> 
+In summary, multi-stratum nesting, together with appropriate mixed model analysis of the data, has the potential for significant improvement in precision of estimation of large block designs without loss of the traditional robustness of the randomized block design. 
+
+<br/>
 
 #### Acknowledgement
 
 This project was partly supported by a DEFRA UK grant HH3811SX [DEFRA UK](http://randd.defra.gov.uk/Default.aspx?Menu=Menu&amp;Module=More&amp;Location=None&amp;ProjectID=12783&amp;FromSearch=Y&amp;Status=3&amp;Publisher=1&amp;SearchText=statistics&20&amp;SortString=ProjectCode&amp;SortOrder=Asc&amp;Paging=10#Description)
-<br/> <br/> 
+
+<br/>
 
 #### References
 
@@ -129,9 +131,11 @@ Wright, K. (2014). agridat: Agricultural datasets. R package version 1.9. http:/
 
 Yates, F. (1936). A new method of arranging variety trials involving a large number of varieties. Journal of Agricultural Science, Vol. 26, pp. 424-455.
 
+<br/>
 
-<br/> <br/> 
-#### Appendix 1: Simulated efficiencies for 3 replicates of 48 treatments in nested blocks of size 8 and size 4 
+####Appendix 1: 
+
+Simulated efficiencies for 3 replicates of 48 treatments in nested blocks of size 8 and size 4 
 
         Expvar = function(n = 48, s2 = .209, lambda= .725, rho = .942) {  
         V= ( diag(n)*(1-lambda) + lambda*rho**abs(row(diag(n)) -  col(diag(n))))*s2  
