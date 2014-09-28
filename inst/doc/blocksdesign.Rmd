@@ -95,13 +95,11 @@ Further discussion of model fitting is beyond the scope of this vignette and fur
 
 In summary, multi-stratum nesting, together with appropriate mixed model analysis of the data, has the potential for significant improvement in precision of estimation of large block designs without loss of the traditional robustness of the randomized block design. 
 
-<br/>
 
 #### Acknowledgement
 
 This project was partly supported by a DEFRA UK grant HH3811SX [DEFRA UK](http://randd.defra.gov.uk/Default.aspx?Menu=Menu&amp;Module=More&amp;Location=None&amp;ProjectID=12783&amp;FromSearch=Y&amp;Status=3&amp;Publisher=1&amp;SearchText=statistics&20&amp;SortString=ProjectCode&amp;SortOrder=Asc&amp;Paging=10#Description)
 
-<br/>
 
 #### References
 
@@ -131,9 +129,9 @@ Wright, K. (2014). agridat: Agricultural datasets. R package version 1.9. http:/
 
 Yates, F. (1936). A new method of arranging variety trials involving a large number of varieties. Journal of Agricultural Science, Vol. 26, pp. 424-455.
 
-<br/>
 
-####Appendix 1: 
+
+#### Appendix 1: 
 
 Simulated efficiencies for 3 replicates of 48 treatments in nested blocks of size 8 and size 4 
 
