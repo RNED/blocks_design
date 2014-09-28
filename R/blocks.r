@@ -25,7 +25,7 @@
 #' they will be as near equal as possible and will never differ by more than a single unit. 
 #' 
 #' Lattice designs where the number of treatments is the square of the block size v and the number of replicates is k+2 or less and k mutually 
-#' orthogomal latin squares (MOLS) of size v*v exist are constructed algebraically. Lattice designs exist for any 
+#' orthogonal latin squares (MOLS) of size v*v exist are constructed algebraically. Lattice designs exist for any 
 #' v if k = 1 and for any prime or prime power v if k < v and for v = 10 and k = 2. Prime-power MOLS are constructed by using the MOLS 
 #' function of the \code{crossdes} package (Sailer 2013).  
 #' 
@@ -63,8 +63,8 @@
 #'   
 #' @examples
 #' 
-#' # 3 treatments with 2 reps, 2 treatments with 4 reps and 4 treatments with 3 reps 
-#' # the hcf of c(2,4,3) is 1 and the default design is a completely randomized design 
+#' # 3 treatments with 2 reps, 2 treatments with 4 reps, 4 treatments with 3 reps 
+#' # the replication hcf is 1 and the default design is a completely randomized design 
 #' blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 #' 
 #' # 50 treatments with 4 reps in 4 complete randomized blocks 
@@ -82,9 +82,8 @@
 #' # concurrence matrices of 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
 #' crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
 #' 
-#' # concurrences for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks 
+#' # concurrence matrix for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks 
 #' crossprod(blocks(c(13,13),c(4,1),13,searches=100)$Incidences[[1]])
-#' 
 #' 
 #' @export
 #' 
