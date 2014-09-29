@@ -76,8 +76,8 @@ blocks(treatments=50,replicates=4,blocklevels=c(4,5))
 # as above but with 20 additional single replicate treatments, one to each block
 blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 
-# 64 treatments with 4 reps and 4 main blocks and five 2-level multi-stratum nested factors
-blocks(treatments=64,replicates=4,blocklevels=c(4,2,2,2,2,2))
+# 64 treatments with 2 reps and 2 main blocks with five 2-level nested factors
+blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2),searches=12)
 
 # concurrence matrices of 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
 crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
