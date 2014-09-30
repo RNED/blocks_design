@@ -150,15 +150,17 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   v=sqrt(ntrts)		
   lattice= (max(replevs)==min(replevs) & identical(v,ntrts%/%v))	  
   
-  # primality test  
-  if (v <= 3) isprime = TRUE
-  else if (v %% 2 == 0 | v %% 3 == 0) isprime = FALSE
-  else if (v<25) isprime = TRUE
-  else
-    for(i in  6*rep(1:floor((sqrt(v)+1)/6)) )
-      if( v %% (i-1) == 0 | v %% (i+1) == 0) isprime = FALSE
-  else isprime = TRUE
-  
+  # primality test function
+  isPrime=function(v) {
+    if (v <= 3)  return(TRUE)
+    else if (v %% 2 == 0 | v %% 3 == 0) return(FALSE)
+    else if (v<25) return(TRUE)
+    else 
+      for(i in  6*rep(1:floor((sqrt(v)+1)/6)) )
+        if( v %% (i-1) == 0 | v %% (i+1) == 0) return(FALSE) 
+    return(TRUE)
+  }      
+    
   #updates matrices
   UpDate=function(M11,M22,M12,si,sj,Trts,BF) {
     M11T = M11[Trts[si],]-M11[Trts[sj],]
@@ -184,7 +186,8 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   if (ortho<strata) {
     regreps=nunits/ntrts # replication for equireplicate design	
     for (i in (ortho+1) :strata) {	
-      if ( i==(ortho+1) & lattice  & cumblocklevs[i]==v*regreps &  ( regreps<=3   |  (regreps<=(v+1) & isprime ) ) ) {
+      
+      if ( i==(ortho+1) & lattice  & cumblocklevs[i]==v*regreps &  ( regreps<=3   |  (regreps<=(v+1) & isPrime(v) ) ) ) {
         mols=c( rep(sample(0:(v-1)),v),rep(sample(v:(2*v-1)),each=v))
         square=vector(length=(v*v))
         if (regreps>2) {
@@ -202,7 +205,8 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
         }
         Trts=rep(sample(1:(v*v)),regreps)[order(mols)]
         rand=sample(1:(v*v*regreps))
-        Trts=Trts[rand][order(rep(1:(v*regreps),each=v)[rand])] # randomizes plots within sub-blocks			
+        Trts=as.factor(Trts[rand][order(rep(1:(v*regreps),each=v)[rand])]) # randomizes plots within sub-blocks	
+        
       } else if (i==(ortho+1) & lattice & cumblocklevs[i]==v*regreps & regreps<=(v+1) & ntrts%in%pp_trts ) {								
         prime=c(2,2,2,2,2,2,   3,3,3,  5,7)[which(pp_trts==ntrts)]
         ppower=c(2,3,4,5,6,7,   2,3,4,  2,2)[which(pp_trts==ntrts)]
@@ -211,7 +215,8 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
         for (i in 1: (regreps-2)) mols=c(mols,(as.numeric(fullmols[,,i]) + v*(i+1) -1))
         Trts=rep((1:(v*v)),regreps)[order(mols)]
         rand=sample(1:(v*v*regreps))
-        Trts[rand][order(rep(1:(v*regreps),each=v)[rand])] # randomizes plots within sub-blocks	
+        Trts=as.factor(Trts[rand][order(rep(1:(v*regreps),each=v)[rand])]) # randomizes plots within sub-blocks	
+        
       } else if (i==(ortho+1) & lattice & ntrts==100 & regreps<=4 & cumblocklevs[i]==regreps*v) {	
         mols=c( rep(sample(0:9),10),rep(sample(10:19),each=10))
         tens=c(
@@ -225,7 +230,8 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
         if (regreps==4) mols=c(mols,(tens[101:200] + 30))
         Trts=rep(sample(1:100),regreps)[order(mols)]
         rand=sample(1:(100*regreps))
-        Trts[rand][order(rep(1:(10*regreps),each=10)[rand])] # randomize plots in sub-blocks
+        Trts=as.factor(Trts[rand][order(rep(1:(10*regreps),each=10)[rand])]) # randomize plots in sub-blocks
+        # algorithmic
       } else {	
         MF=as.factor(desMat[,(i-1)])	
         BF=as.factor(desMat[,i])	
