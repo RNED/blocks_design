@@ -322,29 +322,28 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
                 dswap=0
                 while (icount<100 & dswap<0.01) {
                   icount=icount+1
-                  s1=sample(1:length(Trts),1)
-                  if (all(!( (MF==MF[s1]) & (Trts!=Trts[s1]) & (BF!=BF[s1])))) next		
-                  s2 = sample( rep(1:length(Trts))[ ( (MF==MF[s1]) & (Trts!=Trts[s1]) & (BF!=BF[s1]) ) ],1)
+                  s=sample(rep(1:nunits)[MF==sample(nlevels(MF),1)],2)
                   # calculates the proportional change in the determinant of the design information due to swapping treatments on plots s1 and s2
-                  dswap=(1+M12[Trts[s1],BF[s2]]+M12[Trts[s2],BF[s1]]-M12[Trts[s1],BF[s1]]-M12[Trts[s2],BF[s2]])**2-
-                    (2*M11[Trts[s1],Trts[s2]]-M11[Trts[s1],Trts[s1]]-M11[Trts[s2],Trts[s2]])*(2*M22[BF[s1],BF[s2]]-M22[BF[s1],BF[s1]]-M22[BF[s2],BF[s2]])
+                  if ( (Trts[s[1]]!=Trts[s[2]]) & (BF[s[1]]!=BF[s[2]]) ) 	
+                    dswap=(1+M12[Trts[s[1]],BF[s[2]]]+M12[Trts[s[2]],BF[s[1]]]-M12[Trts[s[1]],BF[s[1]]]-M12[Trts[s[2]],BF[s[2]]])**2-
+                    (2*M11[Trts[s[1]],Trts[s[2]]]-M11[Trts[s[1]],Trts[s[1]]]-M11[Trts[s[2]],Trts[s[2]]])*(2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])
                 }
                 #updates matrices
                 prop_change=prop_change*dswap
-                up=UpDate(M11,M22,M12,s1,s2,Trts,BF)	
+                up=UpDate(M11,M22,M12,s[1],s[2],Trts,BF)  
                 M11=up$M11
                 M22=up$M22
                 M12=up$M12
-                Trts[c(s1,s2)]=Trts[c(s2,s1)]	
+                Trts[c(s[1],s[2])]=Trts[c(s[2],s[1])]	
               } 
               locrelD=locrelD*prop_change
             } 
-          } # for r
+          } 
           Trts=globTF
-        } #if count
-      } # if class			
-    }	# for ortho
-  } # if ortho
+        } 
+      } 			
+    }	
+  } 
   
   # add back single replicate treatments here 
   if ( !all(replicates>1) & !all(replicates==1) ) {
