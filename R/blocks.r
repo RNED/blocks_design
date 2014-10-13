@@ -181,6 +181,27 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     M12 = M12 - crossprod(t(Z1),t(Z2)) + crossprod(t(W1),t(W2))	
     list(M11=M11,M22=M22,M12=M12)
   }	
+  
+    maxDet=function(M11,M22,M12,Samp,Trts,BF) {
+    TT=M11[Trts[Samp],Trts[Samp],drop=FALSE]
+    BB=M22[BF[Samp],BF[Samp],drop=FALSE]
+    TB=M12[Trts[Samp],BF[Samp],drop=FALSE]
+    TT=TT-crossprod(t(diag(TT)),t(rep(1,ncol(TT))))
+    TT=TT+t(TT)
+    BB=BB-crossprod(t(diag(BB)),t(rep(1,ncol(TT))))
+    BB=BB+t(BB)
+    TB=TB-crossprod(t(diag(TB)),t(rep(1,ncol(TT))))
+    TB=1+TB+t(TB)
+    detmat=TB**2-TT*BB      
+      N=which.max(detmat)
+      ni=1+(N-1)%%nrow(detmat)
+      nj=1+(N-1)%/%nrow(detmat)
+      maxD=detmat[ni,nj]
+      si=Samp[ni]
+      sj=Samp[nj]  
+    list(maxD,si,sj)
+  }
+  
     
   pp_trts=c(16,64,256,1024,4096,16384,81,729,6561,625,2401)	
   if (ortho<strata) {
@@ -273,28 +294,16 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
           for (r in 1 : searches) {					
             nSamp=ceiling(  min(nunits,36)*tabulate(MF)/nunits) # assuming initial sample size is smallest of 36 or nunits or with at least one sample per restriction block
             repeat {
-              relD=0						
+              relD=0	
               for (i in 1:nlevels(MF)) {
                 Samp=sort(sample(mainSets[[i]],nSamp[i]))
-                TT=M11[Trts[Samp],Trts[Samp],drop=FALSE]
-                BB=M22[BF[Samp],BF[Samp],drop=FALSE]
-                TB=M12[Trts[Samp],BF[Samp],drop=FALSE]
-                TT=TT-crossprod(t(diag(TT)),t(rep(1,ncol(TT))))
-                TT=TT+t(TT)
-                BB=BB-crossprod(t(diag(BB)),t(rep(1,ncol(TT))))
-                BB=BB+t(BB)
-                TB=TB-crossprod(t(diag(TB)),t(rep(1,ncol(TT))))
-                TB=1+TB+t(TB)
-                detmat=TB**2-TT*BB
-                maxD=max(detmat)						
-                if (maxD>relD & maxD>1.00001) {
-                  N=which.max(detmat)
-                  ti=1+(N-1)%%nrow(detmat)
-                  tj=1+(N-1)%/%nrow(detmat)
-                  si=Samp[ti]
-                  sj=Samp[tj]	
+                dmax=maxDet(M11,M22,M12,Samp,Trts,BF)
+                maxD=dmax$maxD
+                if (maxD>1.00001 & maxD>relD) {
+                  si=dmax$si
+                  sj=dmax$sj
                   relD=maxD
-                }
+                }  
               }
               if (relD>0) {
                 up=UpDate(M11,M22,M12,si,sj,Trts,BF)  
@@ -326,7 +335,8 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
                   # calculates the proportional change in the determinant of the design information due to swapping treatments on plots s1 and s2
                   if ( (Trts[s[1]]!=Trts[s[2]]) & (BF[s[1]]!=BF[s[2]]) ) 	
                     dswap=(1+M12[Trts[s[1]],BF[s[2]]]+M12[Trts[s[2]],BF[s[1]]]-M12[Trts[s[1]],BF[s[1]]]-M12[Trts[s[2]],BF[s[2]]])**2-
-                    (2*M11[Trts[s[1]],Trts[s[2]]]-M11[Trts[s[1]],Trts[s[1]]]-M11[Trts[s[2]],Trts[s[2]]])*(2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])
+                    (2*M11[Trts[s[1]],Trts[s[2]]]-M11[Trts[s[1]],Trts[s[1]]]-M11[Trts[s[2]],Trts[s[2]]])*
+                    (2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])
                 }
                 #updates matrices
                 prop_change=prop_change*dswap
