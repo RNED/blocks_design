@@ -40,6 +40,8 @@
 #'
 #' Further discussion of multi-stratum nesting can be found in the package vignette at: vignette("blocksdesign")
 #' 
+#' @seealso \url{http://www.expdesigns.co.uk}
+#' 
 #' @references
 #' 
 #' Bates, D., Maechler, M., Bolker, B. and Walker, S. (2014). lme4: Linear mixed-effects models using Eigen and S4. 

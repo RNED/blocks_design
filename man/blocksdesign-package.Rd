@@ -45,4 +45,7 @@ Further discussion of multi-stratum nesting can be found in the package vignette
 Bates, D., Maechler, M., Bolker, B. and Walker, S. (2014). lme4: Linear mixed-effects models using Eigen and S4.
 R package version 1.1-6. http://CRAN.R-project.org/package=lme4
 }
+\seealso{
+\url{http://www.expdesigns.co.uk}
+}
 

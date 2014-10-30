@@ -171,6 +171,9 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     up=list(M11=M11,M22=M22,M12=M12)
   } # end of function
   
+  
+  
+  
   Optimise=function(TF,BF,MF,M11,M22,M12,searches)   {
     # first stage finds an optima by optimizing samples of increasing size in powers of 2
     globrelD=1
@@ -218,8 +221,8 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
         prop_change=1
         for (iswap in 1 : 6) {
           icount=0
-          dswap=0
-          while (icount<100 & dswap<0.01) {
+          dswap=1
+          while (icount<100 & (dswap<0.01 | dswap>.999)) {
             icount=icount+1
             s=sample(rep(1:nunits)[MF==sample(nlevels(MF),1)],2)
             # calculates the proportional change in the determinant of the design information due to swapping treatments on plots s1 and s2
@@ -229,12 +232,14 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
               (2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])
           }
           #updates matrices
-          prop_change=prop_change*dswap
-          up=UpDate(M11,M22,M12,s[1],s[2],TF,BF)  
-          M11=up$M11
-          M22=up$M22
-          M12=up$M12
-          TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
+          if (icount<100) {
+            prop_change=prop_change*dswap
+            up=UpDate(M11,M22,M12,s[1],s[2],TF,BF)  
+            M11=up$M11
+            M22=up$M22
+            M12=up$M12
+            TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
+          }
         } 
         locrelD=locrelD*prop_change
       } 
@@ -357,10 +362,6 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
               set=c(set,(j+k*z)%%v)
           TF=as.factor(c(TF, rep(1:(v*v))[order(set)]))		
         }				
-        #TF=TF+rep(rep(0:(v-1),each=v),replevs[1])									
-        #rand=sample(1:(length(TF)))
-        #TF=as.factor(TF[rand][order(rep(1:(v*replevs[1]),each=v)[rand])]) # randomizes plots within sub-blocks	
-        #levels(TF)=sample(rep(1:(v*v)))	# randomizes treatment labels   
       } else if (i==(ortho+1) & lattice_i & replevs[1]<(v+2) & ntrts%in%pp_trts ) {		
         prime= c(2,2,2,2,2,2,   3,3,3,  5,7)[which(pp_trts==ntrts)]
         ppower=c(2,3,4,5,6,7,   2,3,4,  2,2)[which(pp_trts==ntrts)]
@@ -370,9 +371,6 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
         for (i in 1: (replevs[1]-2))
           TF=c(TF, rep(1:(v*v))[order(    as.numeric(mols[,,i]) ) ])
         TF=as.factor(TF)
-        #rand=sample(1:(v*v*replevs[1]))
-        #TF=as.factor(TF[rand][order(rep(1:(v*replevs[1]),each=v)[rand])]) # randomizes plots within sub-blocks	
-        #levels(TF)=sample(rep(1:(v*v)))	# randomizes treatment labels 
       } else if (i==(ortho+1) & lattice_i & ntrts==100 & replevs[1]<=4) {			
         TF=rep(1:(v*v))
         TF=c(TF, rep(1:(v*v))[order(rep(0:(v-1),v))])
@@ -385,10 +383,6 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
         if (replevs[1]>2)  TF=c(TF, rep(1:(v*v))[order(tens1)])	
         if (replevs[1]==4) TF=c(TF, rep(1:(v*v))[order(tens2)])
         TF=as.factor(TF)
-        #rand=sample(1:(100*replevs[1]))
-        #TF=as.factor(TF[rand][order(rep(1:(10*replevs[1]),each=10)[rand])]) # randomize plots in sub-blocks
-        #levels(TF)=sample(rep(1:(v*v)))	# randomizes treatment labels 
-        # algorithmic
       } else {		
         TF=GenOpt(TF,as.factor(desMat[,(i+1)]),as.factor(desMat[,i]),searches)
       }
@@ -423,10 +417,10 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   for (r in 1 : strata) 
     randMat[,r]=rep(facMat[,r],blocksizes)
   
-  #dd=as.data.frame(cbind(randMat,sample(rep(1:nunits)),TF))
-  #dd$TF=as.factor(dd$TF)
-  #dd=dd[ do.call(order, dd), ]	
-  #TF=dd$TF
+  dd=as.data.frame(cbind(randMat,sample(rep(1:nunits)),TF))
+  dd$TF=as.factor(dd$TF)
+  dd=dd[ do.call(order, dd), ]	
+  TF=dd$TF
   
   # Design data frame
   Design=as.data.frame(cbind(desMat[,c(2:ncol(desMat))],TF))
