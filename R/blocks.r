@@ -2,7 +2,7 @@
 #' 
 #' @description
 #' 
-#' \code{blocks} constructs nested blocks for unstructured treatments with arbitrary levels of replication and arbitrary depth of nesting.
+#' Constructs nested block designs for unstructured treatments with arbitrary levels of replication and arbitrary depth of nesting.
 #' 
 #' @details
 #' 
@@ -34,19 +34,19 @@
 #' Designs are fully randomized with each set of nested blocks randomized within the
 #' preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
 #'  
-#' @param treatments is a list of the number of treatments for each treatment set in the design. Each treatment number must have a matching
+#' @param treatments A list of the number of treatments for each treatment set in the design. Each treatment number must have a matching
 #' replication number in the \code{replicates} list.
 #' 
-#' @param replicates is a list of the number of replicates for each treatment set in the design. Each replication number must 
+#' @param replicates A list of the number of replicates for each treatment set in the design. Each replication number must 
 #' have a matching treatment number in the \code{treatments} list.
 #' 
-#' @param blocklevels is an optional list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
+#' @param blocklevels An optional list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
 #' are the numbers of blocks nested in each preceding block. The default is the hcf of the replication numbers.
 #' 
-#' @param searches is an optional number for the local optima searched during 
-#' a design optimization. The default is the minimum of 64 or the integer quotient of 4096 divided by the number of plots.
+#' @param searches An optional number for the number of local optima searched during optimization. 
+#' The default is the minimum of 64 or the integer quotient of 4096 divided by the number of plots.
 #' 
-#' @param seed is an integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.
+#' @param seed An integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the block and treatment factors for each plot}
