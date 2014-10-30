@@ -2,53 +2,51 @@
 #' 
 #' @description
 #' 
-#' \code{blocks} function constructs nested blocks for unstructured treatments with arbitrary levels of replication and arbitrary depth of nesting
+#' \code{blocks} constructs nested blocks for unstructured treatments with arbitrary levels of replication and arbitrary depth of nesting.
 #' 
 #' @details
 #' 
-#' \code{blocks} constructs nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal, 
+#' The \code{blocks} function constructs optimized nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal, 
 #' and blocks can have any feasible depth of nesting.
 #' 
-#' Treatment and replication numbers are defined by the \code{treatments} and \code{replicates} parameter lists. These lists must be of equal length
-#' and each matching pair of numbers in the two lists represents a treatment set where the \code{treatments} list gives the number of treatments in the set and 
-#' the \code{replicates} list gives the replication of the set.
+#' Treatment and replication numbers are defined by the \code{treatments} and \code{replicates} parameter lists which must be of equal length.
+#' Matching pairs of numbers in the two lists represent treatment replication sets where the \code{treatments} list contains the treatment number 
+#' and the \code{replicates} list contains the replication of each set.
 #'  
-#' Any number of treatment sets is allowed and the treatments are numbered consecutively according to the ordering of the treatment sets in the parameter lists
+#' Any number of treatment replication sets is allowed and the treatments are numbered consecutively according to the ordering of the treatment replication sets
 #' (see the examples). 
 #'  
-#' Blocks are defined by the \code{blocklevels} list which is a hierarchical list of nested blocks. The first number is the number of main blocks 
-#' and the succesive numbers, if any, are the numbers of blocks nested in each preceding block. The cumulative product of the levels for any stratum
-#' is the total number of blocks in that stratum. The default value for the \code{blocklevels} list is a single number equal to the highest common factor (hcf) of
-#' the replication numbers, which gives an orthogonal blocks design with the maximum possible number of othogonal blocks.   
+#' Blocks are defined by the \code{blocklevels} list which is an optional hierarchical list of nested blocks. The first number is the number of main blocks 
+#' and the succesive numbers, if any, are the numbers of blocks nested in the blocks of the preceding stratum. The cumulative product of the \code{blocklevels} list
+#' is the total number of blocks in the bottom stratum of the design. The default value for the \code{blocklevels} list is the highest common factor (hcf) of
+#' the replication numbers, which gives an orthogonal complete blocks design with the maximum possible number of othogonal blocks.   
 #'  
-#' Block sizes in any given stratum will be equal if the cumulative number of blocks exactly divides the number of plots otherwise
-#' they will be as near equal as possible and will never differ by more than a single unit. 
+#' Block sizes in any given stratum are equal if the cumulative number of blocks exactly divides the number of plots otherwise
+#' they differ by not more than a single unit. 
 #' 
-#' Lattice designs where the number of treatments is the square of the block size v and the number of replicates is k+2 or less and k mutually 
-#' orthogonal latin squares (MOLS) of size v*v exist are constructed algebraically. Lattice designs exist for any 
-#' v if k = 1 and for any prime or prime power v if k < v and for v = 10 and k = 2. Prime-power MOLS are constructed by using the MOLS 
-#' function of the \code{crossdes} package (Sailer 2013).  
+#' If a design is equally replicated with number of treatments equal to the square of the block size v and number of replicates k+2 or less and v is a prime or prime-power if k>1,
+#' the design is a lattice and \code{blocks} constructs lattices algebraically. If v is a prime-power, the \code{crossdes} package (Sailer 2013) is required.  
+#' 
+#' The special non-prime lattice with v = 10 and k = 2 is constructed algebraically as a special case.
 #' 
 #' All other designs are constructed algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality). 
 #'  
-#' Designs are optimized hierarchically with the blocks of each new set optimized within the blocks of the preceding set.
+#' Designs are fully randomized with each set of nested blocks randomized within the
+#' preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
 #'  
-#' Designs are fully randomized with treatments randomized within blocks and each set of nested blocks randomized within the
-#' preceding set of blocks.
-#'  
-#' @param treatments A list of the number of treatments for each treatment set in the design. Each treatment number must have a matching
-#' replication number in the \code{replicates} list
+#' @param treatments is a list of the number of treatments for each treatment set in the design. Each treatment number must have a matching
+#' replication number in the \code{replicates} list.
 #' 
-#' @param replicates A list of the number of replicates for each treatment set in the design. Each replication number must 
-#' have a matching treatment number in the \code{treatments} list
+#' @param replicates is a list of the number of replicates for each treatment set in the design. Each replication number must 
+#' have a matching treatment number in the \code{treatments} list.
 #' 
-#' @param blocklevels A hierarchical list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
+#' @param blocklevels is an optional list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
 #' are the numbers of blocks nested in each preceding block. The default is the hcf of the replication numbers.
 #' 
-#' @param searches The number of local optima searched during 
+#' @param searches is an optional number for the local optima searched during 
 #' a design optimization. The default is the minimum of 64 or the integer quotient of 4096 divided by the number of plots.
 #' 
-#' @param seed An integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.
+#' @param seed is an integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the block and treatment factors for each plot}

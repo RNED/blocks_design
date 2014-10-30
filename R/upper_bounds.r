@@ -9,11 +9,11 @@
 #' are calculated for regular block designs with equal block sizes 
 #' and equal replication. All other designs return NA.    
 #' 
-#' @param nplots The total number of plots in the design 
+#' @param nplots is the total number of plots in the design.
 #' 
-#' @param ntrts The total number of treatments in the design
+#' @param ntrts is the total number of treatments in the design.
 #' 
-#' @param nblocks The total number of blocks in the design
+#' @param nblocks is the total number of blocks in the design.
 #' 
 #' @references
 #' 
