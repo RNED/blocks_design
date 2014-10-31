@@ -6,14 +6,14 @@
 upper_bounds(nplots, ntrts, nblocks)
 }
 \arguments{
-\item{nplots}{is the total number of plots in the design.}
+\item{nplots}{The total number of plots in the design.}
 
-\item{ntrts}{is the total number of treatments in the design.}
+\item{ntrts}{The total number of treatments in the design.}
 
-\item{nblocks}{is the total number of blocks in the design.}
+\item{nblocks}{The total number of blocks in the design.}
 }
 \description{
-\code{upper_bounds} finds upper A-efficiency bounds for regular block designs.
+Finds upper A-efficiency bounds for regular block designs.
 }
 \details{
 Upper bounds for the A-efficiency of regular nested block designs

@@ -91,7 +91,7 @@ Block numbers  | Multi-stratum model | Separate models | Upper bounds|
 128            | 0.52477             |0.52603          |0.55578      |
 256            | 0.01167             |0.01167          |0.25296      |
 
-In this example, there was virtually no loss of efficiency in any stratum due to the constraints of the hierarchical model.
+In this example, there was virtually no loss of efficiency in any stratum due to the constraints of the multi-stratum model.
  
 ### Analysis
 
