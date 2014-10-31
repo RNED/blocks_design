@@ -422,15 +422,8 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   if (strata>1)
     for (i in 1:(strata-1))
       designnames=c(designnames,paste("Sub",i))
-  plannames=c("Blocks",designnames)
-  designnames=c(designnames,"Treatments")
-  colnames(Design)=designnames
-  
-  # Incidence matrix for each stratum
-  Incidences=vector(mode = "list", length =strata )
-  for (i in 1:strata)
-    Incidences[[i]]=table(Design[,c(i,ncol(Design))])	
-  
+  colnames(Design)=c(designnames,"Treatments")
+    
   #Design plan layout
   index=1
   d=matrix(nrow=length(blocksizes),ncol=max(blocksizes))
@@ -441,9 +434,15 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     }
   d[is.na(d)]  = " "
   Plan=as.data.frame(cbind(facMat,rep(" ",nrow(d)),d))
+  designnames=c(designnames,"Plots")
   for (i in 1:max(blocksizes))
-    designnames=c(designnames,paste("p",i,sep=""))
+    designnames=c(designnames,i)
   colnames(Plan)=designnames
+  
+  # Incidence matrix for each stratum
+  Incidences=vector(mode = "list", length =strata )
+  for (i in 1:strata)
+    Incidences[[i]]=table(Design[,c(i,ncol(Design))])  
   
   # Efficiencies data frame
   bounds=rep(0,strata)
