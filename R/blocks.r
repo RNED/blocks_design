@@ -416,13 +416,17 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   TF=dd$TF
   
   # Design data frame
-  Design=as.data.frame(cbind(desMat[,c(2:ncol(desMat))],TF))
+  plots=NULL
+  for (i in 1: length(blocksizes))
+    for (j in 1:blocksizes[i]) 
+      plots=c(plots,j)
+  Design=as.data.frame(cbind(desMat[,c(2:ncol(desMat))],plots,TF))
   Design[]=lapply(Design, factor)	
   designnames="Main"
   if (strata>1)
     for (i in 1:(strata-1))
       designnames=c(designnames,paste("Sub",i))
-  colnames(Design)=c(designnames,"Treatments")
+  colnames(Design)=c(designnames,"Sub-Plots","Treatments")
     
   #Design plan layout
   index=1
@@ -434,7 +438,7 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     }
   d[is.na(d)]  = " "
   Plan=as.data.frame(cbind(facMat,rep(" ",nrow(d)),d))
-  designnames=c(designnames,"Plots")
+  designnames=c(designnames,"Sub-Plots")
   for (i in 1:max(blocksizes))
     designnames=c(designnames,i)
   colnames(Plan)=designnames
