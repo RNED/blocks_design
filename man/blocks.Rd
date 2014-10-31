@@ -22,8 +22,8 @@ divided by the number of plots.}
 \item{seed}{An integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.}
 }
 \value{
-\item{Design}{Data frame showing the block and treatment factors for each plot}
-\item{Plan}{Data frame showing the allocation of treatments to plots for each block in the design}
+\item{Design}{Data frame showing the block and treatment factors for each sub-plot}
+\item{Plan}{Data frame showing the allocation of treatments to sub-plots for each block in the design}
 \item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum in the design}
 \item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum in the design together with an upper bound, where available}
 \item{seed}{Numerical seed for random number generator}
