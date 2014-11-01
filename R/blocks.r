@@ -9,15 +9,14 @@
 #' The \code{blocks} function constructs optimized nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal, 
 #' and blocks can have any feasible depth of nesting.
 #' 
-#' The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where the numbers in treatments list define treatment set with those numbers of treatments 
-#' and the numbers in the replicates list define the replication  for those treatment set. Hence a design with n different levels of replication requires 
-#' n numbers in each parameter list, one for each replication level. Any number of treatment
-#'  replication sets is allowed and the resulting treatments are labelled consecutively according to the ordering of the treatment replication sets
-#' (see the examples). 
+#' The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where a pair of numbers from the two lists with the same index represent
+#' a set of treatments with the same replication. The numbers in the \code{treatments} list are the treatments in each set and the numbers in the \code{replicates} list are
+#' the replication of each set. Any feasible number of different replication levels is allowed and the resulting treatments are labelled consecutively according to 
+#' the ordering of the treatment replication sets.
 #'  
-#' The \code{blocklevels} list defines the blocks structure of the design. The first number is the number of main blocks 
-#' and the succesive numbers, if any, are the numbers of nested blocks in each preceding block. The cumulative product of the \code{blocklevels} list
-#' is the total number of blocks in the design. The default value for the \code{blocklevels} list is the single number equal to the highest common factor (hcf) of
+#' The \code{blocklevels} list defines the blocks structure of the design where the first number is the number of main blocks 
+#' and the succesive numbers, if any, define the number of blocks succesively nested in each main block and in each subsequent nested block. 
+#'  The default value for the \code{blocklevels} list is the single number equal to the highest common factor (hcf) of
 #' the replication numbers, which gives an orthogonal complete blocks design with the maximum possible number of othogonal blocks.   
 #'  
 #' Block sizes in any given stratum are equal if the cumulative number of blocks exactly divides the number of plots, otherwise they differ by not more than a single unit. 
@@ -403,16 +402,14 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   
   # randomize blocks within each nested stratum
   randMat= matrix(1,nrow=nunits,ncol=strata)
-  rblocks=as.data.frame(facMat)
-  rblocks[]=lapply(rblocks, factor)
+  rblocks[]=lapply(as.data.frame(facMat), factor)
   for (r in 1 : strata)
     levels(rblocks[,r])=sample(nlevels(rblocks[,r]))
   for (r in 1 : strata) 
     randMat[,r]=rep(as.numeric(levels(rblocks[,r]))[rblocks[,r]] ,blocksizes)
   dd=as.data.frame(cbind(randMat,sample(rep(1:nunits)),TF))
   dd$TF=as.factor(dd$TF)
-  dd=dd[ do.call(order, dd), ]  
-  TF=dd$TF
+  TF=dd[ do.call(order, dd), ]$TF
   
   # Design data frame
   plots=NULL
