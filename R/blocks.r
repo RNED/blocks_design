@@ -9,22 +9,21 @@
 #' The \code{blocks} function constructs optimized nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal, 
 #' and blocks can have any feasible depth of nesting.
 #' 
-#' Treatment and replication numbers are defined by the \code{treatments} and \code{replicates} parameter lists, which must be of equal length.
-#' Matching pairs of numbers in the two lists represent treatment replication sets where the \code{treatments} list contains the number of treatments 
-#' and the \code{replicates} list contains the replication number of each set.
-#'  
-#' Any number of treatment replication sets is allowed and the resulting treatments are labelled consecutively according to the ordering of the treatment replication sets
+#' The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where the numbers in treatments list define treatment set with those numbers of treatments 
+#' and the numbers in the replicates list define the replication  for those treatment set. Hence a design with n different levels of replication requires 
+#' n numbers in each parameter list, one for each replication level. Any number of treatment
+#'  replication sets is allowed and the resulting treatments are labelled consecutively according to the ordering of the treatment replication sets
 #' (see the examples). 
 #'  
-#' The nested blocks design is defined by the \code{blocklevels} list which is an optional list of repeatedly nested blocks. The first number is the number of main blocks 
-#' and the succesive numbers, if any, are the numbers of blocks nested in each preceding block. The cumulative product of the \code{blocklevels} list
+#' The \code{blocklevels} list defines the blocks structure of the design. The first number is the number of main blocks 
+#' and the succesive numbers, if any, are the numbers of nested blocks in each preceding block. The cumulative product of the \code{blocklevels} list
 #' is the total number of blocks in the design. The default value for the \code{blocklevels} list is the single number equal to the highest common factor (hcf) of
 #' the replication numbers, which gives an orthogonal complete blocks design with the maximum possible number of othogonal blocks.   
 #'  
 #' Block sizes in any given stratum are equal if the cumulative number of blocks exactly divides the number of plots, otherwise they differ by not more than a single unit. 
 #' 
-#' Equally replicated designs with number of treatments equal to the square of the block size v and number of replicates k+2 or less with v
-#' prime or prime-power for k>1 or arbitrary otherwise, are lattice designs and are constructed algebraically. The special non-prime lattice with v = 10 and k = 2 is also 
+#' Designs with v**2 equally replicated treatments, v+1 or fewer replicates and blocks of size v where v is prime or prime-power or arbirary if the number of replicates
+#' is 3 or less are lattice designs and are constructed algebraically. The special non-prime lattice with v = 10 and four replicates  is also 
 #' constructed algebraically. All other designs are constructed algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality). 
 #'  
 #' Designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
