@@ -7,19 +7,19 @@ blocks(treatments, replicates, blocklevels = hcf, searches = min(64,
   floor(4096/nunits)), seed = NULL)
 }
 \arguments{
-\item{treatments}{A list of numbers for the number of treatments in each treatment replication set of the design. Each treatment number must have a matching
+\item{treatments}{a list of numbers for the number of treatments in each treatment replication set of the design. Each treatment number must have a matching
 replication number in the \code{replicates} list.}
 
-\item{replicates}{A list of numbers for the number of replicates in each treatment replication set in the design. Each replication number must
+\item{replicates}{a list of numbers for the number of replicates in each treatment replication set in the design. Each replication number must
 have a matching treatment number in the \code{treatments} list.}
 
-\item{blocklevels}{An optional list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
+\item{blocklevels}{an optional list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
 are the numbers of blocks nested in each preceding block. The default is the hcf of the replication numbers which gives a maximum set of complete orthogonal main blocks.}
 
-\item{searches}{An optional number for the number of local optima searched during optimization. The default is the minimum of 64 or the integer quotient of 4096
+\item{searches}{an optional number for the number of local optima searched during optimization. The default is the minimum of 64 or the integer quotient of 4096
 divided by the number of plots.}
 
-\item{seed}{An integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.}
+\item{seed}{an integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.}
 }
 \value{
 \item{Design}{Data frame showing the block and treatment factors for each sub-plot}

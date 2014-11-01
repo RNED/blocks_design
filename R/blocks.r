@@ -29,19 +29,19 @@
 #'  
 #' Designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
 #'  
-#' @param treatments A list of numbers for the number of treatments in each treatment replication set of the design. Each treatment number must have a matching
+#' @param treatments a list of numbers for the number of treatments in each treatment replication set of the design. Each treatment number must have a matching
 #' replication number in the \code{replicates} list.
 #' 
-#' @param replicates A list of numbers for the number of replicates in each treatment replication set in the design. Each replication number must 
+#' @param replicates a list of numbers for the number of replicates in each treatment replication set in the design. Each replication number must 
 #' have a matching treatment number in the \code{treatments} list.
 #' 
-#' @param blocklevels An optional list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
+#' @param blocklevels an optional list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
 #' are the numbers of blocks nested in each preceding block. The default is the hcf of the replication numbers which gives a maximum set of complete orthogonal main blocks.
 #' 
-#' @param searches An optional number for the number of local optima searched during optimization. The default is the minimum of 64 or the integer quotient of 4096 
+#' @param searches an optional number for the number of local optima searched during optimization. The default is the minimum of 64 or the integer quotient of 4096 
 #' divided by the number of plots.
 #' 
-#' @param seed An integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.
+#' @param seed an integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the block and treatment factors for each sub-plot}
@@ -424,8 +424,8 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   designnames="Main"
   if (strata>1)
     for (i in 1:(strata-1))
-      designnames=c(designnames,paste("Sub",i))
-  colnames(Design)=c(designnames,"Sub-Plots","Treatments")
+      designnames=c(designnames,paste("Sub_",i,sep=""))
+  colnames(Design)=c(designnames,"Sub_plots","Treatments")
     
   #Design plan layout
   index=1
@@ -437,7 +437,7 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     }
   d[is.na(d)]  = " "
   Plan=as.data.frame(cbind(facMat,rep(" ",nrow(d)),d))
-  designnames=c(designnames,"Sub-Plots")
+  designnames=c(designnames,"Sub_plots")
   for (i in 1:max(blocksizes))
     designnames=c(designnames,i)
   colnames(Plan)=designnames
