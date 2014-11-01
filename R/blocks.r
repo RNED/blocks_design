@@ -403,15 +403,16 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   }	
   
   # randomize blocks within each nested stratum
-  rfacMat=facMat
   randMat= matrix(1,nrow=nunits,ncol=strata)
-  for (r in 1 : strata) {
-    levels(rfacMat[,r])=sample(nlevels(rfacMat[,r]))
-    randMat[,r]=rep( rfacMat[,r],blocksizes)
-  } 
+  rblocks=as.data.frame(facMat)
+  rblocks[]=lapply(rblocks, factor)
+  for (r in 1 : strata)
+    levels(rblocks[,r])=sample(nlevels(rblocks[,r]))
+  for (r in 1 : strata) 
+    randMat[,r]=rep(as.numeric(levels(rblocks[,r]))[rblocks[,r]] ,blocksizes)
   dd=as.data.frame(cbind(randMat,sample(rep(1:nunits)),TF))
   dd$TF=as.factor(dd$TF)
-  dd=dd[ do.call(order, dd), ]	
+  dd=dd[ do.call(order, dd), ]  
   TF=dd$TF
   
   # Design data frame
