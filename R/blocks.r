@@ -12,18 +12,18 @@
 #' The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where the \code{treatments} list contains a list of numbers that partition the
 #' total number of treatments into sub-sets of equally replicated treatments and the \code{replicates} list contains the actual replication of each set. The two lists are of equal length and 
 #' the treatment numbers and replication numbers are matched by index position in the two lists. Any feasible number of replication levels can be defined and the resulting treatments are 
-#' labelled consecutively according to the indx postion of the the treatment sets in the two lists.
+#' labelled consecutively according to the index postion of the the treatment sets in the two lists.
 #'  
 #' The \code{blocklevels} list defines the blocks structure of the design where the first number in the list is the number of main blocks 
-#' and the succesive numbers, if any, are the numbers of succesively nested blocks. The numbers are the numbers of blocks in each preceding block therefore the cumulative products of the numbers
-#' over stratsa are the total number of blocks in each stratum. The default value for the \code{blocklevels} list is a single number equal to the highest common factor (hcf) of
+#' and the succesive numbers, if any, are the numbers of succesively nested blocks. The numbers are the nested blocks in each preceding block therefore the cumulative product of the numbers
+#' is the total number of blocks in the design. The default value for the \code{blocklevels} list is a single number equal to the highest common factor (hcf) of
 #' the replication numbers, which gives an orthogonal complete blocks design with the maximum possible number of othogonal blocks.   
 #'  
 #' Block sizes in any given stratum are equal if the cumulative number of blocks exactly divides the number of plots, otherwise they differ by not more than a single unit. 
 #' 
-#' Designs with t = v**2 equally replicated treatments, k = v+1 or fewer replicates and blocks of size v where v is prime or prime-power if k>3 or arbirary otherwise,
+#' Designs with t = v**2 equally replicated treatments, k = v+1 or fewer replicates and blocks of size v where v is a prime or prime-power if k>3 or is arbitrary otherwise,
 #' are regular lattice designs and can be constructed algebraically. \code{blocks} constructs all regular lattice designs algebraically and also constructs the special 
-#' non-prime lattice with t = 100, v = 10 and k< = 4 algebraically. Prime-power lattice designs are constructed by using the \code{\link[crossdes]{MOLS}} function.
+#' non-prime lattice with t = 100, v = 10 and k< = 4 algebraically. Prime-power lattice designs require the \code{MOLS} function from the \code{crossdes} package.
 #' All other designs are constructed algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality). 
 #'  
 #' Designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
