@@ -13,7 +13,7 @@ replication number in the \code{replicates} list.}
 \item{replicates}{a list of numbers for the number of replicates in each treatment replication set in the design. Each replication number must
 have a matching treatment number in the \code{treatments} list.}
 
-\item{blocklevels}{an optional list of nested blocks where the first number is the number of main blocks and the  remaining numbers, if any,
+\item{blocklevels}{an optional list of nested blocks where the first number is the number of main blocks and where the  remaining numbers, if any,
 are the numbers of blocks nested in each preceding block. The default is the hcf of the replication numbers which gives a maximum set of complete orthogonal main blocks.}
 
 \item{searches}{an optional number for the number of local optima searched during optimization. The default is the minimum of 64 or the integer quotient of 4096
@@ -29,27 +29,28 @@ divided by the number of plots.}
 \item{seed}{Numerical seed for random number generator}
 }
 \description{
-Constructs nested block designs for unstructured treatments with arbitrary levels of replication and arbitrary depth of nesting.
+Constructs nested block designs for unstructured treatments with arbitrary replication, not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
 The \code{blocks} function constructs optimized nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal,
 and blocks can have any feasible depth of nesting.
 
-The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where a pair of numbers from the two lists with the same index represent
-a set of treatments with the same replication. The numbers in the \code{treatments} list are the treatments in each set and the numbers in the \code{replicates} list are
-the replication of each set. Any feasible number of different replication levels is allowed and the resulting treatments are labelled consecutively according to
-the ordering of the treatment replication sets.
+The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where the \code{treatments} list contains a list of numbers that partition the
+total number of treatments into sub-sets of equally replicated treatments and the \code{replicates} list contains the actual replication of each set. The two lists are of equal length and
+the treatment numbers and replication numbers are matched by index position in the two lists. Any feasible number of replication levels can be defined and the resulting treatments are
+labelled consecutively according to the indx postion of the the treatment sets in the two lists.
 
-The \code{blocklevels} list defines the blocks structure of the design where the first number is the number of main blocks
-and the succesive numbers, if any, define the number of blocks succesively nested in each main block and in each subsequent nested block.
- The default value for the \code{blocklevels} list is the single number equal to the highest common factor (hcf) of
+The \code{blocklevels} list defines the blocks structure of the design where the first number in the list is the number of main blocks
+and the succesive numbers, if any, are the numbers of succesively nested blocks. The numbers are the numbers of blocks in each preceding block therefore the cumulative products of the numbers
+over stratsa are the total number of blocks in each stratum. The default value for the \code{blocklevels} list is a single number equal to the highest common factor (hcf) of
 the replication numbers, which gives an orthogonal complete blocks design with the maximum possible number of othogonal blocks.
 
 Block sizes in any given stratum are equal if the cumulative number of blocks exactly divides the number of plots, otherwise they differ by not more than a single unit.
 
-Designs with v**2 equally replicated treatments, v+1 or fewer replicates and blocks of size v where v is prime or prime-power or arbirary if the number of replicates
-is 3 or less are lattice designs and are constructed algebraically. The special non-prime lattice with v = 10 and four replicates  is also
-constructed algebraically. All other designs are constructed algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality).
+Designs with t = v**2 equally replicated treatments, k = v+1 or fewer replicates and blocks of size v where v is prime or prime-power if k>3 or arbirary otherwise,
+are regular lattice designs and can be constructed algebraically. \code{blocks} constructs all regular lattice designs algebraically and also constructs the special
+non-prime lattice with t = 100, v = 10 and k< = 4 algebraically. Prime-power lattice designs are constructed by using the \code{\link[crossdes]{MOLS}} function.
+All other designs are constructed algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality).
 
 Designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
 }
