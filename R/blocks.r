@@ -9,10 +9,10 @@
 #' The \code{blocks} function constructs optimized nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal, 
 #' and blocks can have any feasible depth of nesting.
 #' 
-#' The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where the \code{treatments} list contains a list of numbers that partition the
-#' total number of treatments into sub-sets of equally replicated treatments and the \code{replicates} list contains the actual replication of each set. The two lists are of equal length and 
-#' the treatment numbers and replication numbers are matched by index position in the two lists. Any feasible number of replication levels can be defined and the resulting treatments are 
-#' labelled consecutively according to the index postion of the the treatment sets in the two lists.
+#' The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where the \code{treatments} list partitions the
+#' total number of treatments into sub-sets of equally replicated treatments and the \code{replicates} list provides the replication for each set. The two lists are of equal length and 
+#' the treatment numbers and replication numbers are paired according to their index position in the two lists. Any feasible number of replication levels can be defined and the resulting treatments are 
+#' labelled consecutively according to the ordering of the the treatment sets in the two lists.
 #'  
 #' The \code{blocklevels} list defines the blocks structure of the design where the first number in the list is the number of main blocks 
 #' and the succesive numbers, if any, are the numbers of succesively nested blocks. The numbers are the nested blocks in each preceding block therefore the cumulative product of the numbers
@@ -23,7 +23,7 @@
 #' 
 #' Designs with t = v**2 equally replicated treatments, k = v+1 or fewer replicates and blocks of size v where v is a prime or prime-power if k>3 or is arbitrary otherwise,
 #' are regular lattice designs and can be constructed algebraically. \code{blocks} constructs all regular lattice designs algebraically and also constructs the special 
-#' non-prime lattice with t = 100, v = 10 and k< = 4 algebraically. Prime-power lattice designs require the \code{MOLS} function from the \code{crossdes} package.
+#' non-prime lattice with t = 100, v = 10 and k< = 4 algebraically. Prime-power lattice designs require the \code{MOLS} function of the \code{crossdes} package.
 #' All other designs are constructed algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality). 
 #'  
 #' Designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
