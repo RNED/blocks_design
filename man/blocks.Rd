@@ -45,7 +45,7 @@ and the succesive numbers, if any, are the numbers of succesively nested blocks.
 is the total number of blocks in the design. The default value for the \code{blocklevels} list is a single number equal to the highest common factor (hcf) of
 the replication numbers, which gives an orthogonal complete blocks design with the maximum possible number of othogonal blocks.
 
-Block sizes in any given stratum are equal if the cumulative number of blocks exactly divides the number of plots, otherwise they differ by not more than a single unit.
+Block sizes in any given stratum are equal if the cumulative number of blocks in that stratum exactly divides the total number of plots, otherwise they differ by not more than a single unit.
 
 Designs with t = v**2 equally replicated treatments, k = v+1 or fewer replicates and blocks of size v where v is a prime or prime-power if k>3 or is arbitrary otherwise,
 are regular lattice designs and can be constructed algebraically. \code{blocks} constructs all regular lattice designs algebraically and also constructs the special

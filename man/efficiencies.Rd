@@ -16,7 +16,7 @@ Tabulates the efficieny of pairwise treatment difference for each stratum of a d
 }
 \details{
 Tabulates the efficiency factors of the pairwise treatment differences in every statum of any design built by the \code{blocks} function.
- For equi-replicate block designs, the harmonic mean of the pairwise efficiency factors should equal the A-efficiency factor.
+ For equi-replicate block designs, the harmonic mean of the pairwise efficiency factors will equal the A-efficiency factor.
 }
 \examples{
 # 4 replicates of 50 treatments in complete randomized blocks
