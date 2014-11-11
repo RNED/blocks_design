@@ -307,6 +307,7 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
       while (v[2]%%v[1] != 0) v = c(v[2]%%v[1], v[1])
       hcf=v[1]        
     }
+
   if (anyNA(blocklevels) | anyNA(searches) ) return(" NA values not allowed") 
   if (!all(is.finite(blocklevels)) | !all(is.finite(searches)) | !all(!is.nan(blocklevels)) | !all(!is.nan(searches))) return(" Inputs must contain only finite integers ")
   if (searches<1)  return(" Repeats must be at least one ") 	
@@ -329,7 +330,7 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     facMat[,r]=gl(cumblocklevs[r+1],cumblocklevs[strata+1]/cumblocklevs[r+1])
   desMat= matrix(1,nrow=nunits,ncol=(strata+1))
   for (r in 1 : strata) 
-    desMat[,(r+1)]=as.factor(rep(facMat[,r],blocksizes)) 
+    desMat[,(r+1)]=rep(facMat[,r],blocksizes)
   orthbsize=nunits/hcf 
   ortho=0
   for (i in 1 : strata) 
@@ -380,66 +381,81 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
       }
     }
   }
-  
+  BF=c( rep( 1:length(blocksizes),blocksizes))
   # add back single replicate treatments here 
   if ( !all(replicates>1) & !all(replicates==1) ) {
     nunits=sum(treatments*replicates)
+    
+    reptrts=length(TF)
     TF=c(TF,sample(c( (sum(treatlevs)+1):sum(treatments)) )	)
+    singtrts=length(TF)-reptrts
+    labsrep=NULL
+    labssing=NULL
+    index=1
+    for (i in 1 : length(treatments))
+      for ( j in 1:treatments[i]) {
+        if (replicates[i]>1) labsrep=c(labsrep,index)
+        else labssing=c(labssing,index)
+        index=index+1
+      }  
+    trtlabs=c(labsrep,labssing)
+   # levels(TF)=trtlabs
     fullblocksizes=nunits
     for (i in 1:strata)
       fullblocksizes=Sizes(fullblocksizes,blocklevels[i])	  
-    BF=c( rep( 1:length(blocksizes),blocksizes),  rep( 1:length(blocksizes),(fullblocksizes-blocksizes) ) )
+    BF=c(BF,  rep( 1:length(blocksizes),(fullblocksizes-blocksizes) ) )
     # full TF in blocks
     TF=TF[order(BF)]
     # new desMat for blocksizes
-    blocksizes=fullblocksizes	
-    # desMat is a nested design matrix where column 1 is the mean and the remaining columns are the blocklevels in each stratum 
-    desMat= matrix(1,nrow=nunits,ncol=(strata+1))
-    for (r in 1 : strata) 
-      desMat[,(r+1)]=as.factor(rep(facMat[,r],blocksizes))
+    blocksizes=fullblocksizes	  
     hcf=1
     ortho=0
   }	
   
-  # randomize blocks within each nested stratum
-  randMat= matrix(1,nrow=nunits,ncol=strata)
-  rblocks=as.data.frame(facMat)
-  rblocks[]=lapply(rblocks, factor)
-  for (r in 1 : strata)
-    levels(rblocks[,r])=sample(nlevels(rblocks[,r]))
-  for (r in 1 : strata) 
-    randMat[,r]=rep(as.numeric(levels(rblocks[,r]))[rblocks[,r]] ,blocksizes)
-  dd=as.data.frame(cbind(randMat,sample(rep(1:nunits)),TF))
-  dd$TF=as.factor(dd$TF)
-  TF=dd[ do.call(order, dd), ]$TF
-  
-  # Design data frame
-  plots=NULL
-  for (i in 1: length(blocksizes))
-    for (j in 1:blocksizes[i]) 
-      plots=c(plots,j)
-  Design=as.data.frame(cbind(desMat[,c(2:ncol(desMat))],plots,TF))
-  Design[]=lapply(Design, factor)	
-  designnames="Main"
+# randomize blocks within each nested stratum
+for (r in 1 : strata) {
+  temp=as.factor( desMat[,r+1])
+  levels(temp)=sample(nlevels(temp ) )
+  desMat[,r+1]=as.numeric(as.character(temp))
+}
+dd=as.data.frame(cbind(desMat,sample(rep(1:nunits)),TF))
+dd$TF=as.factor(dd$TF)
+dd=dd[ do.call(order, dd), ]
+TF=dd$TF  
+blocks=dd[,(ncol(dd)-2)]
+# first arrange block sizes in order in which they actually occur
+indexes=match(c(1:max(blocks)),blocks)
+blocksizes=tabulate(blocks)[order(indexes)]
+# design matrix for new TF where block sizes are not necessarily all equal 
+for (r in 1 : strata) 
+  desMat[,(r+1)]=rep(facMat[,r],blocksizes)
+# plots nested in blocks
+plots=NULL
+for (i in 1:length(blocksizes))
+  plots=c(plots,rep(1:blocksizes[i]))
+
+Design=as.data.frame( cbind( desMat[,c(2:ncol(desMat))],plots,TF))
+Design[]=lapply(Design, factor)	
+designnames="Main"
   if (strata>1)
     for (i in 1:(strata-1))
       designnames=c(designnames,paste("Sub_",i,sep=""))
   colnames(Design)=c(designnames,"Sub_plots","Treatments")
     
   #Design plan layout
+  d=matrix(nrow=length(blocksizes),ncol=max(blocksizes)) 
   index=1
-  d=matrix(nrow=length(blocksizes),ncol=max(blocksizes))
-  for (i in 1: length(blocksizes))
+  for (i in 1:length(blocksizes))
     for (j in 1:blocksizes[i]) {
-      d[i,j]=TF[index]
-      index=index+1
-    }
+    d[i,j]=TF[index]
+  index=index+1
+}
   d[is.na(d)]  = " "
   Plan=as.data.frame(cbind(facMat,rep(" ",nrow(d)),d))
   designnames=c(designnames,"Sub_plots")
   for (i in 1:max(blocksizes))
     designnames=c(designnames,i)
-  colnames(Plan)=designnames
+    colnames(Plan)=designnames
   
   # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
