@@ -280,7 +280,7 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
       M22=M22[perm,perm]	
       TF=Optimise(TF,NF,MF,M11,M22,M12,searches)
     }	
-    as.factor(TF)
+    TF
   }
   
   if (missing(treatments) | missing(replicates) )  return(" Treatments or replicates not defined ")   
@@ -307,7 +307,6 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
       while (v[2]%%v[1] != 0) v = c(v[2]%%v[1], v[1])
       hcf=v[1]        
     }
-
   if (anyNA(blocklevels) | anyNA(searches) ) return(" NA values not allowed") 
   if (!all(is.finite(blocklevels)) | !all(is.finite(searches)) | !all(!is.nan(blocklevels)) | !all(!is.nan(searches))) return(" Inputs must contain only finite integers ")
   if (searches<1)  return(" Repeats must be at least one ") 	
@@ -317,14 +316,12 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   cumblocklevs=c(1,blocklevels)	
   for (i in 1 : strata) cumblocklevs[i+1]=cumblocklevs[i+1]*cumblocklevs[i]
   blocksizes=nunits
-  
   for (i in 1:strata)
     blocksizes=Sizes(blocksizes,blocklevels[i])
-  
   # treps is the vector of treatment replications for the minimum orthogonal block size
   treps=rep(replevs,treatlevs)/hcf  
   # facMat is the matrix of nested factor levels NOT sub-levels
-  TF=as.factor(rep(rep(1:ntrts,treps),hcf))
+  TF=rep(rep(1:ntrts,treps),hcf)
   facMat= matrix(nrow=cumblocklevs[strata+1],ncol=strata)
   for (r in 1 : strata) 
     facMat[,r]=gl(cumblocklevs[r+1],cumblocklevs[strata+1]/cumblocklevs[r+1])
@@ -340,22 +337,32 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   regreps=(max(replevs)==min(replevs))
   v=sqrt(ntrts)
   pp_trts=c(16,64,256,1024,4096,16384,81,729,6561,625,2401)	
-  lattice = ( replevs[1]<4 |  (replevs[1]<(v+2) & isPrime(v) ) )
-  
+  simplelattice = (regreps & identical(v,ntrts%/%v)  &  replevs[1]<4  & cumblocklevs[i+1]==v*replevs[1])
+  primelattice = (regreps & identical(v,ntrts%/%v)  &  replevs[1]<(v+2)  & isPrime(v) & cumblocklevs[i+1]==v*replevs[1] )
+  ppowerlattice= (regreps & identical(v,ntrts%/%v)  &  replevs[1]<(v+2)  &  ntrts%in% pp_trts & cumblocklevs[i+1]==v*replevs[1] )
+  lattice100 =(regreps & v==10  &  ntrts==100 & replevs[1]<5   & cumblocklevs[i+1]==v*replevs[1] )    
   if (ortho<strata) {
-    for (i in (ortho+1) : strata) {
-      lattice_i = (regreps & identical(v,ntrts%/%v) &  cumblocklevs[i+1]==v*replevs[1])
-      if ( i==(ortho+1) & lattice & lattice_i ) {			
-        TF=rep(1:(v*v))
-        TF=c(TF, rep(1:(v*v))[order(rep(0:(v-1),v))])
-        for (z in 1: (replevs[1]-2)) {
+    for (i in (ortho+1) : strata) { 
+      if ( i==(ortho+1)  & simplelattice) {		
+        TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
+        if (replevs[1]>2) {
           set=NULL
           for (j in 0: (v-1)) 
             for (k in 0: (v-1)) 
-              set=c(set,(j+k*z)%%v)
-          TF=as.factor(c(TF, rep(1:(v*v))[order(set)]))		
-        }				
-      } else if (i==(ortho+1) & lattice_i & replevs[1]<(v+2) & ntrts%in%pp_trts ) {		
+              set=c(set, (j+k)%%v )
+          TF=c(TF, rep(1:(v*v))[order(set)])	
+          }		
+        } else if ( i==(ortho+1)  & primelattice ) {  		
+          TF=rep(1:(v*v))
+          TF=c(TF, rep(1:(v*v))[order(rep(0:(v-1),v))])
+            for (z in 1: (replevs[1]-2)) {
+              set=NULL
+              for (j in 0: (v-1)) 
+                for (k in 0: (v-1)) 
+                  set=c(set,(j+k*z)%%v)
+              TF=c(TF, rep(1:(v*v))[order(set)])		
+            }	
+      } else if ( i==(ortho+1) & ppowerlattice ) {	
         prime= c(2,2,2,2,2,2,   3,3,3,  5,7)[which(pp_trts==ntrts)]
         ppower=c(2,3,4,5,6,7,   2,3,4,  2,2)[which(pp_trts==ntrts)]
         mols=crossdes::MOLS(prime,ppower)			
@@ -363,69 +370,73 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
         TF=c(TF, rep(1:(v*v))[order(rep(0:(v-1),v))])
         for (i in 1: (replevs[1]-2))
           TF=c(TF, rep(1:(v*v))[order(    as.numeric(mols[,,i]) ) ])
-        TF=as.factor(TF)
-      } else if (i==(ortho+1) & lattice_i & ntrts==100 & replevs[1]<=4) {			
+      } else if (i==(ortho+1) &lattice100) {
         TF=rep(1:(v*v))
         TF=c(TF, rep(1:(v*v))[order(rep(0:(v-1),v))])
+        if (replevs[1]>2)  { 
         tens1=c(
           1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
           5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8)
+        TF=c(TF, rep(1:(v*v))[order(tens1)]) 
+        }
+        if (replevs[1]==4) {
         tens2=c(
           1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
           6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6)
-        if (replevs[1]>2)  TF=c(TF, rep(1:(v*v))[order(tens1)])	
-        if (replevs[1]==4) TF=c(TF, rep(1:(v*v))[order(tens2)])
-        TF=as.factor(TF)
-      } else {		
-        TF=GenOpt(TF,as.factor(desMat[,(i+1)]),as.factor(desMat[,i]),searches)
+       TF=c(TF, rep(1:(v*v))[order(tens2)])
+        }
+      } else {	
+        TF=GenOpt(as.factor(TF),as.factor(desMat[,(i+1)]),as.factor(desMat[,i]),searches)
       }
     }
   }
-  BF=c( rep( 1:length(blocksizes),blocksizes))
+  TF=as.factor(TF)
+  BF=c( rep( 1:length(blocksizes),blocksizes)) 
   # add back single replicate treatments here 
   if ( !all(replicates>1) & !all(replicates==1) ) {
-    nunits=sum(treatments*replicates)
+    repblocksizes=blocksizes
+    nunits=sum(treatments*replicates) 
     
-    reptrts=length(TF)
-    TF=c(TF,sample(c( (sum(treatlevs)+1):sum(treatments)) )	)
-    singtrts=length(TF)-reptrts
-    labsrep=NULL
-    labssing=NULL
-    index=1
-    for (i in 1 : length(treatments))
-      for ( j in 1:treatments[i]) {
-        if (replicates[i]>1) labsrep=c(labsrep,index)
-        else labssing=c(labssing,index)
-        index=index+1
-      }  
-    trtlabs=c(labsrep,labssing)
-   # levels(TF)=trtlabs
-    fullblocksizes=nunits
+    
+    addTF=c( ( sum(treatlevs)+1 ) : sum(treatments))
+    TF=as.factor(c(TF,addTF[sample(length(addTF))])) 
+    
+    trtlabs=NULL  
+    extlabs=NULL
+    index=0
+    for (i in 1 : length(treatments)) {
+      if (replicates[i]>1) trtlabs=c(trtlabs, rep( (index+1):(index+treatments[i]) ))
+      else extlabs=c(extlabs, rep( (index+1):(index+treatments[i]) ))
+    index=index+treatments[i] 
+    }
+    trtlabs=c(trtlabs,extlabs)
+    levels(TF)=trtlabs
+    blocksizes=nunits
     for (i in 1:strata)
-      fullblocksizes=Sizes(fullblocksizes,blocklevels[i])	  
-    BF=c(BF,  rep( 1:length(blocksizes),(fullblocksizes-blocksizes) ) )
+      blocksizes=Sizes(blocksizes,blocklevels[i])	 
+    BF=c(BF,  rep( 1:length(repblocksizes),(blocksizes-repblocksizes) ) )
     # full TF in blocks
     TF=TF[order(BF)]
-    # new desMat for blocksizes
-    blocksizes=fullblocksizes	  
-    hcf=1
-    ortho=0
+   desMat= matrix(1,nrow=nunits,ncol=(strata+1))
+   for (r in 1 : strata) 
+     desMat[,(r+1)]=rep(facMat[,r],blocksizes)
   }	
-  
-# randomize blocks within each nested stratum
-for (r in 1 : strata) {
-  temp=as.factor( desMat[,r+1])
-  levels(temp)=sample(nlevels(temp ) )
-  desMat[,r+1]=as.numeric(as.character(temp))
-}
+   
+#randomise blocks within strata
+desMat=as.data.frame(desMat)
+desMat[]=lapply(desMat, factor)  
+  for (r in 2 : (strata+1)){
+    levels( desMat[,r])=sample(nlevels( desMat[,r]) )
+    desMat[,r]=as.numeric(as.character( desMat[,r]))
+  }
 dd=as.data.frame(cbind(desMat,sample(rep(1:nunits)),TF))
 dd$TF=as.factor(dd$TF)
 dd=dd[ do.call(order, dd), ]
-TF=dd$TF  
-blocks=dd[,(ncol(dd)-2)]
-# first arrange block sizes in order in which they actually occur
-indexes=match(c(1:max(blocks)),blocks)
-blocksizes=tabulate(blocks)[order(indexes)]
+TF=dd$TF 
+# arrange blocksizes in new order
+blocks=as.factor(dd[,(ncol(dd)-2)])
+levels(blocks)=order(unique(blocks))
+blocksizes=tabulate(as.numeric(as.character(blocks)))
 # design matrix for new TF where block sizes are not necessarily all equal 
 for (r in 1 : strata) 
   desMat[,(r+1)]=rep(facMat[,r],blocksizes)
@@ -433,7 +444,6 @@ for (r in 1 : strata)
 plots=NULL
 for (i in 1:length(blocksizes))
   plots=c(plots,rep(1:blocksizes[i]))
-
 Design=as.data.frame( cbind( desMat[,c(2:ncol(desMat))],plots,TF))
 Design[]=lapply(Design, factor)	
 designnames="Main"
@@ -447,9 +457,10 @@ designnames="Main"
   index=1
   for (i in 1:length(blocksizes))
     for (j in 1:blocksizes[i]) {
-    d[i,j]=TF[index]
+    d[i,j]=as.numeric(as.character(TF[index]))
   index=index+1
 }
+
   d[is.na(d)]  = " "
   Plan=as.data.frame(cbind(facMat,rep(" ",nrow(d)),d))
   designnames=c(designnames,"Sub_plots")
@@ -461,14 +472,15 @@ designnames="Main"
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
     Incidences[[i]]=table(Design[,c(i,ncol(Design))])  
-  
+
   # Efficiencies data frame
   bounds=rep(0,strata)
   r=1/sqrt(tabulate(TF))
   aeff=c(rep(0,strata))
   for (i in 1:strata) {	
     k=1/sqrt(tabulate(Design[,i]))
-    U=crossprod(t(crossprod(diag(r,nrow = length(r)),table(TF,Design[,i]))),diag(k,nrow = length(k)))
+    X=crossprod(diag(r,nrow = length(r)),  table(TF,Design[,i])   )
+    U=crossprod(t(X), diag(k,nrow = length(k)))
     A=diag(length(r))-crossprod(t(U))
     aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:length(r)-1])
     if (max(replicates)==min(replicates))
