@@ -294,7 +294,24 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     v[1]
   }
   
-  #***********************************************************inputs*********************************************************************************
+  # A-Efficiencies function 
+  Aeff=function(Design)  {
+    strata=ncol(Design)-2
+    TF=Design$Treatments
+    r=1/sqrt(tabulate(TF))
+    aeff=rep(0,strata)
+    for (i in 1:strata) {  
+      k=1/sqrt(tabulate(Design[,i]))
+      X=crossprod( diag(k,nrow = length(k)),  table(Design[,i],TF ) )
+      U=crossprod(t(X), diag(r,nrow = length(r)))
+      A=diag(length(r))-crossprod(U)   
+      aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:length(r)-1])
+    }
+    aeff
+  }
+  
+  
+  #***********************************************************blocks function proper*********************************************************************************
   
   if (missing(treatments) | missing(replicates) )  return(" Treatments or replicates not defined ")   
   if (is.null(treatments) | is.null(replicates))  return(" Treatments or replicates list is empty ") 	
@@ -473,26 +490,16 @@ designnames="Main"
     Incidences[[i]]=table( Design[,i] , TF)  
   }
 
-  # Efficiencies data frame
-  bounds=rep(0,strata)
-  r=1/sqrt(tabulate(TF))
-  aeff=c(rep(0,strata))
-  for (i in 1:strata) {	
-    k=1/sqrt(tabulate(Design[,i]))
-    X=crossprod(diag(r,nrow = length(r)),  table(TF,Design[,i])   )
-    U=crossprod(t(X), diag(k,nrow = length(k)))
-    A=diag(length(r))-crossprod(t(U))
-    aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:length(r)-1])
-    if (max(replicates)==min(replicates))
-      bounds[i]=upper_bounds(nunits,ntrts,cumblocklevs[i+1]) 
-    else
-      bounds[i]=NA
-  }
-  effics=as.data.frame(cbind( cumblocklevs[2:(strata+1)], aeff, bounds))
+# A-Efficiencies dataframe
+  bounds=rep(NA,strata)
+  for (i in 1:strata)   
+   if (max(replicates)==min(replicates))
+    bounds[i]=upper_bounds(nunits,ntrts,cumblocklevs[i+1])   
+  Efficiencies=as.data.frame(cbind( cumblocklevs[2:(strata+1)], Aeff(Design), bounds))
   rnames=c("Main")
   if (strata>1)
     for (i in 1 : (strata-1)) rnames=c(rnames,paste("Sub",i))
-  colnames(effics)=c("Blocks","A-Efficiencies", "Upper Bounds")
-  rownames(effics)=rnames 
-  list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=effics,seed=seed)
+  colnames(Efficiencies)=c("Blocks","A-Efficiencies", "Upper Bounds")
+  rownames(Efficiencies)=rnames 
+  list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=Efficiencies,seed=seed)
 } 
