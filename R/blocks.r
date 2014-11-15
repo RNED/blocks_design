@@ -417,16 +417,16 @@ desMat=as.data.frame(desMat)
 desMat[]=lapply(desMat, factor)  
   for (r in 2 : (strata+1)){
     levels( desMat[,r])=sample(nlevels( desMat[,r]) )
-    desMat[,r]=as.numeric(as.character( desMat[,r]))
+    desMat[,r]=as.numeric(levels(desMat[,r]))[desMat[,r]]
   }
 dd=as.data.frame(cbind(desMat,sample(rep(1:nunits)),TF))
 dd$TF=as.factor(dd$TF)
 dd=dd[ do.call(order, dd), ]
-TF=as.numeric(as.character(dd$TF))
+TF=as.numeric(levels(dd$TF))[dd$TF]
 # arrange blocksizes in new order
 blocks=as.factor(dd[,(ncol(dd)-2)])
 levels(blocks)=order(unique(blocks))
-blocksizes=tabulate(as.numeric(as.character(blocks)))
+blocksizes=tabulate(as.numeric(levels(blocks))[blocks])
 # design matrix for new TF where block sizes are not necessarily all equal 
 for (r in 1 : strata) 
   desMat[,(r+1)]=rep(facMat[,r],blocksizes)
