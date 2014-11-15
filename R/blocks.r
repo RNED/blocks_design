@@ -282,6 +282,19 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     }	
     TF
   }
+
+  HCF=function(replevs)  {
+    replevs=sort(replevs)
+    v=(c(replevs[1],NULL))
+    if (length(replevs)>1) 
+      for (i in 2: length(replevs)) {
+        v[2]=replevs[i] 
+        while (v[2]%%v[1] != 0) v = c(v[2]%%v[1], v[1]) 
+      }
+    v[1]
+  }
+  
+  #***********************************************************inputs*********************************************************************************
   
   if (missing(treatments) | missing(replicates) )  return(" Treatments or replicates not defined ")   
   if (is.null(treatments) | is.null(replicates))  return(" Treatments or replicates list is empty ") 	
@@ -300,21 +313,17 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     replevs = replicates[replicates>1]
   }
   nunits=sum(treatlevs*replevs) 
-  hcf=replevs[1]
-  if (length(replevs)>1)
-    for (i in 2: length(replevs)) {
-      v=sort(c(replevs[i],hcf))
-      while (v[2]%%v[1] != 0) v = c(v[2]%%v[1], v[1])
-      hcf=v[1]        
-    }
+  hcf=HCF(replevs)
+ 
   if (anyNA(blocklevels) | anyNA(searches) ) return(" NA values not allowed") 
   if (!all(is.finite(blocklevels)) | !all(is.finite(searches)) | !all(!is.nan(blocklevels)) | !all(!is.nan(searches))) return(" Inputs must contain only finite integers ")
   if (searches<1)  return(" Repeats must be at least one ") 	
   if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) return("Design cannot be fitted :  too many blocks and treatments for the available plots")	
   ntrts=sum(treatlevs)
   strata=length(blocklevels)	
-  cumblocklevs=c(1,blocklevels)	
-  for (i in 1 : strata) cumblocklevs[i+1]=cumblocklevs[i+1]*cumblocklevs[i]
+  cumblocklevs=1
+  for (i in 1 : strata) 
+    cumblocklevs=c(cumblocklevs,cumblocklevs[i]*blocklevels[i])
   blocksizes=nunits
   for (i in 1:strata)
     blocksizes=Sizes(blocksizes,blocklevels[i])
@@ -430,6 +439,7 @@ blocksizes=tabulate(as.numeric(levels(blocks))[blocks])
 # design matrix for new TF where block sizes are not necessarily all equal 
 for (r in 1 : strata) 
   desMat[,(r+1)]=rep(facMat[,r],blocksizes)
+
 # plots nested in blocks
 plots=NULL
 for (i in 1:length(blocksizes))
@@ -440,7 +450,8 @@ designnames="Main"
   if (strata>1)
     for (i in 1:(strata-1))
       designnames=c(designnames,paste("Sub_",i,sep=""))
-  colnames(Design)=c(designnames,"Sub_plots","Treatments")    
+  colnames(Design)=c(designnames,"Sub_plots","Treatments")   
+
   #Design plan layout
   d=matrix(nrow=length(blocksizes),ncol=max(blocksizes)) 
   index=1
@@ -455,11 +466,13 @@ designnames="Main"
   for (i in 1:max(blocksizes))
     designnames=c(designnames,i)
     colnames(Plan)=designnames
+
   # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata){
     Incidences[[i]]=table( Design[,i] , TF)  
   }
+
   # Efficiencies data frame
   bounds=rep(0,strata)
   r=1/sqrt(tabulate(TF))
