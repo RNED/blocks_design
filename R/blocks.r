@@ -299,18 +299,23 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     strata=ncol(Design)-2
     TF=Design$Treatments
     r=1/sqrt(tabulate(TF))
-    aeff=rep(0,strata)
+    aeff=rep(0,strata) 
     for (i in 1:strata) {  
       k=1/sqrt(tabulate(Design[,i]))
-      X=crossprod( diag(k,nrow = length(k)),  table(Design[,i],TF ) )
-      U=crossprod(t(X), diag(r,nrow = length(r)))
-      A=diag(length(r))-crossprod(U)   
-      aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:length(r)-1])
+      if (length(r)<=length(k)) {
+        X=crossprod( diag(k,nrow = length(k)),  table(Design[,i],TF ) )
+        A= diag(length(r)) - crossprod(crossprod(t(X), diag(r,nrow = length(r))))   
+        aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:length(r)-1])
+      } else {
+        X=crossprod( diag(r,nrow = length(r)),  table(TF,Design[,i] ) )
+        A=diag(length(k)) - crossprod(crossprod(t(X), diag(k,nrow = length(k))))   
+        aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:length(k)-1])
+        aeff[i]=(length(r)-1)/ ( length(r)-length(k)+(length(k)-1)/aeff[i] )
+      }
     }
     aeff
   }
-  
-  
+     
   #***********************************************************blocks function proper*********************************************************************************
   
   if (missing(treatments) | missing(replicates) )  return(" Treatments or replicates not defined ")   
@@ -501,5 +506,6 @@ designnames="Main"
     for (i in 1 : (strata-1)) rnames=c(rnames,paste("Sub",i))
   colnames(Efficiencies)=c("Blocks","A-Efficiencies", "Upper Bounds")
   rownames(Efficiencies)=rnames 
+
   list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=Efficiencies,seed=seed)
 } 
