@@ -7,14 +7,15 @@ blocks(treatments, replicates, blocklevels = hcf, searches = min(64,
   floor(4096/nunits)), seed = NULL)
 }
 \arguments{
-\item{treatments}{a list of numbers for the number of treatments in each treatment replication set of the design. Each treatment number must have a matching
-replication number in the \code{replicates} list.}
+\item{treatments}{a list of treatment numbers where each treatment number defines a treatment set
+ with the same number of replicates.}
 
-\item{replicates}{a list of numbers for the number of replicates in each treatment replication set in the design. Each replication number must
-have a matching treatment number in the \code{treatments} list.}
+\item{replicates}{a list of replication numbers for the treatment sets where each treatments set has one replication number.}
 
-\item{blocklevels}{an optional list of nested blocks where the first number is the number of main blocks and where the  remaining numbers, if any,
-are the numbers of blocks nested in each preceding block. The default is the hcf of the replication numbers which gives a maximum set of complete orthogonal main blocks.}
+\item{blocklevels}{an optional list where the first number is the number of main blocks,
+the second number is the number of sub-blocks nested
+within each main block, the third number is the number of sub-sub-blocks nested withiin each sub-block and so on.
+The default is the highest common factor of the replication numbers.}
 
 \item{searches}{an optional number for the number of local optima searched during optimization. The default is the minimum of 64 or the integer quotient of 4096
 divided by the number of plots.}
@@ -29,7 +30,7 @@ divided by the number of plots.}
 \item{seed}{Numerical seed for random number generator}
 }
 \description{
-Constructs nested block designs for unstructured treatments with arbitrary replication, not necessarily all equal, and arbitrary depth of nesting.
+Constructs nested block designs for unstructured treatment sets with arbitrary replication, not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
 The \code{blocks} function constructs optimized nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal,

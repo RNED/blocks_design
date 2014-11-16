@@ -2,7 +2,7 @@
 #' 
 #' @description
 #' 
-#' Constructs nested block designs for unstructured treatments with arbitrary replication, not necessarily all equal, and arbitrary depth of nesting.
+#' Constructs nested block designs for unstructured treatment sets with arbitrary replication, not necessarily all equal, and arbitrary depth of nesting.
 #' 
 #' @details
 #' 
@@ -28,14 +28,15 @@
 #'  
 #' Designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
 #'  
-#' @param treatments a list of numbers for the number of treatments in each treatment replication set of the design. Each treatment number must have a matching
-#' replication number in the \code{replicates} list.
+#' @param treatments a list of treatment numbers where each treatment number defines a treatment set
+#'  with the same number of replicates.
 #' 
-#' @param replicates a list of numbers for the number of replicates in each treatment replication set in the design. Each replication number must 
-#' have a matching treatment number in the \code{treatments} list.
+#' @param replicates a list of replication numbers for the treatment sets where each treatments set has one replication number.
 #' 
-#' @param blocklevels an optional list of nested blocks where the first number is the number of main blocks and where the  remaining numbers, if any,
-#' are the numbers of blocks nested in each preceding block. The default is the hcf of the replication numbers which gives a maximum set of complete orthogonal main blocks.
+#' @param blocklevels an optional list where the first number is the number of main blocks, 
+#' the second number is the number of sub-blocks nested
+#' within each main block, the third number is the number of sub-sub-blocks nested withiin each sub-block and so on. 
+#' The default is the highest common factor of the replication numbers.
 #' 
 #' @param searches an optional number for the number of local optima searched during optimization. The default is the minimum of 64 or the integer quotient of 4096 
 #' divided by the number of plots.
@@ -162,8 +163,6 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     M12 = M12 - crossprod(t(Z1),t(Z2)) + crossprod(t(W1),t(W2))
     up=list(M11=M11,M22=M22,M12=M12)
   } # end of function
-  
-  
   
   
   Optimise=function(TF,BF,MF,M11,M22,M12,searches)   {
