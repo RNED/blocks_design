@@ -10,16 +10,19 @@
 #' and blocks can have any feasible depth of nesting.
 #' 
 #' The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where the \code{treatments} list partitions the
-#' total number of treatments into sub-sets of equally replicated treatments and the \code{replicates} list provides the replication for each set. The two lists are of equal length and 
-#' the treatment numbers and replication numbers are paired according to their index position in the two lists. Any feasible number of replication levels can be defined and the resulting treatments are 
-#' labelled consecutively according to the ordering of the the treatment sets in the two lists.
+#' total number of treatments into sub-sets of equally replicated treatments and the \code{replicates} list provides the replication for each set. 
+#' The two lists must be of equal length and the treatment numbers and the replication numbers will be paired according to their index positions in the two lists.  
+#' Treatments will be labelled consecutively according to the ordering of the sets in the two lists. The replication numbers
+#' in the \code{replicates} list need not be unique.
 #'  
-#' The \code{blocklevels} list defines the blocks structure of the design where the first number in the list is the number of main blocks 
-#' and the succesive numbers, if any, are the numbers of succesively nested blocks. The numbers are the nested blocks in each preceding block therefore the cumulative product of the numbers
+#' The \code{blocklevels} list defines the blocks strata of the design where the first number in the list is the number of main blocks 
+#' and the succesive numbers, if any, are the numbers of succesively nested blocks. The numbers are the numbers of blocks nested blocks in each preceding block 
+#' therefore the cumulative product of the numbers
 #' is the total number of blocks in the design. The default value for the \code{blocklevels} list is a single number equal to the highest common factor (hcf) of
 #' the replication numbers, which gives an orthogonal complete blocks design with the maximum possible number of othogonal blocks.   
 #'  
-#' Block sizes in any given stratum are equal if the cumulative number of blocks in that stratum exactly divides the total number of plots, otherwise they differ by not more than a single unit. 
+#' Block sizes in any given stratum are equal if the cumulative number of blocks in that stratum exactly divides the total number of plots, 
+#' otherwise they differ by not more than a single unit. 
 #' 
 #' Designs with t = v**2 equally replicated treatments, k = v+1 or fewer replicates and blocks of size v where v is a prime or prime-power if k>3 or is arbitrary otherwise,
 #' are regular lattice designs and can be constructed algebraically. \code{blocks} constructs all regular lattice designs algebraically and also constructs the special 
@@ -28,17 +31,17 @@
 #'  
 #' Designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
 #'  
-#' @param treatments a list of treatment numbers where each treatment number defines a treatment set
-#'  with the same number of replicates.
+#' @param treatments a list partitioning the total number of treatments into sub-sets of equally replicated treatments.   
 #' 
-#' @param replicates a list of replication numbers for the treatment sets where each treatments set has one replication number.
+#' @param replicates a list assigning replication levels to the sub-sets of equally replicated treatments. 
 #' 
-#' @param blocklevels an optional list where the first number is the number of main blocks, 
-#' the second number is the number of sub-blocks nested
-#' within each main block, the third number is the number of sub-sub-blocks nested withiin each sub-block and so on. 
-#' The default is the highest common factor of the replication numbers.
+#' @param blocklevels a list of the required blocks strata where the first number is the main blocks, 
+#' the second number is the sub-blocks nested within each main block, 
+#' the third number is the sub-sub-blocks nested within each sub-block and so on. 
+#' The bottom stratum is a single nested block but this need not be shown unless a single stratum with a single block is required. 
+#' The default is a single stratum design with main blocks equal to the highest common factor of the \code{replicates} list.
 #' 
-#' @param searches an optional number for the number of local optima searched during optimization. The default is the minimum of 64 or the integer quotient of 4096 
+#' @param searches the number of local optima searched during an optimization. The default is the minimum of 64 or the integer quotient of 4096 
 #' divided by the number of plots.
 #' 
 #' @param seed an integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.
@@ -298,7 +301,7 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     strata=ncol(Design)-2
     TF=Design$Treatments
     r=1/sqrt(tabulate(TF))
-    aeff=rep(0,strata) 
+    aeff=rep(0,strata)     
     for (i in 1:strata) {  
       k=1/sqrt(tabulate(Design[,i]))
       if (length(r)<=length(k)) {
@@ -307,8 +310,8 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
         aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:length(r)-1])
       } else {
         X=crossprod( diag(r,nrow = length(r)),  table(TF,Design[,i] ) )
-        A=diag(length(k)) - crossprod(crossprod(t(X), diag(k,nrow = length(k))))   
-        aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:length(k)-1])
+        A=diag(length(k)) - crossprod(crossprod(t(X), diag(k,nrow = length(k))))  
+        aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:length(k)-1])    
         aeff[i]=(length(r)-1)/ ( length(r)-length(k)+(length(k)-1)/aeff[i] )
       }
     }
@@ -337,9 +340,16 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   hcf=HCF(replevs)
  
   if (anyNA(blocklevels) | anyNA(searches) ) return(" NA values not allowed") 
-  if (!all(is.finite(blocklevels)) | !all(is.finite(searches)) | !all(!is.nan(blocklevels)) | !all(!is.nan(searches))) return(" Inputs must contain only finite integers ")
+  if (!all(is.finite(blocklevels)) | !all(is.finite(searches)) | !all(!is.nan(blocklevels)) | !all(!is.nan(searches))) return(" Entries can contain only finite integers ")
+  if (min(blocklevels)<1) return (" Blocklevels must be at least one ")
   if (searches<1)  return(" Repeats must be at least one ") 	
   if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) return("Design cannot be fitted :  too many blocks and treatments for the available plots")	
+  
+  if (all(blocklevels==1))
+    blocklevels=1
+  else
+  blocklevels=blocklevels[blocklevels>1]
+  
   ntrts=sum(treatlevs)
   strata=length(blocklevels)	
   cumblocklevs=1
@@ -467,11 +477,11 @@ for (i in 1:length(blocksizes))
   plots=c(plots,rep(1:blocksizes[i]))
 Design=as.data.frame( cbind( desMat[,c(2:ncol(desMat))],plots,TF))
 Design[]=lapply(Design, factor)	
-designnames="Main"
+designnames="Main blocks"
   if (strata>1)
     for (i in 1:(strata-1))
-      designnames=c(designnames,paste("Sub_",i,sep=""))
-  colnames(Design)=c(designnames,"Sub_plots","Treatments")   
+      designnames=c(designnames,paste("Sub",i," blocks", sep=""))
+  colnames(Design)=c(designnames,"Sub-plots","Treatments")   
 
   #Design plan layout
   d=matrix(nrow=length(blocksizes),ncol=max(blocksizes)) 
@@ -483,7 +493,7 @@ designnames="Main"
   }
   d[is.na(d)]  = " "
   Plan=as.data.frame(cbind(facMat,rep(" ",nrow(d)),d))
-  designnames=c(designnames,"Sub_plots")
+  designnames=c(designnames,"Sub-plots")
   for (i in 1:max(blocksizes))
     designnames=c(designnames,i)
     colnames(Plan)=designnames

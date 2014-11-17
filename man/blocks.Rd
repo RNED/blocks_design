@@ -7,17 +7,17 @@ blocks(treatments, replicates, blocklevels = hcf, searches = min(64,
   floor(4096/nunits)), seed = NULL)
 }
 \arguments{
-\item{treatments}{a list of treatment numbers where each treatment number defines a treatment set
- with the same number of replicates.}
+\item{treatments}{a list partitioning the total number of treatments into sub-sets of equally replicated treatments.}
 
-\item{replicates}{a list of replication numbers for the treatment sets where each treatments set has one replication number.}
+\item{replicates}{a list assigning replication levels to the sub-sets of equally replicated treatments.}
 
-\item{blocklevels}{an optional list where the first number is the number of main blocks,
-the second number is the number of sub-blocks nested
-within each main block, the third number is the number of sub-sub-blocks nested withiin each sub-block and so on.
-The default is the highest common factor of the replication numbers.}
+\item{blocklevels}{a list of the required blocks strata where the first number is the main blocks,
+the second number is the sub-blocks nested within each main block,
+the third number is the sub-sub-blocks nested within each sub-block and so on.
+The bottom stratum is a single nested block but this need not be shown unless a single stratum with a single block is required.
+The default is a single stratum design with main blocks equal to the highest common factor of the \code{replicates} list.}
 
-\item{searches}{an optional number for the number of local optima searched during optimization. The default is the minimum of 64 or the integer quotient of 4096
+\item{searches}{the number of local optima searched during an optimization. The default is the minimum of 64 or the integer quotient of 4096
 divided by the number of plots.}
 
 \item{seed}{an integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.}
@@ -37,16 +37,19 @@ The \code{blocks} function constructs optimized nested block designs for unstruc
 and blocks can have any feasible depth of nesting.
 
 The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where the \code{treatments} list partitions the
-total number of treatments into sub-sets of equally replicated treatments and the \code{replicates} list provides the replication for each set. The two lists are of equal length and
-the treatment numbers and replication numbers are paired according to their index position in the two lists. Any feasible number of replication levels can be defined and the resulting treatments are
-labelled consecutively according to the ordering of the the treatment sets in the two lists.
+total number of treatments into sub-sets of equally replicated treatments and the \code{replicates} list provides the replication for each set.
+The two lists must be of equal length and the treatment numbers and the replication numbers will be paired according to their index positions in the two lists.
+Treatments will be labelled consecutively according to the ordering of the sets in the two lists. The replication numbers
+in the \code{replicates} list need not be unique.
 
-The \code{blocklevels} list defines the blocks structure of the design where the first number in the list is the number of main blocks
-and the succesive numbers, if any, are the numbers of succesively nested blocks. The numbers are the nested blocks in each preceding block therefore the cumulative product of the numbers
+The \code{blocklevels} list defines the blocks strata of the design where the first number in the list is the number of main blocks
+and the succesive numbers, if any, are the numbers of succesively nested blocks. The numbers are the numbers of blocks nested blocks in each preceding block
+therefore the cumulative product of the numbers
 is the total number of blocks in the design. The default value for the \code{blocklevels} list is a single number equal to the highest common factor (hcf) of
 the replication numbers, which gives an orthogonal complete blocks design with the maximum possible number of othogonal blocks.
 
-Block sizes in any given stratum are equal if the cumulative number of blocks in that stratum exactly divides the total number of plots, otherwise they differ by not more than a single unit.
+Block sizes in any given stratum are equal if the cumulative number of blocks in that stratum exactly divides the total number of plots,
+otherwise they differ by not more than a single unit.
 
 Designs with t = v**2 equally replicated treatments, k = v+1 or fewer replicates and blocks of size v where v is a prime or prime-power if k>3 or is arbitrary otherwise,
 are regular lattice designs and can be constructed algebraically. \code{blocks} constructs all regular lattice designs algebraically and also constructs the special
