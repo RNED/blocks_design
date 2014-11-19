@@ -84,8 +84,10 @@
 blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floor(4096/nunits)), seed=NULL) { 
   
   Sizes=function(mainSizes,slevs) {
-    if (max(mainSizes)==min(mainSizes) & mainSizes[1] %% slevs == 0) {
-      newsizes=rep( rep(mainSizes[1] %/% slevs, slevs), length(mainSizes))
+    if (max(mainSizes)==min(mainSizes) ) {
+      bsize=mainSizes[1] %/% slevs
+      resid=mainSizes[1] %% slevs
+      newsizes=rep( rep(bsize, slevs), length(mainSizes) )  +  rep(  c( rep(1, resid), rep(0, (slevs-resid)  ) ),   length(mainSizes)         )   
     } else {
       newsizes=vector(length=slevs*length(mainSizes))
       for (z in 1: length(mainSizes)) {
@@ -99,6 +101,7 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     }
     newsizes 
   }
+  
   
   isPrime=function(v) {
     if (v <= 3)  return(TRUE)
