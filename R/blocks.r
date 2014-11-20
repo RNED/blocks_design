@@ -16,16 +16,17 @@
 #' the treatment sets in the two lists.
 #'  
 #' The \code{blocklevels} list defines the blocks strata of the design where the first level in the list is the number of main blocks 
-#' and the succesive levels, if any, are succesively nested blocks strata where the numbers of levels are the sub-blocks nested in each preceding block.
+#' and the succesive levels, if any, are the sub-block levels for succesively nested blocks strata where the levels are the
+#'  sub-blocks nested in each preceding block.
 #'  The list length is the number of strata and the cumulative products of the list levels are the total numbers of blocks in each stratum. 
 #' The default blocks design is an complete blocks design with the maximum possible number of othogonal blocks.    
 #'  
 #' Block sizes in any given stratum are equal if the cumulative number of blocks for that stratum exactly divides the total number of plots, 
 #' otherwise they differ, at most, by a single unit. 
 #' 
-#' Designs with t = v**2 equally replicated treatments, k = v+1 or fewer replicates and blocks of size v where v is a prime or prime-power if k>3 or is arbitrary otherwise,
-#' are regular lattice designs and can be constructed algebraically. \code{blocks} constructs all regular lattice designs algebraically and also constructs the special 
-#' non-prime lattice with t = 100, v = 10 and k< = 4 algebraically. Prime-power lattice designs require the \code{MOLS} function of the \code{crossdes} package.
+#' Balanced lattice designs for k-replicate designs with v x v equally replicated treatments and blocks of size v exist if sets of k mutually orthogonal latin squares exist.
+#' \code{blocks} constructs regular lattice designs algebraicaly for any v when k <= 3, for any prime or prime-power v when k <= v+1
+#' and for v = 10 when k <= 4. Prime-power lattice designs require the \code{MOLS} function of the \code{crossdes} package.
 #' All other designs are constructed algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality). 
 #'  
 #' Designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
@@ -35,7 +36,7 @@
 #' @param replicates a list assigning a replication level to each set of equally replicated treatments. 
 #' 
 #' @param blocklevels a list of nested block levels where the first level is the number of main blocks
-#' and the remaining levels, if any, are the sub-block levels of a hierarchy of succesively nested blocks. 
+#' and the remaining levels, if any, are the numbers of sub-blocks in the succesively nested blocks of a hierarchy of nested blocks.
 #' The default is the highest common factor of the \code{replicates} list.
 #'  
 #' @param searches the number of local optima searched during an optimization. The default is the minimum of 64 or the integer quotient of 4096 
