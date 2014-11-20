@@ -12,8 +12,8 @@ blocks(treatments, replicates, blocklevels = hcf, searches = min(64,
 \item{replicates}{a list assigning a replication level to each set of equally replicated treatments.}
 
 \item{blocklevels}{a list of nested block levels where the first level is the number of main blocks
-and the succesive levels, if any, are the numbers of sub-blocks nested in each preceding block.
-The default is the highest common factor of the \code{replicates} list which gives a  maximal set of orthogonal main blocks.}
+and the remaining levels, if any, are the sub-block levels of a hierarchy of succesively nested blocks.
+The default is the highest common factor of the \code{replicates} list.}
 
 \item{searches}{the number of local optima searched during an optimization. The default is the minimum of 64 or the integer quotient of 4096
 divided by the number of plots.}
@@ -41,8 +41,8 @@ The replication numbers in the \code{replicates} list need not be unique. Treatm
 the treatment sets in the two lists.
 
 The \code{blocklevels} list defines the blocks strata of the design where the first level in the list is the number of main blocks
-and the succesive levels, if any, are the numbers of sub-blocks nested in each preceding block. The list length is the number of
-blocks strata in the design and the cumulative products of the list levels are the total numbers of blocks in each stratum.
+and the succesive levels, if any, are succesively nested blocks strata where the numbers of levels are the sub-blocks nested in each preceding block.
+ The list length is the number of strata and the cumulative products of the list levels are the total numbers of blocks in each stratum.
 The default blocks design is an complete blocks design with the maximum possible number of othogonal blocks.
 
 Block sizes in any given stratum are equal if the cumulative number of blocks for that stratum exactly divides the total number of plots,

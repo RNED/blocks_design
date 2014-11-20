@@ -16,8 +16,8 @@
 #' the treatment sets in the two lists.
 #'  
 #' The \code{blocklevels} list defines the blocks strata of the design where the first level in the list is the number of main blocks 
-#' and the succesive levels, if any, are the numbers of sub-blocks nested in each preceding block. The list length is the number of 
-#' blocks strata in the design and the cumulative products of the list levels are the total numbers of blocks in each stratum. 
+#' and the succesive levels, if any, are succesively nested blocks strata where the numbers of levels are the sub-blocks nested in each preceding block.
+#'  The list length is the number of strata and the cumulative products of the list levels are the total numbers of blocks in each stratum. 
 #' The default blocks design is an complete blocks design with the maximum possible number of othogonal blocks.    
 #'  
 #' Block sizes in any given stratum are equal if the cumulative number of blocks for that stratum exactly divides the total number of plots, 
@@ -35,8 +35,8 @@
 #' @param replicates a list assigning a replication level to each set of equally replicated treatments. 
 #' 
 #' @param blocklevels a list of nested block levels where the first level is the number of main blocks
-#' and the succesive levels, if any, are the numbers of sub-blocks nested in each preceding block. 
-#' The default is the highest common factor of the \code{replicates} list which gives a  maximal set of orthogonal main blocks.
+#' and the remaining levels, if any, are the sub-block levels of a hierarchy of succesively nested blocks. 
+#' The default is the highest common factor of the \code{replicates} list.
 #'  
 #' @param searches the number of local optima searched during an optimization. The default is the minimum of 64 or the integer quotient of 4096 
 #' divided by the number of plots.
@@ -321,7 +321,89 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     }
     aeff
   }
-     
+
+  optTF=function(Design,treatlevs,replevs,searches) {
+    nunits=nrow(Design)
+    ntrts=sum(treatlevs)
+    hcf=HCF(replevs)
+    v=sqrt(ntrts)
+    strata=ncol(Design)
+    orthbsize=nunits/hcf 
+    ortho=0
+    for (i in 1 : strata) 
+      if (all( tabulate(Design[,i]) %% orthbsize == 0)) ortho=i else  break
+    reglat=(max(replevs)==min(replevs) & max(Design[,i])==v*replevs[1] & identical(v,ntrts%/%v) )
+    pp_trts=c(16,64,256,1024,4096,16384,81,729,6561,625,2401)  
+    simplelattice = (reglat &  replevs[1]<4 )
+    primelattice =  (reglat &  replevs[1]<(v+2)  & isPrime(v))
+    ppowerlattice= (reglat  &  replevs[1]<(v+2)  &  ntrts%in% pp_trts)
+    lattice100 =(reglat & v==10  & replevs[1]<5 )  
+    # treps is the vector of treatment replications for the minimum orthogonal block size
+    treps=rep(replevs,treatlevs)/hcf  
+    TF=rep(rep(1:ntrts,treps),hcf)
+    Design=cbind(rep(1:nrow(Design)),Design)
+    if (ortho<strata) {
+      for (i in (ortho+1) : strata) { 
+        if ( i==(ortho+1)  & simplelattice) {		
+          TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
+          if (replevs[1]>2) {
+            set=NULL
+            for (j in 0: (v-1)) 
+              for (k in 0: (v-1)) 
+                set=c(set, (j+k)%%v )
+            TF=c(TF, rep(1:(v*v))[order(set)])	
+          }		
+        } else if ( i==(ortho+1)  & primelattice ) {  		
+          TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
+          for (z in 1: (replevs[1]-2)) {
+            set=NULL
+            for (j in 0: (v-1)) 
+              for (k in 0: (v-1)) 
+                set=c(set,(j+k*z)%%v)
+            TF=c(TF, rep(1:(v*v))[order(set)])		
+          }	
+        } else if ( i==(ortho+1) & ppowerlattice ) {	
+          prime= c(2,2,2,2,2,2,   3,3,3,  5,7)[which(pp_trts==ntrts)]
+          ppower=c(2,3,4,5,6,7,   2,3,4,  2,2)[which(pp_trts==ntrts)]
+          mols=crossdes::MOLS(prime,ppower)			
+          TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
+          for (i in 1: (replevs[1]-2))
+            TF=c(TF, rep(1:(v*v))[order(    as.numeric(mols[,,i]) ) ])
+        } else if (i==(ortho+1) &lattice100) {
+          TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
+          if (replevs[1]>2)  { 
+            tens1=c(
+              1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
+              5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8)
+            TF=c(TF, rep(1:(v*v))[order(tens1)]) 
+          }
+          if (replevs[1]==4) {
+            tens2=c(
+              1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
+              6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6)
+            TF=c(TF, rep(1:(v*v))[order(tens2)])
+          }
+        } else {	
+          TF=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches)
+        }
+      }
+    }
+    TF   
+  }
+  # randomises sub-block level labels and plots then re-orders the label rankings within blocks  
+  randBlocks=function(Design) {
+    #randomise blocks within strata
+    Design=as.data.frame(Design) 
+    Design[]=lapply(Design, factor)  
+    for (r in 1 : (strata+1)){
+      levels( Design[,r])=sample(nlevels( Design[,r]) )
+      Design[,r]=as.numeric(levels(Design[,r]))[Design[,r]]
+    }
+    # re-order all numeric columns
+    Design=Design[ do.call(order, Design), ]
+    Design
+  }
+  
   #***********************************************************blocks function proper*********************************************************************************
   
   if (missing(treatments) | missing(replicates) )  return(" Treatments or replicates not defined ")   
@@ -365,71 +447,13 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
   facMat= matrix(nrow=cumblocklevs[strata+1],ncol=strata)
   for (r in 1 : strata) 
     facMat[,r]=gl(cumblocklevs[r+1],cumblocklevs[strata+1]/cumblocklevs[r+1])
-  desMat= matrix(1,nrow=nunits,ncol=(strata+1))
+  
+  Design= matrix(1,nrow=nunits,ncol=(strata))
   for (r in 1 : strata) 
-    desMat[,(r+1)]=rep(facMat[,r],blocksizes)
-  orthbsize=nunits/hcf 
-  ortho=0
-  for (i in 1 : strata) 
-    if (all( tabulate(desMat[,i+1]) %% orthbsize == 0)) ortho=i else  break
-  v=sqrt(ntrts)
-  reglat=(max(replevs)==min(replevs) & cumblocklevs[i+1]==v*replevs[1] & identical(v,ntrts%/%v) )
-  pp_trts=c(16,64,256,1024,4096,16384,81,729,6561,625,2401)	
-  simplelattice = (reglat &  replevs[1]<4 )
-  primelattice =  (reglat &  replevs[1]<(v+2)  & isPrime(v))
-  ppowerlattice= (reglat  &  replevs[1]<(v+2)  &  ntrts%in% pp_trts)
-  lattice100 =(reglat & v==10  & replevs[1]<5 )  
-  # treps is the vector of treatment replications for the minimum orthogonal block size
-  treps=rep(replevs,treatlevs)/hcf  
-  TF=rep(rep(1:ntrts,treps),hcf)
-  if (ortho<strata) {
-    for (i in (ortho+1) : strata) { 
-      if ( i==(ortho+1)  & simplelattice) {		
-        TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
-        if (replevs[1]>2) {
-          set=NULL
-          for (j in 0: (v-1)) 
-            for (k in 0: (v-1)) 
-              set=c(set, (j+k)%%v )
-          TF=c(TF, rep(1:(v*v))[order(set)])	
-          }		
-        } else if ( i==(ortho+1)  & primelattice ) {  		
-          TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
-            for (z in 1: (replevs[1]-2)) {
-              set=NULL
-              for (j in 0: (v-1)) 
-                for (k in 0: (v-1)) 
-                  set=c(set,(j+k*z)%%v)
-              TF=c(TF, rep(1:(v*v))[order(set)])		
-            }	
-      } else if ( i==(ortho+1) & ppowerlattice ) {	
-        prime= c(2,2,2,2,2,2,   3,3,3,  5,7)[which(pp_trts==ntrts)]
-        ppower=c(2,3,4,5,6,7,   2,3,4,  2,2)[which(pp_trts==ntrts)]
-        mols=crossdes::MOLS(prime,ppower)			
-        TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
-        for (i in 1: (replevs[1]-2))
-          TF=c(TF, rep(1:(v*v))[order(    as.numeric(mols[,,i]) ) ])
-      } else if (i==(ortho+1) &lattice100) {
-        TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
-        if (replevs[1]>2)  { 
-        tens1=c(
-          1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
-          5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8)
-        TF=c(TF, rep(1:(v*v))[order(tens1)]) 
-        }
-        if (replevs[1]==4) {
-        tens2=c(
-          1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
-          6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6)
-       TF=c(TF, rep(1:(v*v))[order(tens2)])
-        }
-      } else {	
-        TF=GenOpt(as.factor(TF),as.factor(desMat[,(i+1)]),as.factor(desMat[,i]),searches)
-      }
-    }
-  }
-  TF=as.factor(TF)
-  BF=c( rep( 1:length(blocksizes),blocksizes)) 
+    Design[,r]=rep(facMat[,r],blocksizes)
+  
+  TF=as.factor(optTF(Design,treatlevs,replevs,searches))
+  BF=c( rep( 1:length(blocksizes),blocksizes))   
   # add back single replicate treatments here 
   if ( !all(replicates>1) & !all(replicates==1) ) {
     repblocksizes=blocksizes
@@ -452,51 +476,39 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     BF=c(BF,  rep( 1:length(repblocksizes),(blocksizes-repblocksizes) ) )
     # full TF in blocks
     TF=TF[order(BF)]
-   desMat= matrix(1,nrow=nunits,ncol=(strata+1))
+   Design= matrix(1,nrow=nunits,ncol=strata)
    for (r in 1 : strata) 
-     desMat[,(r+1)]=rep(facMat[,r],blocksizes)
+     Design[,r]=rep(facMat[,r],blocksizes)
   }	
-#randomise blocks within strata
-desMat=as.data.frame(desMat)
-desMat[]=lapply(desMat, factor)  
-  for (r in 2 : (strata+1)){
-    levels( desMat[,r])=sample(nlevels( desMat[,r]) )
-    desMat[,r]=as.numeric(levels(desMat[,r]))[desMat[,r]]
-  }
-dd=as.data.frame(cbind(desMat,sample(rep(1:nunits)),TF))
-dd$TF=as.factor(dd$TF)
-dd=dd[ do.call(order, dd), ]
-TF=as.numeric(levels(dd$TF))[dd$TF]
+Design=cbind(Design,rep(1:nunits),TF)   
+Design=randBlocks(Design)
 # arrange blocksizes in new order
-blocks=as.factor(dd[,(ncol(dd)-2)])
+blocks=as.factor(Design[,(ncol(Design)-2)])
 levels(blocks)=order(unique(blocks))
 blocksizes=tabulate(as.numeric(levels(blocks))[blocks])
 # design matrix for new TF where block sizes are not necessarily all equal 
 for (r in 1 : strata) 
-  desMat[,(r+1)]=rep(facMat[,r],blocksizes)
-
-# plots nested in blocks
-plots=NULL
-for (i in 1:length(blocksizes))
-  plots=c(plots,rep(1:blocksizes[i]))
-Design=as.data.frame( cbind( desMat[,c(2:ncol(desMat))],plots,TF))
+  Design[,(r)]=rep(facMat[,r],blocksizes)
+Design[,(strata+1)]=rep(1:nunits)
 Design[]=lapply(Design, factor)	
 designnames="Main_blocks"
   if (strata>1)
     for (i in 1:(strata-1))
       designnames=c(designnames,paste("Sub",i,"_blocks", sep=""))
-  colnames(Design)=c(designnames,"Sub_plots","Treatments")   
+  colnames(Design)=c(designnames, "Plots","Treatments")   
+rownames(Design) = NULL 
 
   #Design plan layout
-  d=matrix(nrow=length(blocksizes),ncol=max(blocksizes)) 
+  plotTrts=matrix(nrow=length(blocksizes),ncol=max(blocksizes)) 
   index=1
   for (i in 1:length(blocksizes))
     for (j in 1:blocksizes[i]) {
-      d[i,j]=TF[index]  
+      plotTrts[i,j]=Design[index,strata+2]  
   index=index+1
   }
-  d[is.na(d)]  = " "
-  Plan=as.data.frame(cbind(facMat,rep(" ",nrow(d)),d))
+plotTrts[is.na(plotTrts)]  = " "
+
+  Plan=as.data.frame(cbind(facMat,rep(" ",length(blocksizes)),plotTrts))
   designnames=c(designnames,"Sub_plots")
   for (i in 1:max(blocksizes))
     designnames=c(designnames,i)
@@ -505,19 +517,19 @@ designnames="Main_blocks"
   # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata){
-    Incidences[[i]]=table( Design[,i] , TF)  
+    Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
   }
 
 # A-Efficiencies dataframe
   bounds=rep(NA,strata)
-  for (i in 1:strata)   
    if (max(replicates)==min(replicates))
-    bounds[i]=upper_bounds(nunits,ntrts,cumblocklevs[i+1])   
+     for (i in 1:strata)   
+      bounds[i]=upper_bounds(nunits,ntrts,cumblocklevs[i+1])   
   Efficiencies=as.data.frame(cbind( cumblocklevs[2:(strata+1)], Aeff(Design), bounds))
+  colnames(Efficiencies)=c("Blocks","A-Efficiencies", "Upper Bounds")
   rnames=c("Main")
   if (strata>1)
     for (i in 1 : (strata-1)) rnames=c(rnames,paste("Sub",i))
-  colnames(Efficiencies)=c("Blocks","A-Efficiencies", "Upper Bounds")
   rownames(Efficiencies)=rnames 
 
   list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=Efficiencies,seed=seed)
