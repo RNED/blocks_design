@@ -54,15 +54,14 @@ if sets of k mutually orthogonal latin squares (MOLS) exist. \code{blocks} const
 when k <= 3 or when v is prime or prime-power and k <= v+1 or when v = 10 and k <= 4. Where required, the \code{crossdes} package is
 used to construct prime-power MOLS.
 
-All other non-lattice block designs are constructed algorithmically by a swapping algorithm that seeks to maximizes the determinant of
+All other non-lattice block designs are constructed algorithmically by a swapping algorithm that seeks to maximize the determinant of
 the information matrix (D-optimality). Beginning with the main blocks stratum, the swapping algorithm swaps pairs of treatments between
-sub-blocks within each preceding block until no further improvement is possible and a local optima is attained. If the number of searches
-is greater than one, the algorithm then makes a number of random swaps and then continues the search for improving
-swaps until another local optima is attained. This continues for the selected number of searches and the best overall local
-optimal design is selected and saved for that stratum. The algorithm continues until eventually
-the bottom stratum is reached and the algorithm then stops.
+sub-blocks nested within the preceding blocks until no further improvement is possible and a local optima is attained. If the number of searches
+is greater than one, the algorithm escapes a the local optima by a number of random swaps and then continues
+until another local optima is attained. This continues for the selected number of searches and the best overall local
+design is retained for that stratum. Eventually, the bottom stratum is optimized after which the algorithm stops.
 
-After optimization, designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with
+Optimized designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with
 the  treatments randomized within the bottom set of blocks.
 }
 \examples{
