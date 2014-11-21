@@ -16,18 +16,18 @@
 #' the treatment sets in the two lists.
 #'  
 #' The \code{blocklevels} list defines the blocks strata of the design where the first level in the list is the number of main blocks 
-#' and the succesive levels, if any, are the sub-block levels for succesively nested blocks strata where the levels are the
-#'  sub-blocks nested in each preceding block.
+#' and the succesive levels, if any, are the sub-block levels in a hierarchy of nested sub-blocks.
 #'  The list length is the number of strata and the cumulative products of the list levels are the total numbers of blocks in each stratum. 
 #' The default blocks design is an complete blocks design with the maximum possible number of othogonal blocks.    
 #'  
 #' Block sizes in any given stratum are equal if the cumulative number of blocks for that stratum exactly divides the total number of plots, 
 #' otherwise they differ, at most, by a single unit. 
 #' 
-#' Balanced lattice designs for k-replicate designs with v x v equally replicated treatments and blocks of size v exist if sets of k mutually orthogonal latin squares exist.
-#' \code{blocks} constructs regular lattice designs algebraicaly for any v when k <= 3, for any prime or prime-power v when k <= v+1
-#' and for v = 10 when k <= 4. Prime-power lattice designs require the \code{MOLS} function of the \code{crossdes} package.
+#' Balanced lattice designs for sets of v x v equally replicated treatments in blocks of size v with k main replicate blocks 
+#' exist if sets of k mutually orthogonal latin squares exist. \code{blocks} constructs regular lattice designs algebraicaly
+#' when k <= 3 or when v is prime or prime-power and k <= v+1 or when v = 10 and k <= 4. 
 #' All other designs are constructed algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality). 
+#' Prime-power lattice designs are constructed by using the \code{MOLS} function of the \code{crossdes} package.
 #'  
 #' Designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
 #'  
@@ -36,7 +36,7 @@
 #' @param replicates a list assigning a replication level to each set of equally replicated treatments. 
 #' 
 #' @param blocklevels a list of nested block levels where the first level is the number of main blocks
-#' and the remaining levels, if any, are the numbers of sub-blocks in the succesively nested blocks of a hierarchy of nested blocks.
+#' and the remaining levels, if any, are the nested levels of a hierarchy of nested sub-blocks.
 #' The default is the highest common factor of the \code{replicates} list.
 #'  
 #' @param searches the number of local optima searched during an optimization. The default is the minimum of 64 or the integer quotient of 4096 
@@ -82,7 +82,7 @@
 #' @export
 #' 
 
-blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floor(4096/nunits)), seed=NULL) { 
+blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=NULL) { 
   
   Sizes=function(mainSizes,slevs) {
     if (max(mainSizes)==min(mainSizes) ) {
@@ -424,14 +424,15 @@ blocks = function(treatments, replicates, blocklevels=hcf, searches=min(64, floo
     replevs = replicates[replicates>1]
   }
   nunits=sum(treatlevs*replevs) 
-  hcf=HCF(replevs)
- 
+  if (is.null(searches)) 
+    searches=min(64, floor(4096/nunits))
+  if (is.null(blocklevels)) 
+    blocklevels=HCF(replevs)
   if (anyNA(blocklevels) | anyNA(searches) ) return(" NA values not allowed") 
   if (!all(is.finite(blocklevels)) | !all(is.finite(searches)) | !all(!is.nan(blocklevels)) | !all(!is.nan(searches))) return(" Entries can contain only finite integers ")
   if (min(blocklevels)<1) return (" Blocklevels must be at least one ")
   if (searches<1)  return(" Repeats must be at least one ") 	
   if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) return("Design cannot be fitted :  too many blocks and treatments for the available plots")	
-  
   if (all(blocklevels==1))
     blocklevels=1
   else
