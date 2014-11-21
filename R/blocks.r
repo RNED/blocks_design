@@ -24,18 +24,18 @@
 #' Block sizes in any given stratum are equal if the cumulative number of blocks for that stratum exactly divides the total number of plots, 
 #' otherwise they differ by, at most, a single unit. 
 #' 
-#' Balanced lattice designs exist for sets of v**2 equally replicated treatments in blocks of size v with k replicates 
-#' if sets of k mutually orthogonal latin squares (MOLS) exist. \code{blocks} constructs regular lattice designs algebraicaly
-#' when k <= 3 or when v is prime or prime-power and k <= v+1 or when v = 10 and k <= 4. Where required, the \code{crossdes} package is
-#' used to construct prime-power MOLS.
-#' 
-#' All other non-lattice block designs are constructed algorithmically by a swapping algorithm that seeks to maximize the determinant of
+#' General block designs are constructed algorithmically by a swapping algorithm that seeks to maximize the determinant of
 #' the information matrix (D-optimality). Beginning with the main blocks stratum, the swapping algorithm swaps pairs of treatments between
-#' sub-blocks nested within the preceding blocks until no further improvement is possible and a local optima is attained. If the number of searches
-#' is greater than one, the algorithm escapes a the local optima by a number of random swaps and then continues
-#' until another local optima is attained. This continues for the selected number of searches and the best overall local
-#' design is retained for that stratum. Eventually, the bottom stratum is optimized after which the algorithm stops.  
-#'  
+#' sub-blocks nested within blocks until a local optima is attained. If the number of searches
+#' is greater than one, the algorithm makes a number of random swaps and then continues with improving swaps
+#' until another local optima is attained. The process continues for the selected number of searches with the best overall design
+#' for that stratum retained. The process is repeated for the next stratum in the hierarchy until eventually the bottom stratum
+#' is optimized after which the algorithm stops.  
+#' 
+#' Special lattice designs for v**2 equally replicated treatments in blocks of size v with k replicates 
+#' are constructed algebraicaly when k <= 3 or when v is prime or prime-power and k <= v+1 or when v = 10 and k <= 4. 
+#' The \code{crossdes} package is required for lattice designs with prime-power v.
+#'   
 #' Optimized designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with
 #'the  treatments randomized within the bottom set of blocks.
 #'  
