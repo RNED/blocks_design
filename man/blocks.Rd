@@ -12,7 +12,7 @@ blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
 \item{replicates}{a list assigning a replication level to each set of equally replicated treatments.}
 
 \item{blocklevels}{a list of nested block levels where the first level is the number of main blocks
-and the remaining levels, if any, are the nested levels of a hierarchy of nested sub-blocks.
+and the remaining levels, if any, are the sub-blocks levels for a hierarchy of nested sub-blocks.
 The default is the highest common factor of the \code{replicates} list.}
 
 \item{searches}{the number of local optima searched during an optimization. The default is the minimum of 64 or the integer quotient of 4096
@@ -21,8 +21,8 @@ divided by the number of plots.}
 \item{seed}{an integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.}
 }
 \value{
-\item{Design}{Data frame showing the block and treatment factors for each sub-plot}
-\item{Plan}{Data frame showing the allocation of treatments to sub-plots for each block in the design}
+\item{Design}{Data frame showing the blocks, plots and and treatment factors}
+\item{Plan}{Data frame showing the allocation of treatments to sub-plots within blocks}
 \item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum in the design}
 \item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum in the design together with an upper bound, where available}
 \item{seed}{Numerical seed for random number generator}
@@ -37,24 +37,33 @@ and blocks can have any feasible depth of nesting.
 The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where the \code{treatments} list partitions the
 total number of treatments into sets of equally replicated treatments and the \code{replicates} list provides the replication for each set.
 The two lists must be of equal length and the treatment numbers and the replication numbers are paired by their index positions in the two lists.
-The replication numbers in the \code{replicates} list need not be unique. Treatments are labelled consecutively according to the ordering of
+The replication numbers in the \code{replicates} list need not be unique and treatments are labelled consecutively according to the ordering of
 the treatment sets in the two lists.
 
 The \code{blocklevels} list defines the blocks strata of the design where the first level in the list is the number of main blocks
-and the succesive levels, if any, are the sub-block levels in a hierarchy of nested sub-blocks.
- The list length is the number of strata and the cumulative products of the list levels are the total numbers of blocks in each stratum.
-The default blocks design is an complete blocks design with the maximum possible number of othogonal blocks.
+and the succesive levels, if any, are the nested levels of a hierarchy of nested sub-blocks. Each nested level is the number of sub-blocks
+nested in each block of the preceding stratum. The list length is the number of strata
+in the design and the cumulative products of the levels for any stratum are the total numbers of blocks for that stratum.
+The default design is a main blocks design with complete set of othogonal blocks.
 
 Block sizes in any given stratum are equal if the cumulative number of blocks for that stratum exactly divides the total number of plots,
-otherwise they differ, at most, by a single unit.
+otherwise they differ by, at most, a single unit.
 
-Balanced lattice designs for sets of v x v equally replicated treatments in blocks of size v with k main replicate blocks
-exist if sets of k mutually orthogonal latin squares exist. \code{blocks} constructs regular lattice designs algebraicaly
-when k <= 3 or when v is prime or prime-power and k <= v+1 or when v = 10 and k <= 4.
-All other designs are constructed algorithmically by a swapping algorithm that maximizes the determinant of the information matrix (D-optimality).
-Prime-power lattice designs use the \code{MOLS} function of the \code{crossdes} package.
+Balanced lattice designs exist for sets of v**2 equally replicated treatments in blocks of size v with k replicates
+if sets of k mutually orthogonal latin squares (MOLS) exist. \code{blocks} constructs regular lattice designs algebraicaly
+when k <= 3 or when v is prime or prime-power and k <= v+1 or when v = 10 and k <= 4. Where required, the \code{crossdes} package is
+used to construct prime-power MOLS.
 
-Designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with treatments fully randomized within the bottom set of blocks.
+All other non-lattice block designs are constructed algorithmically by a swapping algorithm that seeks to maximizes the determinant of
+the information matrix (D-optimality). Beginning with the main blocks stratum, the swapping algorithm swaps pairs of treatments between
+sub-blocks within each preceding block until no further improvement is possible and a local optima is attained. If the number of searches
+is greater than one, the algorithm then makes a number of random swaps and then continues the search for improving
+swaps until another local optima is attained. This continues for the selected number of searches and the best overall local
+optimal design is selected and saved for that stratum. The algorithm continues until eventually
+the bottom stratum is reached and the algorithm then stops.
+
+After optimization, designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with
+the  treatments randomized within the bottom set of blocks.
 }
 \examples{
 # 3 treatments with 2 reps, 2 treatments with 4 reps, 4 treatments with 3 reps
