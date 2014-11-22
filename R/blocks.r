@@ -463,7 +463,8 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     Design[,r]=rep(facMat[,r],blocksizes)
   
   TF=as.factor(optTF(Design,treatlevs,replevs,searches))
-  BF=c( rep( 1:length(blocksizes),blocksizes))   
+  BF=c( rep( 1:length(blocksizes),blocksizes)) 
+  
   # add back single replicate treatments here 
   if ( !all(replicates>1) & !all(replicates==1) ) {
     repblocksizes=blocksizes
@@ -480,6 +481,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     }
     trtlabs=c(trtlabs,extlabs)
     levels(TF)=trtlabs
+    TF=as.numeric(levels(TF))[TF]
     blocksizes=nunits
     for (i in 1:strata)
       blocksizes=Sizes(blocksizes,blocklevels[i])	 
@@ -491,6 +493,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
      Design[,r]=rep(facMat[,r],blocksizes)
   }	
 Design=cbind(Design,rep(1:nunits),TF)   
+print(Design)
 Design=randBlocks(Design)
 # arrange blocksizes in new order
 blocks=as.factor(Design[,(ncol(Design)-2)])
