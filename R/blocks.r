@@ -502,6 +502,10 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
      return(" Treatments and replicates can contain only finite integers ")
    if ( length(treatments)!=length(replicates) ) 
      return(paste("The number of treatments sets = " , length(treatments) , " does not equal the number of replication sets = " , length(replicates)))
+  if (!all(treatments>=1)) 
+     return("Treatments must be integers greater than zero")
+  if (!all(replicates>=1)) 
+    return("Replicates must be integers greater than zero")   
    if (!is.null(blocklevels)) {
      if (anyNA(blocklevels) ) return(" NA blocklevels values not allowed") 
      if (!all(is.finite(blocklevels)) | !all(!is.nan(blocklevels)) ) return(" Blocklevels can contain only finite integers ")
