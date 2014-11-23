@@ -7,22 +7,23 @@ blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
   seed = NULL)
 }
 \arguments{
-\item{treatments}{a list partitioning the total number of treatments into sets of equally replicated treatments.}
+\item{treatments}{a list partitioning the total number of treatments into equally replicated treatment sets.}
 
-\item{replicates}{a list assigning a replication level to each set of equally replicated treatments.}
+\item{replicates}{a list assigning a replication level to each equally replicated treatment set.}
 
 \item{blocklevels}{a list of nested block levels where the first level is the number of main blocks
-and the remaining levels, if any, are the sub-blocks levels for a hierarchy of nested sub-blocks.
-The default is the highest common factor of the \code{replicates} list.}
+and the remaining levels, if any, are the levels of sub-blocks in  a hierarchy of nested sub-blocks.
+The default setting is the highest common factor of the \code{replicates} list.}
 
-\item{searches}{the number of local optima searched during an optimization. The default is the minimum of 64 or the integer quotient of 4096
+\item{searches}{the number of local optima searched during optimization. The default setting is the minimum of 64 or the integer quotient of 4096
 divided by the number of plots.}
 
-\item{seed}{an integer seed for initializing the random number generator where a design must be reproducible. The default is a random seed.}
+\item{seed}{an integer seed for initializing the random number generator where a design must be reproducible. The default
+setting is a random seed.}
 }
 \value{
-\item{Design}{Data frame showing the blocks, plots and and treatment factors}
-\item{Plan}{Data frame showing the allocation of treatments to sub-plots within blocks}
+\item{Design}{Data frame showing the listing of treatments allocated to blocks}
+\item{Plan}{Data frame showing a plan of treatments allocated to sub-plots within blocks}
 \item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum in the design}
 \item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum in the design together with an upper bound, where available}
 \item{seed}{Numerical seed for random number generator}
@@ -34,30 +35,31 @@ Constructs nested block designs for unstructured treatment sets with arbitrary r
 The \code{blocks} function constructs optimized nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal,
 and blocks can have any feasible depth of nesting.
 
-The treatments are defined by the \code{treatments} and \code{replicates} parameter lists where the \code{treatments} list partitions the
-total number of treatments into sets of equally replicated treatments and the \code{replicates} list provides the replication for each set.
-The two lists must be of equal length and the treatment numbers and the replication numbers are paired by their index positions in the two lists.
-The replication numbers in the \code{replicates} list need not be unique and treatments are labelled consecutively according to the ordering of
-the treatment sets in the two lists.
+The \code{treatments} list contains the total number of treatments in the design partitioned into
+sets of equally replicated treatments where the replication can vary between sets but must be constant within sets.
+The \code{replicates} list provides the replication level for each treatment set and must be the same length as
+the \code{treatments} list. The individual treatments are labelled consecutively according to the ordering of the sets
+in the two lists and different treatment sets with the same replication can be used, if required.
 
-The \code{blocklevels} list defines the blocks strata of the design where the first level in the list is the number of main blocks
-and the succesive levels, if any, are the nested levels of a hierarchy of nested sub-blocks. Each nested level is the number of sub-blocks
-nested in each block of the preceding stratum. The list length is the number of strata
-in the design and the cumulative products of the levels for any stratum are the total numbers of blocks for that stratum.
-The default design is a main blocks design with complete set of othogonal blocks.
+The \code{blocklevels} list defines the blocks structure of the design where the first level in the list is the number of main blocks
+and the succesive levels, if any, are the levels of sub-blocks in a hierarchy of nested sub-blocks. Each nested level is the number of sub-blocks
+nested in each block of the preceding stratum. The length of the list is the number of strata
+in the design and the running product of the first k-levels of the \code{blocklevels} list is the total numbers of
+blocks in the kth stratum. The average block size in any stratum is the total number of blocks in that stratum divided by
+the total number of plots therefore the block sizes are exactly equal if the quotient is an integer.
+Otherwise, the block sizes differ by, at most, a single unit.
 
-Block sizes in any given stratum are equal if the cumulative number of blocks for that stratum exactly divides the total number of plots,
-otherwise they differ by, at most, a single unit.
+The default design is a main blocks design with a complete set of othogonal blocks.
 
 General block designs are constructed algorithmically by a swapping algorithm that seeks to maximize the determinant of
-the information matrix (D-optimality). Beginning with the main blocks stratum, the swapping algorithm swaps pairs of treatments between
+the information matrix (D-optimality). Beginning with the main blocks stratum, pairs of treatments are swapped between
 sub-blocks nested within blocks until a local optima is attained. If the number of searches
-is greater than one, the algorithm makes a number of random swaps and then continues with improving swaps
-until another local optima is attained. The process continues for the selected number of searches with the best overall design
-for that stratum retained. The process is repeated for the next stratum in the hierarchy until eventually the bottom stratum
+is greater than one, the algorithm makes a number of random swaps and then continues with the improving swaps
+until another local optima is attained. After the required number of searches, the best overall design
+for that stratum is restored and the process is repeated for the next stratum in the hierarchy. Eventually the bottom stratum
 is optimized after which the algorithm stops.
 
-Special lattice designs for v**2 equally replicated treatments in blocks of size v with k replicates
+Special lattice block designs for v**2 equally replicated treatments in blocks of size v with k replicates
 are constructed algebraicaly when k <= 3 or when v is prime or prime-power and k <= v+1 or when v = 10 and k <= 4.
 The \code{crossdes} package is required for lattice designs with prime-power v.
 
