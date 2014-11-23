@@ -16,22 +16,21 @@
 #' in the two lists and different treatment sets with the same replication can be used, if required.
 #'  
 #' The \code{blocklevels} list defines the blocks structure of the design where the first level in the list is the number of main blocks 
-#' and the succesive levels, if any, are the levels of sub-blocks in a nested hierarchy of sub-blocks. Each nested level is the number of sub-blocks
-#' nested in each block of the preceding stratum. The length of the list is the number of strata
+#' and the succesive levels, if any, are the levels of succesive sub-blocks in a hierarchy of sub-blocks. The length of the list is the number of strata
 #' and the running products of the levels are the total numbers of 
 #' blocks in the succesive strata. The average block size of a stratum is the total number of blocks divided by 
-#' the total number of plots therefore the block sizes are all equal if the quotient is an integer, otherwise block sizes differ by, at most, a single unit. 
+#' the total number of plots andthe block sizes are all equal if the quotient is an integer. Otherwise block sizes differ by, at most, a single unit. 
 #' The default design is a complete set of othogonal main blocks. 
 #' 
 #' General block designs are constructed algorithmically by a swapping algorithm that seeks to maximize the determinant of
 #' the information matrix (D-optimality). Beginning with the main blocks stratum, pairs of treatments are swapped at random between
-#' sub-blocks nested within any existing blocks until a local optima is attained. If the number of searches
-#' is greater than one, the algorithm makes a number of random swaps and then continues with improving swaps
+#' sub-blocks nested within existing blocks until a local optima is attained. If the number of searches
+#' is greater than one, the algorithm then makes a number of random swaps and then continues with improving swaps
 #' until another local optima is reached. After the required number of searches, the best overall design
-#' is restored and the process repeated for the next stratum down in the hierarchy. Eventually the bottom stratum
+#' is restored and the process repeated for the next stratum in the hierarchy. Eventually the bottom stratum
 #' is reached after which the algorithm stops. Special lattice designs for v**2 equally replicated treatments in blocks of size v with k replicates 
 #' are constructed algebraicaly when k <= 3 or when v is prime or prime-power and k <= v+1 or when v = 10 and k <= 4. 
-#' The \code{crossdes} package is required for lattice designs with prime-power v.
+#' The \code{crossdes} package is used for lattice designs with prime-power v.
 #'   
 #' Optimized designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with
 #' treatments randomized within the bottom set of blocks.
@@ -471,37 +470,6 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     Efficiencies
   }
   
-  #******************************************************** Validates inputs************************************************************************************
- testInputs=function(treatments,replicates,blocklevels,searches,seed) {  
-  if (missing(treatments) | missing(replicates) )  
-    return(" Treatments or replicates not defined ")   
-  if (is.null(treatments) | is.null(replicates))  
-    return(" Treatments or replicates list is empty ") 	
-  if (anyNA(treatments) | anyNA(replicates) ) 
-    return(" NA values not allowed")
-  if (!all(is.finite(treatments)) | !all(is.finite(replicates)) | !all(!is.nan(treatments)) | !all(!is.nan(replicates))) 
-    return(" Treatments and replicates must contain only finite integers ")
-  if ( length(treatments)!=length(replicates) ) 
-    return(paste("The number of treatments sets = " , length(treatments) , " does not equal the number of replication sets = " , length(replicates)))
-  if (!is.null(blocklevels)) {
-    if (anyNA(blocklevels) ) return(" NA blocklevels values not allowed") 
-    if (!all(is.finite(blocklevels)) | !all(!is.nan(blocklevels)) ) return(" Blocklevels can contain only finite integers ")
-    if (min(blocklevels)<1) return (" Blocklevels must be at least one ")
-  }
-  if (!is.null(searches)) {
-    if (anyNA(searches) ) return(" NA searches values not allowed") 
-    if ( !all(is.finite(searches)) | !all(!is.nan(searches))) return(" Searches must be a finite integer ") 
-    if (searches<1)  return(" Repeats must be at least one ")   
-  }  
-  if (!is.null(seed)) {
-    if (anyNA(seed) ) return(" NA seed values not allowed") 
-    if ( !all(is.finite(searches)) | !all(!is.nan(searches))) return(" Seed must be a finite integer ") 
-    if (seed<1)  return(" Seed must be at least one ")   
-  }  
-  if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
-    return("Design cannot be fitted :  too many blocks and treatments for the available plots")  
-  return(TRUE)
-  }
  
  #******************************************************** Plan output************************************************************************************
  Plan=function(Design,facMat)  {
@@ -520,6 +488,38 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
      designnames=c(designnames,i)
    colnames(Plan)=designnames
    Plan
+ }
+ 
+ #******************************************************** Validates inputs************************************************************************************
+ testInputs=function(treatments,replicates,blocklevels,searches,seed) {  
+   if (missing(treatments) | missing(replicates) )  
+     return(" Treatments or replicates not defined ")   
+   if (is.null(treatments) | is.null(replicates))  
+     return(" Treatments or replicates list is empty ")   
+   if (anyNA(treatments) | anyNA(replicates) ) 
+     return(" NA values not allowed")
+   if (!all(is.finite(treatments)) | !all(is.finite(replicates)) | !all(!is.nan(treatments)) | !all(!is.nan(replicates))) 
+     return(" Treatments and replicates can contain only finite integers ")
+   if ( length(treatments)!=length(replicates) ) 
+     return(paste("The number of treatments sets = " , length(treatments) , " does not equal the number of replication sets = " , length(replicates)))
+   if (!is.null(blocklevels)) {
+     if (anyNA(blocklevels) ) return(" NA blocklevels values not allowed") 
+     if (!all(is.finite(blocklevels)) | !all(!is.nan(blocklevels)) ) return(" Blocklevels can contain only finite integers ")
+     if (min(blocklevels)<1) return (" Blocklevels must be at least one ")
+   }
+   if (!is.null(searches)) {
+     if (anyNA(searches) ) return(" NA searches values not allowed") 
+     if ( !all(is.finite(searches)) | !all(!is.nan(searches))) return(" Searches must be a finite integer ") 
+     if (searches<1)  return(" Repeats must be at least one ")   
+   }  
+   if (!is.null(seed)) {
+     if (anyNA(seed) ) return(" NA seed values not allowed") 
+     if ( !all(is.finite(searches)) | !all(!is.nan(searches))) return(" Seed must be a finite integer ") 
+     if (seed<1)  return(" Seed must be at least one ")   
+   }  
+   if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
+     return("Design cannot be fitted :  too many blocks and treatments for the available plots")  
+   return(TRUE)
  }
  
  #********************************************************builds design ************************************************************************************ 
@@ -545,15 +545,12 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   else
   blocklevels=blocklevels[blocklevels>1]
   strata=length(blocklevels)	
-  cumblocklevs=1
-  for (i in 1 : strata) 
-    cumblocklevs=c(cumblocklevs,cumblocklevs[i]*blocklevels[i])
   blocksizes=nunits
   for (i in 1:strata)
     blocksizes=Sizes(blocksizes,blocklevels[i])
-  facMat= matrix(nrow=cumblocklevs[strata+1],ncol=strata)
+  facMat= matrix(nrow=prod(blocklevels),ncol=strata)
   for (r in 1 : strata) 
-    facMat[,r]=gl(cumblocklevs[r+1],cumblocklevs[strata+1]/cumblocklevs[r+1])  
+    facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels)/prod(blocklevels[1:r])  )  
  Design= matrix(1,nrow=nunits,ncol=(strata+1))
   for (r in 1 : strata) 
     Design[,r+1]=rep(facMat[,r],blocksizes)
