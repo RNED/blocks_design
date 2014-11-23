@@ -16,29 +16,25 @@
 #' in the two lists and different treatment sets with the same replication can be used, if required.
 #'  
 #' The \code{blocklevels} list defines the blocks structure of the design where the first level in the list is the number of main blocks 
-#' and the succesive levels, if any, are the levels of sub-blocks in a hierarchy of nested sub-blocks. Each nested level is the number of sub-blocks
+#' and the succesive levels, if any, are the levels of sub-blocks in a nested hierarchy of sub-blocks. Each nested level is the number of sub-blocks
 #' nested in each block of the preceding stratum. The length of the list is the number of strata
-#' in the design and the running product of the first k-levels of the \code{blocklevels} list is the total numbers of 
-#' blocks in the kth stratum. The average block size in any stratum is the total number of blocks in that stratum divided by 
-#' the total number of plots therefore the block sizes are exactly equal if the quotient is an integer. 
-#' Otherwise, the block sizes differ by, at most, a single unit. 
-#' 
-#' The default design is a main blocks design with a complete set of othogonal blocks. 
+#' and the running products of the levels are the total numbers of 
+#' blocks in the succesive strata. The average block size of a stratum is the total number of blocks divided by 
+#' the total number of plots therefore the block sizes are all equal if the quotient is an integer, otherwise block sizes differ by, at most, a single unit. 
+#' The default design is a complete set of othogonal main blocks. 
 #' 
 #' General block designs are constructed algorithmically by a swapping algorithm that seeks to maximize the determinant of
-#' the information matrix (D-optimality). Beginning with the main blocks stratum, pairs of treatments are swapped between
-#' sub-blocks nested within blocks until a local optima is attained. If the number of searches
-#' is greater than one, the algorithm makes a number of random swaps and then continues with the improving swaps
-#' until another local optima is attained. After the required number of searches, the best overall design
-#' for that stratum is restored and the process is repeated for the next stratum in the hierarchy. Eventually the bottom stratum
-#' is optimized after which the algorithm stops.  
-#' 
-#' Special lattice block designs for v**2 equally replicated treatments in blocks of size v with k replicates 
+#' the information matrix (D-optimality). Beginning with the main blocks stratum, pairs of treatments are swapped at random between
+#' sub-blocks nested within any existing blocks until a local optima is attained. If the number of searches
+#' is greater than one, the algorithm makes a number of random swaps and then continues with improving swaps
+#' until another local optima is reached. After the required number of searches, the best overall design
+#' is restored and the process repeated for the next stratum down in the hierarchy. Eventually the bottom stratum
+#' is reached after which the algorithm stops. Special lattice designs for v**2 equally replicated treatments in blocks of size v with k replicates 
 #' are constructed algebraicaly when k <= 3 or when v is prime or prime-power and k <= v+1 or when v = 10 and k <= 4. 
 #' The \code{crossdes} package is required for lattice designs with prime-power v.
 #'   
 #' Optimized designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with
-#' the  treatments randomized within the bottom set of blocks.
+#' treatments randomized within the bottom set of blocks.
 #'  
 #' @param treatments a list partitioning the total number of treatments into equally replicated treatment sets.   
 #' 
