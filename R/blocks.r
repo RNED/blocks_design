@@ -389,7 +389,6 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
   
   #******************************************************** Randomizes blocks************************************************************************************
-
   randBlocks=function(Design) {
     #randomise blocks within strata
     Design=as.data.frame( cbind( Design[,1:(ncol(Design)-1)], rep(1:nrow(Design)), Design[,(ncol(Design))] ) )   
@@ -404,8 +403,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     Design
   }
  
-  #******************************************************** Puts back single rep treatments ***************************************************************************
-  
+  #******************************************************** Puts back single rep treatments *************************************************************************** 
   fullDesign=function(Design,treatments,replicates,blocksizes,blocklevels) {
     strata=ncol(Design)-2
     TF=as.factor(Design[,ncol(Design)])
@@ -509,8 +507,26 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   return(TRUE)
   }
  
- #********************************************************builds design ************************************************************************************
+ #******************************************************** Plan output************************************************************************************
+ Plan=function(Design,facMat)  {
+   strata=ncol(Design)-1
+   bSizes=tabulate(Design[,strata])
+   plotTrts=matrix(nrow=length(bSizes),ncol=max(bSizes)) 
+   counter=0
+   for (i in 1:length(bSizes)) {
+       plotTrts[i,c(1 : bSizes[i])]=Design[ c((1+counter) : (counter+bSizes[i]))  , strata+1]  
+       counter=counter+bSizes[i]
+   }
+   plotTrts[is.na(plotTrts)]  = " "
+   Plan=as.data.frame(cbind(facMat,rep(" ",length(bSizes)),plotTrts))
+   designnames=c(designnames,"Sub_plots")
+   for (i in 1:ncol(plotTrts))
+     designnames=c(designnames,i)
+   colnames(Plan)=designnames
+   Plan
+ }
  
+ #********************************************************builds design ************************************************************************************ 
  testout=testInputs(treatments,replicates,blocklevels,searches,seed) 
   if (testout!=TRUE) return(testout)
   if (is.null(seed)) seed=sample(1:100000,1)
@@ -567,23 +583,10 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       designnames=c(designnames,paste("Sub",i,"_blocks", sep=""))
   colnames(Design)=c(designnames,"Treatments")   
   rownames(Design) = NULL 
-  #Design plan layout
-  plotTrts=matrix(nrow=length(blocksizes),ncol=max(blocksizes)) 
-  index=1
-  for (i in 1:length(blocksizes))
-    for (j in 1:blocksizes[i]) {
-      plotTrts[i,j]=Design[index,strata+1]  
-      index=index+1
-  }
-  plotTrts[is.na(plotTrts)]  = " "
-  Plan=as.data.frame(cbind(facMat,rep(" ",length(blocksizes)),plotTrts))
-  designnames=c(designnames,"Sub_plots")
-  for (i in 1:max(blocksizes))
-    designnames=c(designnames,i)
-  colnames(Plan)=designnames
   # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
-    Incidences[[i]]=table( Design[,i] ,Design[,strata+1])  
-  list(Design=Design,Plan=Plan,Incidences=Incidences,Efficiencies=A_Efficiencies(Design),seed=seed)
+    Incidences[[i]]=table( Design[,i] ,Design[,strata+1]) 
+ 
+  list(Design=Design,Plan=Plan(Design,facMat),Incidences=Incidences,Efficiencies=A_Efficiencies(Design),seed=seed)
 } 
