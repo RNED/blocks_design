@@ -89,6 +89,18 @@
 
 blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=NULL) { 
 
+  
+  #********************************************************Block Sizes ************************************************************************************
+  Sizes=function(newsizes,blocklevels) { 
+    for  (i in 1:length(blocklevels)) {    
+      acc=NULL
+      for (z in 1: length(newsizes)) 
+        acc=c(acc, rep(newsizes[z] %/% blocklevels[i], blocklevels[i]) + c( rep(1, newsizes[z] %% blocklevels[i]), rep(0,(blocklevels[i]-newsizes[z] %% blocklevels[i])))) 
+      newsizes=acc
+    }   
+    newsizes 
+  }
+  
   #******************************************************** Primality test ************************************************************************************
   isPrime=function(v) {
     if (v <= 3)  return(TRUE)
@@ -129,11 +141,11 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       TT=M11[trts,trts,drop=FALSE]
       BB=M22[rblks,rblks,drop=FALSE]
       TB=M12[trts,rblks,drop=FALSE]
-      TT=TT-crossprod(t(diag(TT)),t(rep(1,ncol(TT))))
+      TT=TT-tcrossprod(diag(TT),rep(1,ncol(TT)))      
       TT=TT+t(TT)
-      BB=BB-crossprod(t(diag(BB)),t(rep(1,ncol(TT))))
+      BB=BB-tcrossprod(diag(BB),rep(1,ncol(TT)))      
       BB=BB+t(BB)
-      TB=TB-crossprod(t(diag(TB)),t(rep(1,ncol(TT))))
+      TB=TB-tcrossprod(diag(TB),rep(1,ncol(TT)))      
       TB=1+TB+t(TB)
       detmat[[i]]=TB**2-TT*BB
     }
@@ -156,9 +168,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     Z2 = (M22B-M12T)/f 
     W1 = (M11T+M12B - Z1*(m22-m11)/f)*m
     W2 = (M12T+M22B - Z2*(m22-m11)/f)*m
-    M11 = M11 - crossprod(t(Z1)) + crossprod(t(W1))
-    M22 = M22 - crossprod(t(Z2)) + crossprod(t(W2))
-    M12 = M12 - crossprod(t(Z1),t(Z2)) + crossprod(t(W1),t(W2))
+    M11 = M11 - tcrossprod(Z1) + tcrossprod(W1)
+    M22 = M22 - tcrossprod(Z2) + tcrossprod(W2)
+    M12 = M12 - tcrossprod(Z1,Z2) + tcrossprod(W1,W2)
     up=list(M11=M11,M22=M22,M12=M12)
   } # end of function
  
@@ -398,9 +410,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     levels(TF)=trtlabs
     TF=as.numeric(levels(TF))[TF]
     BF=c( rep( 1:length(blocksizes),blocksizes))
-    
     newblocksizes=Sizes(nunits,blocklevels)
-    
     BF=c(BF,  rep( 1:length(blocksizes),(newblocksizes-blocksizes) ) )
     # full TF in blocks
     TF=TF[order(BF)]
@@ -450,7 +460,6 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     Efficiencies
   }
   
- 
  #******************************************************** Plan output************************************************************************************
  Plan=function(Design,facMat)  {
    strata=ncol(Design)-1
@@ -506,18 +515,6 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
    return(TRUE)
  }
  
- #********************************************************Block Sizes ************************************************************************************
- 
- Sizes=function(newsizes,blocklevels) { 
-   for  (i in 1:length(blocklevels)) {    
-       acc=NULL
-       for (z in 1: length(newsizes)) 
-         acc=c(acc, rep(newsizes[z] %/% blocklevels[i], blocklevels[i]) + c( rep(1, newsizes[z] %% blocklevels[i]), rep(0,(blocklevels[i]-newsizes[z] %% blocklevels[i])))) 
-       newsizes=acc
-     }   
-   newsizes 
- }
-  
  #********************************************************builds design ************************************************************************************ 
  testout=testInputs(treatments,replicates,blocklevels,searches,seed) 
   if (testout!=TRUE) return(testout)
