@@ -7,16 +7,15 @@ blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
   seed = NULL)
 }
 \arguments{
-\item{treatments}{a list partitioning the total number of treatments into equally replicated treatment sets.}
+\item{treatments}{a list of numbers representing a partition of the total number of treatments into equally replicated treatment sets.}
 
-\item{replicates}{a list assigning a replication level to each equally replicated treatment set.}
+\item{replicates}{a list of numbers assigning a replication level to each of the treatment sets in the \code{treatments} list.}
 
-\item{blocklevels}{a list of nested block levels where the first level is the number of main blocks
-and the remaining levels, if any, are the levels of sub-blocks in  a hierarchy of nested sub-blocks.
-The default setting is the highest common factor of the \code{replicates} list.}
+\item{blocklevels}{a list of numbers  where the first number defines the main blocks in the design
+and the remaining numbers, if any, define the sub-blocks in  a hierarchy of nested sub-blocks.
+The default setting is a maximum set of orthogonal main blocks.}
 
-\item{searches}{the number of local optima searched during optimization. The default setting is the minimum of 64 or the integer quotient of 4096
-divided by the number of plots.}
+\item{searches}{the number of local optima searched during optimization. The default setting is the minimum of 64 or the floor of 4096/(number of plots).}
 
 \item{seed}{an integer seed for initializing the random number generator where a design must be reproducible. The default
 setting is a random seed.}
@@ -32,33 +31,34 @@ setting is a random seed.}
 Constructs nested block designs for unstructured treatment sets with arbitrary replication, not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
-The \code{blocks} function constructs optimized nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal,
+\code{blocks} constructs optimized nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal,
 and blocks can have any feasible depth of nesting.
 
-The \code{treatments} list contains the total number of treatments in the design partitioned into
+\code{treatments} defines the total number of treatments in the design partitioned into
 sets of equally replicated treatments where the replication can vary between sets but must be constant within sets.
-The \code{replicates} list provides the replication level for each treatment set and must be the same length as
-the \code{treatments} list. The individual treatments are labelled consecutively according to the ordering of the sets
-in the two lists and different treatment sets with the same replication can be used, if required.
+\code{replicates} defines the replication level for each treatment set and must be the same length as
+\code{treatments}. The individual treatments are labelled consecutively according to the ordering of the sets
+in the two lists and different treatment sets with the same replication number can be used, if required.
 
-The \code{blocklevels} list defines the blocks structure of the design where the first level in the list is the number of main blocks
-and the succesive levels, if any, are the levels of succesive sub-blocks in a hierarchy of sub-blocks. The length of the list is the number of strata
-and the running products of the levels are the total numbers of
-blocks in the succesive strata. The average block size of a stratum is the total number of blocks divided by
-the total number of plots andthe block sizes are all equal if the quotient is an integer. Otherwise block sizes differ by, at most, a single unit.
-The default design is a complete set of othogonal main blocks.
+\code{blocklevels} defines the blocks structure of the design where the first number defines the main blocks
+and the succesive numbers, if any, define the sub-blocks in a hierarchy of nested sub-blocks.
+The length of the list is the number of strata and the running products are the numbers of
+blocks in each succesive stratum. The blocks in any given stratum are all equal in size or differ by, at most, a
+single plot. The default design is a complete set of othogonal main blocks.
 
-General block designs are constructed algorithmically by a swapping algorithm that seeks to maximize the determinant of
-the information matrix (D-optimality). Beginning with the main blocks stratum, pairs of treatments are swapped at random between
-sub-blocks nested within existing blocks until a local optima is attained. If the number of searches
-is greater than one, the algorithm then makes a number of random swaps and then continues with improving swaps
-until another local optima is reached. After the required number of searches, the best overall design
-is restored and the process repeated for the next stratum in the hierarchy. Eventually the bottom stratum
-is reached after which the algorithm stops. Special lattice designs for v**2 equally replicated treatments in blocks of size v with k replicates
-are constructed algebraicaly when k <= 3 or when v is prime or prime-power and k <= v+1 or when v = 10 and k <= 4.
-The \code{crossdes} package is used for lattice designs with prime-power v.
+General block designs are constructed by a swapping algorithm that finds a maxima of the determinant of
+the information matrix (D-optimality). Beginning with the main blocks, pairs of treatments are swapped at random between
+sub-blocks within preceding blocks and improving swaps are retained until no further improvement is possible.
+If the number of searches is greater than one, the algorithm makes a number of random swaps and then continues until
+another maxima is found. After completing the required number of searches, the best overall design
+is retained and the process repeated for the next stratum in the hierarchy. Eventually, the bottom stratum
+is reached and the algorithm stops.
 
-Optimized designs are fully randomized with each set of nested blocks randomized within the preceding set of blocks and with
+Certain special lattice designs with v**2 equally replicated treatments in blocks of size v and with k replicates
+are optimized algebraically for k <= 3 or for v prime or prime-power and k <= v+1 or for v = 10 and k <= 4.
+\code{crossdes} is used for lattice designs with prime-power v.
+
+Optimized designs are fully randomized with each set of nested blocks randomized within each preceding set of blocks and with
 treatments randomized within the bottom set of blocks.
 }
 \examples{
