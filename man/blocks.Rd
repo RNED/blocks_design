@@ -7,15 +7,15 @@ blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
   seed = NULL)
 }
 \arguments{
-\item{treatments}{a list of numbers representing a partition of the total number of treatments into equally replicated treatment sets.}
+\item{treatments}{a list representing a partition of the total number of treatments into equally replicated treatment sets.}
 
-\item{replicates}{a list of numbers assigning a replication level to each of the treatment sets in the \code{treatments} list.}
+\item{replicates}{a list assigning a replication level to each set in the \code{treatments} list.}
 
-\item{blocklevels}{a list of numbers  where the first number defines the main blocks in the design
-and the remaining numbers, if any, define the sub-blocks in  a hierarchy of nested sub-blocks.
-The default setting is a maximum set of orthogonal main blocks.}
+\item{blocklevels}{a list of levels where the first level is the number of main blocks and the remaining
+levels, if any, are the levels of a hierarchy of nested sub-blocks in descending order of nesting.
+The default setting is an orthogonal main blocks design.}
 
-\item{searches}{the number of local optima searched during optimization. The default setting is the minimum of 64 or the floor of 4096/(number of plots).}
+\item{searches}{the number of local optima searched during an optimization. The default is the minimum of 64 or 4096 / (number of plots).}
 
 \item{seed}{an integer seed for initializing the random number generator where a design must be reproducible. The default
 setting is a random seed.}
@@ -28,31 +28,29 @@ setting is a random seed.}
 \item{seed}{Numerical seed for random number generator}
 }
 \description{
-Constructs nested block designs for unstructured treatment sets with arbitrary replication, not necessarily all equal, and arbitrary depth of nesting.
+Constructs nested block designs for unstructured treatment sets with arbitrary replication,
+not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
-\code{blocks} constructs optimized nested block designs for unstructured treatment sets where treatments can have any arbitrary replication, not necessarily all equal,
-and blocks can have any feasible depth of nesting.
-
-\code{treatments} defines the total number of treatments in the design partitioned into
+\code{treatments} is a partition of the total number of treatments in the design into
 sets of equally replicated treatments where the replication can vary between sets but must be constant within sets.
-\code{replicates} defines the replication level for each treatment set and must be the same length as
-\code{treatments}. The individual treatments are labelled consecutively according to the ordering of the sets
-in the two lists and different treatment sets with the same replication number can be used, if required.
 
-\code{blocklevels} defines the blocks structure of the design where the first number defines the main blocks
-and the succesive numbers, if any, define the sub-blocks in a hierarchy of nested sub-blocks.
-The length of the list is the number of strata and the running products are the numbers of
+\code{replicates} is a list of replication levels for the treatment sets in the treatments list.
+ The levels need not be unique but the treatments and replicates lists must be of equal length.
+ The treatments are numbered consecutively according to the ordering of the replication sets.
+
+\code{blocklevels} is a list of levels for the blocks design where the first number is the number of main blocks
+and the succesive numbers, if any, are the numbers of sub-blocks in a hierarchy of nested sub-blocks.
+The length of the list is the number of strata and the running products are the total numbers of
 blocks in each succesive stratum. The blocks in any given stratum are all equal in size or differ by, at most, a
-single plot. The default design is a complete set of othogonal main blocks.
+single plot. The default setting is the highest common factor of the replication levels which gives a main blocks
+ design with a maximal set of complete othogonal main blocks.
 
-General block designs are constructed by a swapping algorithm that finds a maxima of the determinant of
-the information matrix (D-optimality). Beginning with the main blocks, pairs of treatments are swapped at random between
-sub-blocks within preceding blocks and improving swaps are retained until no further improvement is possible.
-If the number of searches is greater than one, the algorithm makes a number of random swaps and then continues until
-another maxima is found. After completing the required number of searches, the best overall design
-is retained and the process repeated for the next stratum in the hierarchy. Eventually, the bottom stratum
-is reached and the algorithm stops.
+The function constructs general block designs by a swapping algorithm that seeks a maxima for the determinant of
+the information matrix (D-optimality). The algortithm first finds an optima for the main blocks design and then repeats
+the process for each stratum in the hierarchy always ensuring that improving swaps are nested within the blocks
+of the preceding stratum. The optima for each stratum is found from a number of searches given by
+the \code{searches} parameter.
 
 Certain special lattice designs with v**2 equally replicated treatments in blocks of size v and with k replicates
 are optimized algebraically for k <= 3 or for v prime or prime-power and k <= v+1 or for v = 10 and k <= 4.
