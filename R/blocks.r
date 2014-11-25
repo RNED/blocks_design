@@ -520,7 +520,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
  
  #********************************************************builds design ************************************************************************************ 
  testout=testInputs(treatments,replicates,blocklevels,searches,seed) 
-  if (testout!=TRUE) return(testout)
+  if (testout!=TRUE) stop(testout)
   if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed) 
   # omit any single replicate treatments here 
