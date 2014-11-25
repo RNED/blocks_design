@@ -181,13 +181,15 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     locrelD=1
     globTF=TF
     nunits=length(TF)
-    mainSets=split(rep(1:nunits),MF)
+    mainSizes=tabulate(MF)
+    mainBlocks=split(rep(1:nunits),MF)
     Samp=vector("list", nlevels(MF)) 
     for (r in 1 : searches) {
-      nSamp=ceiling(  min(nunits,36)*tabulate(MF)/nunits) #sample size is smallest of 36 or nunits or has at least one sample per restriction
+      nSamp=ceiling(  min(nunits,36)*mainSizes/nunits) #sample size is smallest of 36 or nunits or has at least one sample per restriction
       repeat {
         relD=0
-        for (i in 1:nlevels(MF)) Samp[[i]]=sort(sample(mainSets[[i]],nSamp[i]))						
+        for (i in 1:nlevels(MF)) 
+          Samp[[i]]=sort(sample(mainBlocks[[i]],nSamp[i]))	
         detmat=DetMat(M11,M22,M12,Samp,TF,BF)
         grelD=1
         for (i in 1:nlevels(MF)) {
@@ -209,8 +211,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
           TF[c(gsi,gsj)]=TF[c(gsj,gsi)]
           locrelD=grelD*locrelD				
         } else if ( sum(nSamp) < min(nunits,512)) {
-          nSamp=2*nSamp # doubles sample size
-          if (sum(nSamp)>nunits) nSamp=tabulate(MF) # ensures sample size not greater than the population
+          nSamp=2*nSamp # doubles sample size and ensures no block sample is bigger than the corresponding block size
+          for (i in 1:nlevels(MF))
+            if (nSamp[i]>mainSizes[i]) nSamp[i]=mainSizes[i]
         } else break
       } # repeat	
       if (locrelD>globrelD) {
