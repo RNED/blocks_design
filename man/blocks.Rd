@@ -7,7 +7,7 @@ blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
   seed = NULL)
 }
 \arguments{
-\item{treatments}{a list representing a partition of the total number of treatments into equally replicated treatment sets.}
+\item{treatments}{a list giving a partition of the total number of treatments into equally replicated treatment sets.}
 
 \item{replicates}{a list assigning a replication level to each set in the \code{treatments} list.}
 
@@ -15,7 +15,7 @@ blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
 levels, if any, are the levels of a hierarchy of nested sub-blocks in descending order of nesting.
 The default setting is an orthogonal main blocks design.}
 
-\item{searches}{the number of local optima searched during an optimization. The default is the minimum of 64 or 4096 / (number of plots).}
+\item{searches}{the number of local optima searched during an optimization. The default is the minimum of 64 or 4096/(number of plots).}
 
 \item{seed}{an integer seed for initializing the random number generator where a design must be reproducible. The default
 setting is a random seed.}
@@ -23,8 +23,8 @@ setting is a random seed.}
 \value{
 \item{Design}{Data frame showing the listing of treatments allocated to blocks}
 \item{Plan}{Data frame showing a plan of treatments allocated to sub-plots within blocks}
-\item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum in the design}
-\item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum in the design together with an upper bound, where available}
+\item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum of the design}
+\item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum of the design together with an upper bound, where available}
 \item{seed}{Numerical seed for random number generator}
 }
 \description{
@@ -32,32 +32,32 @@ Constructs nested block designs for unstructured treatment sets with arbitrary r
 not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
-\code{treatments} is a partition of the total number of treatments in the design into
+\code{treatments} is a partition of the total number of treatments into
 sets of equally replicated treatments where the replication can vary between sets but must be constant within sets.
 
 \code{replicates} is a list of replication levels for the treatment sets in the treatments list.
  The levels need not be unique but the treatments and replicates lists must be of equal length.
- The treatments are numbered consecutively according to the ordering of the replication sets.
+ The treatments are numbered consecutively according to the order of the replication sets.
 
 \code{blocklevels} is a list of levels for the blocks design where the first number is the number of main blocks
-and the succesive numbers, if any, are the numbers of sub-blocks in a hierarchy of nested sub-blocks.
+and the succesive numbers, if any, are the numbers of sub-block levels in a hierarchy of nested sub-blocks.
 The length of the list is the number of strata and the running products are the total numbers of
 blocks in each succesive stratum. The blocks in any given stratum are all equal in size or differ by, at most, a
 single plot. The default setting is the highest common factor of the replication levels which gives a main blocks
  design with a maximal set of complete othogonal main blocks.
 
-The function constructs general block designs by a swapping algorithm that seeks a maxima for the determinant of
+The function constructs general block designs by a swapping algorithm that seeks to maximize the determinant of
 the information matrix (D-optimality). The algortithm first finds an optima for the main blocks design and then repeats
 the process for each stratum in the hierarchy always ensuring that improving swaps are nested within the blocks
-of the preceding stratum. The optima for each stratum is found from a number of searches given by
-the \code{searches} parameter.
+of the preceding stratum. The best optima for each stratum is found from a number of searches defined by the
+\code{searches} parameter.
 
 Certain special lattice designs with v**2 equally replicated treatments in blocks of size v and with k replicates
 are optimized algebraically for k <= 3 or for v prime or prime-power and k <= v+1 or for v = 10 and k <= 4.
 \code{crossdes} is used for lattice designs with prime-power v.
 
 Optimized designs are fully randomized with each set of nested blocks randomized within each preceding set of blocks and with
-treatments randomized within the bottom set of blocks.
+treatments randomized within blocks.
 }
 \examples{
 # 3 treatments with 2 reps, 2 treatments with 4 reps, 4 treatments with 3 reps

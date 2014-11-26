@@ -7,34 +7,34 @@
 #' 
 #' @details
 #' 
-#' \code{treatments} is a partition of the total number of treatments in the design into
+#' \code{treatments} is a partition of the total number of treatments into
 #' sets of equally replicated treatments where the replication can vary between sets but must be constant within sets. 
 #'  
 #' \code{replicates} is a list of replication levels for the treatment sets in the treatments list. 
 #'  The levels need not be unique but the treatments and replicates lists must be of equal length. 
-#'  The treatments are numbered consecutively according to the ordering of the replication sets.
+#'  The treatments are numbered consecutively according to the order of the replication sets.
 #'  
 #' \code{blocklevels} is a list of levels for the blocks design where the first number is the number of main blocks 
-#' and the succesive numbers, if any, are the numbers of sub-blocks in a hierarchy of nested sub-blocks. 
+#' and the succesive numbers, if any, are the numbers of sub-block levels in a hierarchy of nested sub-blocks. 
 #' The length of the list is the number of strata and the running products are the total numbers of 
 #' blocks in each succesive stratum. The blocks in any given stratum are all equal in size or differ by, at most, a
 #' single plot. The default setting is the highest common factor of the replication levels which gives a main blocks
 #'  design with a maximal set of complete othogonal main blocks. 
 #' 
-#' The function constructs general block designs by a swapping algorithm that seeks a maxima for the determinant of
+#' The function constructs general block designs by a swapping algorithm that seeks to maximize the determinant of
 #' the information matrix (D-optimality). The algortithm first finds an optima for the main blocks design and then repeats 
 #' the process for each stratum in the hierarchy always ensuring that improving swaps are nested within the blocks
-#' of the preceding stratum. The optima for each stratum is found from a number of searches given by 
-#' the \code{searches} parameter.  
+#' of the preceding stratum. The best optima for each stratum is found from a number of searches defined by the 
+#' \code{searches} parameter.  
 #'
 #' Certain special lattice designs with v**2 equally replicated treatments in blocks of size v and with k replicates 
 #' are optimized algebraically for k <= 3 or for v prime or prime-power and k <= v+1 or for v = 10 and k <= 4. 
 #' \code{crossdes} is used for lattice designs with prime-power v.
 #'   
 #' Optimized designs are fully randomized with each set of nested blocks randomized within each preceding set of blocks and with
-#' treatments randomized within the bottom set of blocks.
+#' treatments randomized within blocks.
 #'  
-#' @param treatments a list representing a partition of the total number of treatments into equally replicated treatment sets.   
+#' @param treatments a list giving a partition of the total number of treatments into equally replicated treatment sets.   
 #' 
 #' @param replicates a list assigning a replication level to each set in the \code{treatments} list. 
 #' 
@@ -42,7 +42,7 @@
 #' levels, if any, are the levels of a hierarchy of nested sub-blocks in descending order of nesting.
 #' The default setting is an orthogonal main blocks design.
 #'  
-#' @param searches the number of local optima searched during an optimization. The default is the minimum of 64 or 4096 / (number of plots).
+#' @param searches the number of local optima searched during an optimization. The default is the minimum of 64 or 4096/(number of plots).
 #' 
 #' @param seed an integer seed for initializing the random number generator where a design must be reproducible. The default 
 #' setting is a random seed.
@@ -50,8 +50,8 @@
 #' @return  
 #' \item{Design}{Data frame showing the listing of treatments allocated to blocks}
 #' \item{Plan}{Data frame showing a plan of treatments allocated to sub-plots within blocks}
-#' \item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum in the design}
-#' \item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum in the design together with an upper bound, where available}
+#' \item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum of the design}
+#' \item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum of the design together with an upper bound, where available}
 #' \item{seed}{Numerical seed for random number generator}
 #'
 #' @references
@@ -87,18 +87,17 @@
 
 blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=NULL) { 
 
-  
-  #********************************************************Block Sizes ************************************************************************************
-  Sizes=function(newsizes,blocklevels) { 
+  #******************************************************** sizes ************************************************************************************ 
+  Sizes=function(sizes,blocklevels) { 
     for  (i in 1:length(blocklevels)) {    
-      acc=NULL
-      for (z in 1: length(newsizes)) 
-        acc=c(acc, rep(newsizes[z] %/% blocklevels[i], blocklevels[i]) + c( rep(1, newsizes[z] %% blocklevels[i]), rep(0,(blocklevels[i]-newsizes[z] %% blocklevels[i])))) 
-      newsizes=acc
+      newsizes=NULL
+      for (z in 1: length(sizes)) 
+        newsizes=c(newsizes, rep(sizes[z] %/% blocklevels[i], blocklevels[i]) + c( rep(1, sizes[z] %% blocklevels[i]), rep(0,(blocklevels[i]-sizes[z] %% blocklevels[i])))) 
+      sizes=newsizes
     }   
-    newsizes 
-  }
-  
+    sizes 
+  } 
+     
   #******************************************************** Primality test ************************************************************************************
   isPrime=function(v) {
     if (v <= 3)  return(TRUE)
@@ -131,14 +130,14 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
   
   #********************************************************Determinants of swaps ************************************************************************************
-  DetMat=function(M11,M22,M12,Samp,TF,RF) {
+  DetMat=function(M11,M22,M12,Samp,TF,BF) {
     detmat=vector("list", length(Samp))
     for (i in 1:length(Samp)) {
       trts=as.numeric(TF[Samp[[i]]])
-      rblks=as.numeric(RF[Samp[[i]]])
+      nblks=as.numeric(BF[Samp[[i]]])
       TT=M11[trts,trts,drop=FALSE]
-      BB=M22[rblks,rblks,drop=FALSE]
-      TB=M12[trts,rblks,drop=FALSE]
+      BB=M22[nblks,nblks,drop=FALSE]
+      TB=M12[trts,nblks,drop=FALSE]
       TT=TT-tcrossprod(diag(TT),rep(1,ncol(TT)))      
       TT=TT+t(TT)
       BB=BB-tcrossprod(diag(BB),rep(1,ncol(TT)))      
@@ -151,15 +150,15 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
   
   #******************************************************** Updates variance matrix ************************************************************************************
-  UpDate=function(M11,M22,M12,si,sj,TF,RF) {
+  UpDate=function(M11,M22,M12,si,sj,TF,BF) {
     M11T = M11[TF[si],]-M11[TF[sj],]
     M12T = M12[TF[si],]-M12[TF[sj],]
-    M12B = M12[,RF[si]]-M12[,RF[sj]]
-    M22B = M22[,RF[si]]-M22[,RF[sj]]
+    M12B = M12[,BF[si]]-M12[,BF[sj]]
+    M22B = M22[,BF[si]]-M22[,BF[sj]]
     # updating vectors
     m11=M11T[TF[si]]-M11T[TF[sj]]
-    m22=M22B[RF[si]]-M22B[RF[sj]]
-    m12=M12T[RF[si]]-M12T[RF[sj]]
+    m22=M22B[BF[si]]-M22B[BF[sj]]
+    m12=M12T[BF[si]]-M12T[BF[sj]]
     f = sqrt(2+m11+m22-2*m12)
     m = f/sqrt(1-2*m12-m11*m22+m12*m12)/2
     Z1 = (M12B-M11T)/f 
@@ -226,8 +225,8 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
           dswap=1
           while (icount<100 & (dswap<0.01 | dswap>.999)) {
             icount=icount+1
+            # proportional change in information due to swapping different treatments in different sub-blocks in same main block
             s=sample(rep(1:nunits)[MF==sample(nlevels(MF),1)],2)
-            # calculates the proportional change in the determinant of the design information due to swapping treatments on plots s1 and s2
             if ( (TF[s[1]]!=TF[s[2]]) & (BF[s[1]]!=BF[s[2]]) ) 	
               dswap=(1+M12[TF[s[1]],BF[s[2]]]+M12[TF[s[2]],BF[s[1]]]-M12[TF[s[1]],BF[s[1]]]-M12[TF[s[2]],BF[s[2]]])**2-
               (2*M11[TF[s[1]],TF[s[2]]]-M11[TF[s[1]],TF[s[1]]]-M11[TF[s[2]],TF[s[2]]])*
@@ -249,34 +248,23 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     globTF
   } # end of function
   
-  #******************************************************** fullrank randomised design  ************************************************************************************
-  FullRank=function(MF,TF,TB,NB,DD) {
-    count=0
-    while ( (qr(DD)$rank<ncol(DD))&(count<1000) ) {
-      rand=sample(1:length(TF))
-      TF=TF[rand][order(MF[rand])]
-      TB=TB[rand,][order(MF[rand]),]
-      DD=crossprod(cbind(TB,NB))
-      count=count+1
-    } # end of while
-    fullrank=list(TF=TF,DD=DD,count=count)	
-  }
   
   #******************************************************** Initializes design***************************************************************************************
   GenOpt=function(TF,NF,MF,searches)  {
     singular=FALSE
-    T=TreatContrasts(MF,TF)
-    N=BlockContrasts(MF,NF) 
-    DD=crossprod(cbind(T,N))
+    TB=TreatContrasts(MF,TF)
+    NB=BlockContrasts(MF,NF) 
+    DD=crossprod(cbind(TB,NB))
     count=0
-    # attempts to find a full rank randomisation	
-    if (qr(DD)$rank<ncol(DD)) {
-      fullrank=FullRank(MF,TF,T,N,DD)
-      TF=fullrank$TF
-      count=fullrank$count
-      DD=fullrank$DD
+      while ( qr(DD)$rank<ncol(DD) & count<1000 ) 
+      {
+        rand=sample(1:length(TF))
+        TF=TF[rand][order(MF[rand])] 
+        TB=TB[rand,][order(MF[rand]),]
+        DD=crossprod(cbind(TB , NB))
+        count=count+1
     }
-    if (count<100) {
+    if (count<1000) {
       V=chol2inv(chol(DD))
       M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))	
       M22=matrix(0,nrow=nlevels(NF),ncol=nlevels(NF))
@@ -308,17 +296,17 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
  
   #******************************************************** builds lattice designs  ************************************************************************************
-  optTF=function(Design,treatlevs,replevs,searches) {
+    optTF=function(Design,treatlevs,replevs,searches) {
     nunits=nrow(Design)
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
     v=sqrt(ntrts)
-    strata=ncol(Design)-1
+    strata=ncol(Design)-2
     orthbsize=nunits/hcf 
     ortho=0
     for (i in 1 : strata) 
       if (all( tabulate(Design[,i+1]) %% orthbsize == 0)) ortho=i else  break
-    reglat=(max(replevs)==min(replevs) & max(Design[,i+1])==v*replevs[1] & identical(v,ntrts%/%v) )
+    reglat=( all(replevs==replevs[1]) & max(Design[,i+1])==v*replevs[1] & identical(v,ntrts%/%v) )
     pp_trts=c(16,64,256,1024,4096,16384,81,729,6561,625,2401)  
     simplelattice = (reglat &  replevs[1]<4 )
     primelattice =  (reglat &  replevs[1]<(v+2)  & isPrime(v))
@@ -376,24 +364,10 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     TF   
   }
   
-  #******************************************************** Randomizes blocks************************************************************************************
-  randBlocks=function(Design) {
-    #randomise blocks within strata
-    Design=as.data.frame( cbind( Design[,1:(ncol(Design)-1)], rep(1:nrow(Design)), Design[,(ncol(Design))] ) )   
-    Design[]=lapply(Design, factor)  
-    for (r in 2 : (ncol(Design)-1)){
-      levels( Design[,r])=sample(nlevels( Design[,r]) )
-      Design[,r]=as.numeric(levels(Design[,r]))[Design[,r]]
-    }
-    # re-order all numeric columns
-    Design=Design[ do.call(order, Design), ]
-    Design=Design[,c(1:(ncol(Design)-2),ncol(Design))]
-    Design
-  }
  
   #******************************************************** Puts back single rep treatments *************************************************************************** 
   fullDesign=function(Design,treatments,replicates,blocksizes,blocklevels) {
-    strata=ncol(Design)-2
+    strata=ncol(Design)-3
     TF=as.factor(Design[,ncol(Design)])
     nunits=sum(treatments*replicates)  
     addTF=c( (nlevels(TF)+1 ) : sum(treatments))
@@ -415,9 +389,10 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     BF=c(BF,  rep( 1:length(blocksizes),(newblocksizes-blocksizes) ) )
     # full TF in blocks
     TF=TF[order(BF)]
-    Design = matrix(1,nrow=nunits,ncol=(strata+1))
+    Design = matrix(1,nrow=nunits,ncol=(strata+2))
     for (r in 1 : strata) 
       Design[,r+1]=rep(facMat[,r],newblocksizes)
+    Design[,r+2]=rep(1:nunits)
     Design=cbind(Design,as.factor(TF))  
     Design
   }  
@@ -425,7 +400,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   #******************************************************** A-efficiencies ************************************************************************************
   # A-Efficiencies function 
   A_Efficiencies=function(Design)  {
-    strata=ncol(Design)-1
+    strata=ncol(Design)-2
     nunits=nrow(Design)
     TF=Design$Treatments
     treps=tabulate(TF)
@@ -463,7 +438,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   
  #******************************************************** Plan output************************************************************************************
  Plan=function(Design,facMat)  {
-   strata=ncol(Design)-1
+   strata=ncol(Design)-2
    bSizes=tabulate(Design[,strata])
    plotTrts=matrix(nrow=length(bSizes),ncol=max(bSizes)) 
    counter=0
@@ -516,6 +491,18 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
    return(TRUE)
  }
  
+ #******************************************************** Randomizes blocks within strata************************************************************************************ 
+ randBlocks=function(Design) {
+   Design=as.data.frame(Design) 
+   Design[]=lapply(Design, factor)  
+   for (r in 2 : (ncol(Design)-1) ){
+     levels( Design[,r])=sample(nlevels( Design[,r]) )
+     Design[,r]=as.numeric(levels(Design[,r]))[Design[,r]]
+   }
+   Design=Design[ do.call(order, Design), ]
+   Design
+ }
+ 
  #********************************************************builds design ************************************************************************************ 
  testout=testInputs(treatments,replicates,blocklevels,searches,seed) 
   if (testout!=TRUE) stop(testout)
@@ -543,34 +530,49 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   facMat= matrix(nrow=prod(blocklevels),ncol=strata)
   for (r in 1 : strata) 
     facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels)/prod(blocklevels[1:r])  )  
- Design= matrix(1,nrow=nunits,ncol=(strata+1))
+
+ Design= matrix(1,nrow=nunits,ncol=(strata+2))
   for (r in 1 : strata) 
     Design[,r+1]=rep(facMat[,r],blocksizes)
-  TF=optTF(Design,treatlevs,replevs,searches)
-  Design=cbind(Design,as.factor(TF))   
+ Design[,r+2]=rep(1:nunits)
+ TF=optTF(Design,treatlevs,replevs,searches) 
+  Design=cbind(Design,as.factor(TF)) 
   # add back single replicate treatments here 
   if ( !all(replicates>1) & !all(replicates==1) ) 
    Design= fullDesign(Design,treatments,replicates,blocksizes,blocklevels)  
+
   Design=randBlocks(Design)
-  # arrange blocksizes in new order
-  blocks=as.factor(Design[,(ncol(Design)-1)])
-  levels(blocks)=order(unique(blocks))
-  blocksizes=tabulate(as.numeric(levels(blocks))[blocks])
-  # design matrix for new TF where block sizes are not necessarily all equal 
-  for (r in 1 : strata) 
-    Design[,(r+1)]=rep(facMat[,r],blocksizes)
-  Design[]=lapply(Design, factor)	
+
+ 
+ print(Design)
+ # arrange blocksizes in new order
+ blocks=as.factor(Design[,(ncol(Design)-2)])
+ levels(blocks)=order(unique(blocks))
+ print(blocks)
+ blocksizes=tabulate(as.numeric(levels(blocks))[blocks])
+ # design matrix for new TF where block sizes are not necessarily all equal 
+ for (r in 1 : strata) 
+   Design[,(r+1)]=rep(facMat[,r],blocksizes)
+ 
+ plots=NULL
+ for ( i in 1:length(blocksizes))
+   plots=c(plots,rep(1:blocksizes[i])) 
+ Design[,strata+2]=plots
+ Design[]=lapply(Design, factor)  
+
   # drop leading column
   Design=Design[,c(2:ncol(Design))]
   designnames=c("Main_blocks")
   if (strata>1)
     for (i in 1:(strata-1))
       designnames=c(designnames,paste("Sub",i,"_blocks", sep=""))
-  colnames(Design)=c(designnames,"Treatments")   
+  colnames(Design)=c(designnames,"Sub-plots","Treatments")   
   rownames(Design) = NULL 
+print(Design)
   # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
-    Incidences[[i]]=table( Design[,i] ,Design[,strata+1]) 
+    Incidences[[i]]=table( Design[,i] ,Design[,strata+2]) 
+
   list(Design=Design,Plan=Plan(Design,facMat),Incidences=Incidences,Efficiencies=A_Efficiencies(Design),seed=seed)
 } 
