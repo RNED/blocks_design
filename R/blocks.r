@@ -248,7 +248,6 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     globTF
   } # end of function
   
-  
   #******************************************************** Initializes design***************************************************************************************
   GenOpt=function(TF,NF,MF,searches)  {
     singular=FALSE
@@ -314,7 +313,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     lattice100 =(reglat & v==10  & replevs[1]<5 )  
     # treps is the vector of treatment replications for the minimum orthogonal block size
     treps=rep(replevs,treatlevs)/hcf  
-    TF=rep(rep(1:ntrts,treps),hcf)
+    TF=as.factor(rep(rep(1:ntrts,treps),hcf))
     if (ortho<strata) {
       for (i in (ortho+1) : strata) { 
         if ( i==(ortho+1)  & simplelattice) {		
@@ -357,28 +356,28 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
             TF=c(TF, rep(1:(v*v))[order(tens2)])
           }
         } else {	
-          TF=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches)
+          TF=GenOpt(TF,as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches)
         }
       }
     }
     TF   
   }
   
- 
   #******************************************************** Puts back single rep treatments *************************************************************************** 
   fullDesign=function(Design,treatments,replicates,blocksizes,blocklevels) {
     strata=ncol(Design)-3
     TF=as.factor(Design[,ncol(Design)])
-    nunits=sum(treatments*replicates)  
-    addTF=c( (nlevels(TF)+1 ) : sum(treatments))
-    TF=as.factor(c(TF,addTF[sample(length(addTF))])) 
+    nunits=sum(treatments*replicates)
+    ntrts=sum(treatments)
+    redtrts=nlevels(TF)
+    TF=as.factor(c(TF,((redtrts+1):ntrts)[sample(ntrts-redtrts)])) 
     trtlabs=NULL  
     extlabs=NULL
     index=0
     for (i in 1 : length(treatments)) {
       if (replicates[i]>1) 
-        trtlabs=c(trtlabs, rep( (index+1):(index+treatments[i]) ))
-      else extlabs=c(extlabs, rep( (index+1):(index+treatments[i]) ))
+        trtlabs=c(trtlabs,  (index+1):(index+treatments[i]) )
+      else extlabs=c(extlabs,  (index+1):(index+treatments[i]) )
         index=index+treatments[i] 
     }
     trtlabs=c(trtlabs,extlabs)
@@ -389,11 +388,11 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     BF=c(BF,  rep( 1:length(blocksizes),(newblocksizes-blocksizes) ) )
     # full TF in blocks
     TF=TF[order(BF)]
-    Design = matrix(1,nrow=nunits,ncol=(strata+2))
+    Design = matrix(1,nrow=nunits,ncol=(strata+3))
     for (r in 1 : strata) 
       Design[,r+1]=rep(facMat[,r],newblocksizes)
     Design[,r+2]=rep(1:nunits)
-    Design=cbind(Design,as.factor(TF))  
+    Design[,r+3]=as.factor(TF)  
     Design
   }  
   
@@ -422,11 +421,12 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     }
     bounds=rep(NA,strata)
     blocks=rep(0,strata)
-    if (max(treps)==min(treps))
-      for (i in 1:strata)   
-        bounds[i]=upper_bounds(nunits,ntrts,nlevels(Design[,i]))  
     for (i in 1:strata)   
-      blocks[i]=nlevels(Design[,i])
+      blocks[i]=nlevels(Design[,i])    
+    if ( all(treps==treps[1]) )
+      for (i in 1:strata)  
+        if (nunits%%blocks[i] == 0) 
+          bounds[i]=upper_bounds(nunits,ntrts,blocks[i])    
     Efficiencies=as.data.frame(cbind(blocks, aeff, bounds))
     colnames(Efficiencies)=c("Blocks","A-Efficiencies", "Upper Bounds")
     rnames=c("Main")
@@ -437,20 +437,19 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
   
  #******************************************************** Plan output************************************************************************************
- Plan=function(Design,facMat)  {
+ Plan=function(Design,facMat,designnames)  {
    strata=ncol(Design)-2
    bSizes=tabulate(Design[,strata])
-   plotTrts=matrix(nrow=length(bSizes),ncol=max(bSizes)) 
+   nblocks=length(bSizes)
+   plotTrts=matrix(nrow=nblocks,ncol=max(bSizes)) 
    counter=0
-   for (i in 1:length(bSizes)) {
-       plotTrts[i,c(1 : bSizes[i])]=Design[ c((1+counter) : (counter+bSizes[i]))  , strata+1]  
+   for (i in 1:nblocks) {
+       plotTrts[i,c(1 : bSizes[i])]=Design[ c((1+counter) : (counter+bSizes[i]))  , strata+2]  
        counter=counter+bSizes[i]
    }
    plotTrts[is.na(plotTrts)]  = " "
-   Plan=as.data.frame(cbind(facMat,rep(" ",length(bSizes)),plotTrts))
-   designnames=c(designnames,"Sub_plots")
-   for (i in 1:ncol(plotTrts))
-     designnames=c(designnames,i)
+   Plan=as.data.frame(cbind(facMat, rep(" ",nblocks), plotTrts))
+   designnames=c(designnames, "Sub_plots", 1:ncol(plotTrts) )
    colnames(Plan)=designnames
    Plan
  }
@@ -535,22 +534,20 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   for (r in 1 : strata) 
     Design[,r+1]=rep(facMat[,r],blocksizes)
  Design[,r+2]=rep(1:nunits)
+ 
  TF=optTF(Design,treatlevs,replevs,searches) 
   Design=cbind(Design,as.factor(TF)) 
+ 
   # add back single replicate treatments here 
   if ( !all(replicates>1) & !all(replicates==1) ) 
    Design= fullDesign(Design,treatments,replicates,blocksizes,blocklevels)  
-
   Design=randBlocks(Design)
-
  
- print(Design)
  # arrange blocksizes in new order
  blocks=as.factor(Design[,(ncol(Design)-2)])
  levels(blocks)=order(unique(blocks))
- print(blocks)
  blocksizes=tabulate(as.numeric(levels(blocks))[blocks])
- # design matrix for new TF where block sizes are not necessarily all equal 
+ # re-labels design matrix in standard order for new TF (including first unit column) 
  for (r in 1 : strata) 
    Design[,(r+1)]=rep(facMat[,r],blocksizes)
  
@@ -568,11 +565,11 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       designnames=c(designnames,paste("Sub",i,"_blocks", sep=""))
   colnames(Design)=c(designnames,"Sub-plots","Treatments")   
   rownames(Design) = NULL 
-print(Design)
+
   # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2]) 
 
-  list(Design=Design,Plan=Plan(Design,facMat),Incidences=Incidences,Efficiencies=A_Efficiencies(Design),seed=seed)
+  list(Design=Design,Plan=Plan(Design,facMat,designnames),Incidences=Incidences,Efficiencies=A_Efficiencies(Design),seed=seed)
 } 
