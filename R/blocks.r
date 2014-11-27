@@ -455,7 +455,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
  }
  
  #******************************************************** Randomizes blocks within strata************************************************************************************ 
- randBlocks=function(Design) {
+ randBlocks=function(Design,facMat) {
    Design=as.data.frame(Design) 
    Design[]=lapply(Design, factor)  
    for (r in 2 : (ncol(Design)-1) ){
@@ -463,6 +463,18 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
      Design[,r]=as.numeric(levels(Design[,r]))[Design[,r]]
    }
    Design=Design[ do.call(order, Design), ]
+   blocks=as.factor(Design[,(ncol(Design)-2)])
+   # re-label blocks in actual new order of occurence
+   levels(blocks)=order(unique(blocks))
+   blocksizes=tabulate(as.numeric(levels(blocks))[blocks])
+   # rebuild Design matrix using re-ordered blocksizes to maintain correct treatment grouping even when blocksizes vary  
+   for (r in 1 : strata) 
+     Design[,(r+1)]=rep(facMat[,r],blocksizes)
+   plots=NULL
+   for ( i in 1:length(blocksizes))
+     plots=c(plots,rep(1:blocksizes[i])) 
+   Design[,strata+2]=plots
+   Design[]=lapply(Design, factor)  
    Design
  }
  
@@ -502,10 +514,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
    return(TRUE)
  }
  
- 
  #********************************************************builds design ************************************************************************************ 
  testout=testInputs(treatments,replicates,blocklevels,searches,seed) 
-  if (testout!=TRUE) stop(testout)
+  if (!isTRUE(testout)) stop(testout)
   if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed) 
   # omit any single replicate treatments here 
@@ -521,44 +532,27 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   nunits=sum(treatlevs*replevs) 
   if (is.null(searches)) 
    searches=min(64, floor(4096/nunits))
-  if (all(blocklevels==1))
-    blocklevels=1
-  else
+ if (!all(blocklevels==1))
     blocklevels=blocklevels[blocklevels>1]
+ else
+   blocklevels=1
   strata=length(blocklevels)	
   blocksizes=Sizes(nunits,blocklevels)
-  facMat= matrix(nrow=prod(blocklevels),ncol=strata)
+  totblocks=prod(blocklevels)
+  facMat= matrix(nrow=totblocks,ncol=strata)
   for (r in 1 : strata) 
-    facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels)/prod(blocklevels[1:r])  )  
-
+    facMat[,r]=gl(prod(blocklevels[1:r]),totblocks/prod(blocklevels[1:r])  )  
  Design= matrix(1,nrow=nunits,ncol=(strata+2))
   for (r in 1 : strata) 
     Design[,r+1]=rep(facMat[,r],blocksizes)
  Design[,r+2]=rep(1:nunits)
- 
  TF=optTF(Design,treatlevs,replevs,searches) 
   Design=cbind(Design,as.factor(TF)) 
- 
   # add back single replicate treatments here 
   if ( !all(replicates>1) & !all(replicates==1) ) 
    Design= fullDesign(Design,treatments,replicates,blocksizes,blocklevels)  
-  Design=randBlocks(Design)
- 
- # arrange blocksizes in new order
- blocks=as.factor(Design[,(ncol(Design)-2)])
- levels(blocks)=order(unique(blocks))
- blocksizes=tabulate(as.numeric(levels(blocks))[blocks])
- # re-labels design matrix in standard order for new TF (including first unit column) 
- for (r in 1 : strata) 
-   Design[,(r+1)]=rep(facMat[,r],blocksizes)
- 
- plots=NULL
- for ( i in 1:length(blocksizes))
-   plots=c(plots,rep(1:blocksizes[i])) 
- Design[,strata+2]=plots
- Design[]=lapply(Design, factor)  
-
-  # drop leading column
+ # randomization
+  Design=randBlocks(Design,facMat)
   Design=Design[,c(2:ncol(Design))]
   designnames=c("Main_blocks")
   if (strata>1)
@@ -566,7 +560,6 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       designnames=c(designnames,paste("Sub",i,"_blocks", sep=""))
   colnames(Design)=c(designnames,"Sub-plots","Treatments")   
   rownames(Design) = NULL 
-
   # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
