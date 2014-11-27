@@ -249,8 +249,8 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   } # end of function
   
   #******************************************************** Initializes design***************************************************************************************
-  GenOpt=function(TF,NF,MF,searches)  {
-    singular=FALSE
+  GenOpt=function(TF,NF,MF,searches)  {   
+    singular=FALSE  
     TB=TreatContrasts(MF,TF)
     NB=BlockContrasts(MF,NF) 
     DD=crossprod(cbind(TB,NB))
@@ -313,7 +313,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     lattice100 =(reglat & v==10  & replevs[1]<5 )  
     # treps is the vector of treatment replications for the minimum orthogonal block size
     treps=rep(replevs,treatlevs)/hcf  
-    TF=as.factor(rep(rep(1:ntrts,treps),hcf))
+    TF=rep(rep(1:ntrts,treps),hcf)
     if (ortho<strata) {
       for (i in (ortho+1) : strata) { 
         if ( i==(ortho+1)  & simplelattice) {		
@@ -356,7 +356,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
             TF=c(TF, rep(1:(v*v))[order(tens2)])
           }
         } else {	
-          TF=GenOpt(TF,as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches)
+          TF=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches)
         }
       }
     }
@@ -454,6 +454,18 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
    Plan
  }
  
+ #******************************************************** Randomizes blocks within strata************************************************************************************ 
+ randBlocks=function(Design) {
+   Design=as.data.frame(Design) 
+   Design[]=lapply(Design, factor)  
+   for (r in 2 : (ncol(Design)-1) ){
+     levels( Design[,r])=sample(nlevels( Design[,r]) )
+     Design[,r]=as.numeric(levels(Design[,r]))[Design[,r]]
+   }
+   Design=Design[ do.call(order, Design), ]
+   Design
+ }
+ 
  #******************************************************** Validates inputs************************************************************************************
  testInputs=function(treatments,replicates,blocklevels,searches,seed) {  
    if (missing(treatments) | missing(replicates) )  
@@ -490,17 +502,6 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
    return(TRUE)
  }
  
- #******************************************************** Randomizes blocks within strata************************************************************************************ 
- randBlocks=function(Design) {
-   Design=as.data.frame(Design) 
-   Design[]=lapply(Design, factor)  
-   for (r in 2 : (ncol(Design)-1) ){
-     levels( Design[,r])=sample(nlevels( Design[,r]) )
-     Design[,r]=as.numeric(levels(Design[,r]))[Design[,r]]
-   }
-   Design=Design[ do.call(order, Design), ]
-   Design
- }
  
  #********************************************************builds design ************************************************************************************ 
  testout=testInputs(treatments,replicates,blocklevels,searches,seed) 
@@ -570,6 +571,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2]) 
-
-  list(Design=Design,Plan=Plan(Design,facMat,designnames),Incidences=Incidences,Efficiencies=A_Efficiencies(Design),seed=seed)
+  plan=Plan(Design,facMat,designnames)
+  efficiencies=A_Efficiencies(Design)
+  list(Design=Design,Plan=plan,Incidences=Incidences,Efficiencies=efficiencies,seed=seed)
 } 
