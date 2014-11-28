@@ -509,7 +509,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
      if ( !all(is.finite(searches)) | !all(!is.nan(searches))) return(" Seed must be a finite integer ") 
      if (seed<1)  return(" Seed must be at least one ")   
    }  
-   if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
+   if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)) ) 
      return("Design cannot be fitted :  too many blocks and treatments for the available plots")  
    return(TRUE)
  }
@@ -531,7 +531,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     blocklevels=HCF(replevs)
   nunits=sum(treatlevs*replevs) 
   if (is.null(searches)) 
-   searches=min(64, floor(4096/nunits))
+   searches=min(32, floor(4096/nunits))
  if (!all(blocklevels==1))
     blocklevels=blocklevels[blocklevels>1]
  else
