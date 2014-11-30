@@ -7,33 +7,39 @@
 #' 
 #' @details
 #' 
-#' \code{treatments} is a list of numbers partitioning the total number of treatments into
+#' \code{blocks} constructs general block designs by maximizing the determinant of
+#' the information matrix (D-optimality). The algorithm makes improving swaps in the top stratum 
+#' until no further improvement is possible and then repeats 
+#' the process for each nested stratum in the hierarchy until the bottom stratum is reached.
+#' At each stage, improving swaps are always nested within any existing blocks to ensure top-down optimization.
+#' 
+#' Certain special lattice designs with v**2 equally replicated treatments in blocks of size v and with k replicates 
+#' are optimized algebraically for k <= 3 or for v prime or prime-power and k <= v+1 or for v = 10 and k <= 4. 
+#' \code{crossdes} is used for lattice designs with prime-power v.
+#' 
+#' 
+#' \code{treatments} is a parameter list of numbers partitioning the total number of treatments into
 #' sets of equally replicated treatments. All treatments in the same set must 
 #' have equal replication and treatments are numbered consecutively according to their set order. 
 #'  
-#' \code{replicates} is a list of replication levels for the sets in the treatments list. 
+#' \code{replicates} is a parameter list of replication levels for the sets in the treatments list. 
 #'  Normally, replication levels will be unique but treatments with the same replication level could be split between two or more sets 
 #'  if, say, a non-standard treatment order was required. The treatments and replicates lists must, however, always be of equal length. 
 #'  
-#' \code{blocklevels} is a list of levels for the blocks design where the first number is the number of main blocks 
+#' \code{blocklevels} is a parameter list of levels for the blocks design where the first number is the number of main blocks 
 #' and the succesive numbers, if any, are the numbers of sub-block levels in a hierarchy of nested sub-blocks. 
 #' The length of the list is the number of strata and the running products are the total numbers of 
 #' blocks in each succesive stratum. The blocks in any given stratum are all equal in size or differ by, at most, a
 #' single plot. The default setting is the highest common factor of the replication levels which gives a main blocks
 #'  design with a maximal set of complete othogonal main blocks. 
-#' 
-#' \code{blocks} constructs general block designs by using a swapping algorithm that aims to maximize the determinant of
-#' the information matrix (D-optimality). The algortithm finds an optima for the main blocks design and then repeats 
-#' the process for each stratum in the hierarchy always ensuring that improving swaps are nested within the blocks
-#' of each preceding stratum. The best optima for each stratum is found from a number of searches defined by the 
-#' \code{searches} parameter.  
 #'
-#' Certain special lattice designs with v**2 equally replicated treatments in blocks of size v and with k replicates 
-#' are optimized algebraically for k <= 3 or for v prime or prime-power and k <= v+1 or for v = 10 and k <= 4. 
-#' \code{crossdes} is used for lattice designs with prime-power v.
-#'   
+#' \code{searches} is the number of local optima searched for each stratum for during an optimization with the
+#'  best optima selected before proceeding to the next stratum. Each new search from a local optima makes a number of
+#'  random swaps (6) to escape the optima and then proceeds by improving swaps. The number of searches can be set to       
+#'  any value, as required.
+#'
 #' Optimized designs are fully randomized with each set of nested blocks fully randomized within preceding sets of blocks and with
-#' treatments fully randomized within blocks.
+#' treatments fully randomized within blocks.   
 #'  
 #' @param treatments a list giving a partition of the total number of treatments into equally replicated treatment sets.   
 #' 
@@ -46,7 +52,7 @@
 #' @param searches the number of local optima searched during an optimization. The default is the minimum of 64 or
 #'  4096 divided by the number of units.
 #' 
-#' @param seed an integer seed for initializing the random number generator for reproducible designs. The default 
+#' @param seed an integer seed for initializing the random number generator. The default 
 #' is a random seed.
 #' 
 #' @return  
