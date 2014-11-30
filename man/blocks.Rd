@@ -33,24 +33,26 @@ Constructs nested block designs for unstructured treatment sets with arbitrary r
 not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
-\code{blocks} constructs general block designs by maximizing the determinant of
-the information matrix (D-optimality). The algorithm makes improving swaps in the top stratum
-until no further improvement is possible and then repeats
-the process for each nested stratum in the hierarchy until the bottom stratum is reached.
-At each stage, improving swaps are always nested within any existing blocks to ensure top-down optimization.
+\code{blocks} constructs general block designs that aim to maximize the determinant of
+the information matrix (D-optimality). The general design algorithm works by making improving swaps in the top stratum
+of a design until no further improvement is possible and then repeating
+the process for each nested stratum in turn until the bottom stratum is reached.
+At each stage, improving swaps are nested within existing blocks to ensure top-down optimization.
 
 Certain special lattice designs with v**2 equally replicated treatments in blocks of size v and with k replicates
 are optimized algebraically for k <= 3 or for v prime or prime-power and k <= v+1 or for v = 10 and k <= 4.
 \code{crossdes} is used for lattice designs with prime-power v.
 
 
-\code{treatments} is a parameter list of numbers partitioning the total number of treatments into
-sets of equally replicated treatments. All treatments in the same set must
-have equal replication and treatments are numbered consecutively according to their set order.
+\code{treatments} is a parameter list that partitions the total number of treatments into
+sets of equally replicated treatments. All treatments in the same set
+have equal replication and all treatments are numbered consecutively according to their set order.
+Normally, all treatments with the same replication will occur in the same set but
+treatments with the same replication could be split between two or more sets  if, say, a non-standard treatment ordering
+ was required.
 
 \code{replicates} is a parameter list of replication levels for the sets in the treatments list.
- Normally, replication levels will be unique but treatments with the same replication level could be split between two or more sets
- if, say, a non-standard treatment order was required. The treatments and replicates lists must, however, always be of equal length.
+  The treatments and replicates lists must be of equal length.
 
 \code{blocklevels} is a parameter list of levels for the blocks design where the first number is the number of main blocks
 and the succesive numbers, if any, are the numbers of sub-block levels in a hierarchy of nested sub-blocks.
