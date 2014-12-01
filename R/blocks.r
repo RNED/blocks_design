@@ -7,54 +7,58 @@
 #' 
 #' @details
 #' 
-#' \code{blocks} constructs general block designs that aim to maximize the determinant of
-#' the information matrix (D-optimality). The general design algorithm works by making improving swaps in the top stratum 
+#' \code{blocks(...)} constructs general block designs by maximizing the determinant of
+#' the information matrix (D-optimality). The algorithm works by making improving swaps between blocks
+#'  in the top stratum 
 #' of a design until no further improvement is possible and then repeating 
 #' the process for each nested stratum in turn until the bottom stratum is reached.
-#' At each stage, improving swaps are nested within existing blocks to ensure top-down optimization.
+#' At each stage, improving swaps between nested blocks are made within the blocks of the preceding strata
+#' to ensure top-down optimization.
 #' 
-#' Certain special lattice designs with v**2 equally replicated treatments in blocks of size v and with k replicates 
+#' Certain special designs with v**2 equally replicated treatments in blocks of size v and with k replicates 
 #' are optimized algebraically for k <= 3 or for v prime or prime-power and k <= v+1 or for v = 10 and k <= 4. 
-#' \code{crossdes} is used for lattice designs with prime-power v.
 #' 
+#' The treatments design is defined by the \code{treatments} and the \code{replicates} parameter lists which
+#' define the total required number of treatments partitioned into
+#' sets of equally replicated treatments. The \code{treatments} list defines the size of each set 
+#' and the \code{replicates} list defines the replication. The two lists must be of equal length and the sets
+#' must be in the same order in the two lists. Treatments are numbered consecutively according to their set order
+#' and normally, all treatments with the same replication will be in the same set. 
+#' However, equi-replicate treatments can be split between two or more sets if a non-standard treatment ordering
+#' is required. 
+#'  
+#' The block design is defined by the \code{blocklevels} list which contains the nested block levels 
+#' for each stratum of the design. The first number is the number of main blocks 
+#' and the successive numbers, if any, are the numbers of sub-blocks in a hierarchy of nested sub-blocks. 
+#' The length of the list is the number of strata in the design and the 
+#' running products of the levels are the total blocks in each successive strata of the
+#' design. The blocks in any given stratum are always equal in size or differ by, at most, a
+#' single plot. The default is the highest common factor of the replication levels, 
+#' which gives a main blocks design with a maximal set of complete orthogonal main blocks. 
+#'
+#' The \code{searches} parameter is the number of local optima found for each stratum during an optimization and
+#' the default has been chosen to ensure a reasonable search time for small or medium size designs using
+#' a reasonably fast computer. Increasing the number of searches may improve the efficiency of a design but
+#'  will also increase the search time.
+#'  
+#' The \code{seed} parameter is an integer number used to initialize the random number generator and the 
+#'  default is a random integer. However any fixed positive integer can be used if required.   
 #' 
-#' \code{treatments} is a parameter list that partitions the total number of treatments into
-#' sets of equally replicated treatments. All treatments in the same set
-#' have equal replication and all treatments are numbered consecutively according to their set order. 
-#' Normally, all treatments with the same replication will occur in the same set but
-#' treatments with the same replication could be split between two or more sets  if, say, a non-standard treatment ordering
-#'  was required.
-#'  
-#' \code{replicates} is a parameter list of replication levels for the sets in the treatments list. 
-#'   The treatments and replicates lists must be of equal length. 
-#'  
-#' \code{blocklevels} is a parameter list of levels for the blocks design where the first number is the number of main blocks 
-#' and the succesive numbers, if any, are the numbers of sub-block levels in a hierarchy of nested sub-blocks. 
-#' The length of the list is the number of strata and the running products are the total numbers of 
-#' blocks in each succesive stratum. The blocks in any given stratum are all equal in size or differ by, at most, a
-#' single plot. The default setting is the highest common factor of the replication levels which gives a main blocks
-#'  design with a maximal set of complete othogonal main blocks. 
-#'
-#' \code{searches} is the number of local optima searched for each stratum for during an optimization with the
-#'  best optima selected before proceeding to the next stratum. Each new search from a local optima makes a number of
-#'  random swaps (6) to escape the optima and then proceeds by improving swaps. The number of searches can be set to       
-#'  any value, as required.
-#'
-#' Optimized designs are fully randomized with each set of nested blocks fully randomized within preceding sets of blocks and with
+#' Optimized designs are fully randomized with each set of nested blocks fully randomized within each preceding block and with
 #' treatments fully randomized within blocks.   
 #'  
 #' @param treatments a list giving a partition of the total number of treatments into equally replicated treatment sets.   
 #' 
 #' @param replicates a list assigning a replication level to each set in the \code{treatments} list. 
 #' 
-#' @param blocklevels a list of levels where the first level is the number of main blocks and the remaining
+#' @param blocklevels an optional list of levels where the first level is the number of main blocks and the remaining
 #' levels, if any, are the levels of a hierarchy of nested sub-blocks in descending order of nesting.
 #' The default is an orthogonal main blocks design.
 #'  
-#' @param searches the number of local optima searched during an optimization. The default is the minimum of 64 or
-#'  4096 divided by the number of units.
+#' @param searches an optional integer for the number of local optima searched during an optimization. 
+#' The default is the minimum of 32 or the ceiling of 4096 divided by the number of units.
 #' 
-#' @param seed an integer seed for initializing the random number generator. The default 
+#' @param seed an optional integer seed for initializing the random number generator. The default 
 #' is a random seed.
 #' 
 #' @return  
@@ -446,37 +450,18 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     Efficiencies
   }
   
- #******************************************************** Plan output************************************************************************************
- Plan=function(Design,facMat,designnames)  {
-   strata=ncol(Design)-2
-   bSizes=tabulate(Design[,strata])
-   nblocks=length(bSizes)
-   plotTrts=matrix(nrow=nblocks,ncol=max(bSizes)) 
-   counter=0
-   for (i in 1:nblocks) {
-       plotTrts[i,c(1 : bSizes[i])]=Design[ c((1+counter) : (counter+bSizes[i]))  , strata+2]  
-       counter=counter+bSizes[i]
-   }
-   plotTrts[is.na(plotTrts)]  = " "
-   Plan=as.data.frame(cbind(facMat, rep(" ",nblocks), plotTrts))
-   designnames=c(designnames, "Sub_plots", 1:ncol(plotTrts) )
-   colnames(Plan)=designnames
-   Plan
- }
- 
- #******************************************************** Randomizes blocks within strata************************************************************************************ 
- randBlocks=function(Design) {
-   for (r in 1 : (ncol(Design)-1) ){
-     levels( Design[,r])=sample(nlevels( Design[,r]) )
-     Design[,r]=as.factor(levels(Design[,r]))[Design[,r]]
-   }
-   Design=Design[ do.call(order, Design), ]
-   for (r in 1 : (ncol(Design)-1) ) {
-     levels(Design[,r])=order(unique(Design[,r]))
-     Design[,r]=as.factor(levels(Design[,r]))[Design[,r]]    
-   } 
-   Design
- }
+  #******************************************************** Randomizes blocks within strata************************************************************************************ 
+  randBlocks=function(Design,facMat) {
+    for (r in 1 : (ncol(Design)-1) )
+      Design[,r]=as.numeric( sample(nlevels( Design[,r]) ))[Design[,r]]  
+    Design=Design[ do.call(order, Design), ] 
+    blocksizes=tabulate(as.numeric( order(unique(Design[,ncol(Design)-2])))[Design[,ncol(Design)-2]])
+    for (r in 1 : (ncol(Design)-2) ) 
+      Design[,r]=rep(facMat[,r],blocksizes)
+    Design[,(ncol(Design)-1)]=rep(1:nrow(Design))
+    Design[]=lapply(Design, factor) 
+    Design
+  }
  
  #******************************************************** Validates inputs************************************************************************************
  testInputs=function(treatments,replicates,blocklevels,searches,seed) {  
@@ -531,7 +516,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     blocklevels=HCF(replevs)
   nunits=sum(treatlevs*replevs) 
   if (is.null(searches)) 
-   searches=min(32, floor(4096/nunits))
+   searches=min(32, ceiling(4096/nunits))
  if (!all(blocklevels==1))
     blocklevels=blocklevels[blocklevels>1]
  else
@@ -552,9 +537,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   if ( !all(replicates>1) & !all(replicates==1) ) 
    Design= fullDesign(Design,treatments,replicates,blocksizes,blocklevels) 
  Design=as.data.frame(Design)[,c(2:ncol(Design))] 
- Design[]=lapply(Design, factor) 
+ Design[]=lapply(Design, factor)   
  # randomization
-  Design=randBlocks(Design)
+  Design=randBlocks(Design,facMat)
   designnames=c("Main_blocks")
   if (strata>1)
     for (i in 1:(strata-1))
@@ -564,7 +549,28 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
-    Incidences[[i]]=table( Design[,i] ,Design[,strata+2]) 
+    Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
+ #******************************************************** Plan output************************************************************************************
+ Plan=function(Design,facMat,designnames)  {
+   strata=ncol(Design)-2
+   bSizes=tabulate(Design[,strata])
+   nblocks=length(bSizes)
+   plotTrts=matrix(nrow=nblocks,ncol=max(bSizes)) 
+   counter=0
+   for (i in 1:nblocks) {
+     plotTrts[i,c(1 : bSizes[i])]=Design[ c((1+counter) : (counter+bSizes[i]))  , strata+2]  
+     counter=counter+bSizes[i]
+   }
+   plotTrts[is.na(plotTrts)]  = " "
+   Plan=as.data.frame(cbind(facMat, rep(" ",nblocks), plotTrts))
+   designnames=c(designnames, "Sub_plots", 1:ncol(plotTrts) )
+   colnames(Plan)=designnames
+   Plan
+ }
+ 
+ 
+ 
+ 
   plan=Plan(Design,facMat,designnames)
   efficiencies=A_Efficiencies(Design)
   list(Design=Design,Plan=plan,Incidences=Incidences,Efficiencies=efficiencies,seed=seed)
