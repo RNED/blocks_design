@@ -7,45 +7,45 @@
 #' 
 #' @details
 #' 
-#' The \code{blocks(...)} function constructs general block designs by maximizing the determinant of
-#' the information matrix (D-optimality). The function works by making improving swaps between blocks
+#' \code{blocks(...)} constructs general block designs by using a swapping algorithm to 
+#' maximize the determinant of
+#' the information matrix (D-optimality). The algorithm proceeds by making improving swaps between blocks
 #'  in the top stratum 
 #' of a design until no further improvement is possible and then repeating 
 #' the process for each nested stratum in turn until the bottom stratum is reached.
-#' At each stage, improving swaps between nested blocks are made within the blocks of any preceding strata
+#' At each stage, improving swaps are made within the blocks of any existing strata
 #' to ensure top-down optimization. Certain special lattice block designs with v**2 equally 
 #' replicated treatments in blocks of size v and with k replicates 
 #'  where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 have algebraic optima and
-#'  are optimized algebraically.  
+#'  these designs are constructed algebraically.  
 #' 
 #' The treatments design is defined by the \code{treatments} and the \code{replicates} parameter lists which
 #' partition the total required number of treatments into
 #' sets of equally replicated treatments. The \code{treatments} list defines the size of each set 
 #' and the \code{replicates} list defines the replication. The two lists must be of equal length and the sets
-#' must have the same order in both lists. Treatments are numbered consecutively according to the set order
-#' and treatments with the same replication can be split between two or more sets if a non-standard treatment ordering
+#' must be in the same order in both lists. Treatments are numbered consecutively according to the set order
+#' and treatments with the same replication can be split between two or more sets if a non-standard treatment order
 #' is required. 
 #'  
 #' The blocks design is defined by the \code{blocklevels} list which contains the nested blocks levels 
 #' for each stratum of the design. The first level is the number of main blocks 
-#' and the successive levels, if any, are the numbers of nested sub-blocks for each stratum of
-#'  a hierarchy of nested sub-blocks. 
+#' and the successive levels, if any, are the numbers of nested sub-blocks in each stratum of
+#'  a hierarchy of nested sub-blocks.
 #' The length of the list is the number of strata in the design and the 
 #' running products of the levels are the total blocks in each successive strata of the
 #' design. The blocks in any given stratum are always equal in size or differ by, at most, a
 #' single plot. The default is the highest common factor of the replication levels, 
 #' which gives a main blocks design with a maximal set of complete orthogonal main blocks. 
 #'
-#' The \code{searches} parameter is the number of local optima found for each stratum during an optimization and
-#' the default has been chosen to ensure a reasonable search time for small or medium size designs using
-#' a reasonably fast computer. Increasing the number of searches may improve the efficiency of a design but
+#' The \code{searches} parameter is the number of local optima searched during an optimization. 
+#' Increasing the number of searches may improve the efficiency of a design but
 #'  will also increase the search time.
 #'  
-#' The \code{seed} parameter is an integer number used to initialize the random number generator and the 
-#'  default is a random integer. However any fixed positive integer can be used if required.   
+#' The \code{seed} parameter is an integer used to initialize the random number generator. The 
+#'  default is a random integer but any fixed positive integer can be used instead,if required.   
 #' 
-#' Optimized designs are fully randomized with each set of nested blocks fully randomized within each preceding block and with
-#' treatments fully randomized within blocks.   
+#' Optimized designs are fully randomized with the smaller blocks fully randomized within the larger blocks 
+#' and with the treatments fully randomized within the bottom level blocks.   
 #'  
 #' @param treatments a list giving a partition of the total number of treatments into equally replicated treatment sets.   
 #' 
