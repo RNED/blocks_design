@@ -34,7 +34,7 @@
 #' The length of the list is the number of strata in the design and the 
 #' running products of the levels are the total blocks in each successive strata of the
 #' design. The blocks in any given stratum are always equal in size or differ by, at most, a
-#' single plot. The default is the highest common factor of the replication levels, 
+#' single unit. The default is the highest common factor of the replication levels, 
 #' which gives a main blocks design with a maximal set of complete orthogonal main blocks. 
 #'
 #' The \code{searches} parameter is the number of local optima searched during an optimization. 
@@ -44,8 +44,8 @@
 #' The \code{seed} parameter is an integer used to initialize the random number generator. The 
 #'  default is a random integer but any fixed positive integer can be used instead,if required.   
 #' 
-#' Optimized designs are fully randomized with the smaller blocks fully randomized within the larger blocks 
-#' and with the treatments fully randomized within the bottom level blocks.   
+#' Blocks and treatments are fully randomized within the constraints imposed by the nested blocks design.
+#' 
 #'  
 #' @param treatments a list giving a partition of the total number of treatments into equally replicated treatment sets.   
 #' 
