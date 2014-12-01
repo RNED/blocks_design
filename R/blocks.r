@@ -7,29 +7,29 @@
 #' 
 #' @details
 #' 
-#' \code{blocks(...)} constructs general block designs by maximizing the determinant of
-#' the information matrix (D-optimality). The algorithm works by making improving swaps between blocks
+#' The \code{blocks(...)} function constructs general block designs by maximizing the determinant of
+#' the information matrix (D-optimality). The function works by making improving swaps between blocks
 #'  in the top stratum 
 #' of a design until no further improvement is possible and then repeating 
 #' the process for each nested stratum in turn until the bottom stratum is reached.
-#' At each stage, improving swaps between nested blocks are made within the blocks of the preceding strata
-#' to ensure top-down optimization.
-#' 
-#' Certain special designs with v**2 equally replicated treatments in blocks of size v and with k replicates 
-#' are optimized algebraically for k <= 3 or for v prime or prime-power and k <= v+1 or for v = 10 and k <= 4. 
+#' At each stage, improving swaps between nested blocks are made within the blocks of any preceding strata
+#' to ensure top-down optimization. Certain special lattice block designs with v**2 equally 
+#' replicated treatments in blocks of size v and with k replicates 
+#'  where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 have algebraic optima and
+#'  are optimized algebraically.  
 #' 
 #' The treatments design is defined by the \code{treatments} and the \code{replicates} parameter lists which
-#' define the total required number of treatments partitioned into
+#' partition the total required number of treatments into
 #' sets of equally replicated treatments. The \code{treatments} list defines the size of each set 
 #' and the \code{replicates} list defines the replication. The two lists must be of equal length and the sets
-#' must be in the same order in the two lists. Treatments are numbered consecutively according to their set order
-#' and normally, all treatments with the same replication will be in the same set. 
-#' However, equi-replicate treatments can be split between two or more sets if a non-standard treatment ordering
+#' must have the same order in both lists. Treatments are numbered consecutively according to the set order
+#' and treatments with the same replication can be split between two or more sets if a non-standard treatment ordering
 #' is required. 
 #'  
-#' The block design is defined by the \code{blocklevels} list which contains the nested block levels 
-#' for each stratum of the design. The first number is the number of main blocks 
-#' and the successive numbers, if any, are the numbers of sub-blocks in a hierarchy of nested sub-blocks. 
+#' The blocks design is defined by the \code{blocklevels} list which contains the nested blocks levels 
+#' for each stratum of the design. The first level is the number of main blocks 
+#' and the successive levels, if any, are the numbers of nested sub-blocks for each stratum of
+#'  a hierarchy of nested sub-blocks. 
 #' The length of the list is the number of strata in the design and the 
 #' running products of the levels are the total blocks in each successive strata of the
 #' design. The blocks in any given stratum are always equal in size or differ by, at most, a
@@ -463,6 +463,24 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     Design
   }
  
+  #******************************************************** Plan output************************************************************************************
+  Plan=function(Design,facMat,designnames)  {
+    strata=ncol(Design)-2
+    bSizes=tabulate(Design[,strata])
+    nblocks=length(bSizes)
+    plotTrts=matrix(nrow=nblocks,ncol=max(bSizes)) 
+    counter=0
+    for (i in 1:nblocks) {
+      plotTrts[i,c(1 : bSizes[i])]=Design[ c((1+counter) : (counter+bSizes[i]))  , strata+2]  
+      counter=counter+bSizes[i]
+    }
+    plotTrts[is.na(plotTrts)]  = " "
+    Plan=as.data.frame(cbind(facMat, rep(" ",nblocks), plotTrts))
+    designnames=c(designnames, "Sub_plots", 1:ncol(plotTrts) )
+    colnames(Plan)=designnames
+    Plan
+  }
+  
  #******************************************************** Validates inputs************************************************************************************
  testInputs=function(treatments,replicates,blocklevels,searches,seed) {  
    if (missing(treatments) | missing(replicates) )  
@@ -550,27 +568,6 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
- #******************************************************** Plan output************************************************************************************
- Plan=function(Design,facMat,designnames)  {
-   strata=ncol(Design)-2
-   bSizes=tabulate(Design[,strata])
-   nblocks=length(bSizes)
-   plotTrts=matrix(nrow=nblocks,ncol=max(bSizes)) 
-   counter=0
-   for (i in 1:nblocks) {
-     plotTrts[i,c(1 : bSizes[i])]=Design[ c((1+counter) : (counter+bSizes[i]))  , strata+2]  
-     counter=counter+bSizes[i]
-   }
-   plotTrts[is.na(plotTrts)]  = " "
-   Plan=as.data.frame(cbind(facMat, rep(" ",nblocks), plotTrts))
-   designnames=c(designnames, "Sub_plots", 1:ncol(plotTrts) )
-   colnames(Plan)=designnames
-   Plan
- }
- 
- 
- 
- 
   plan=Plan(Design,facMat,designnames)
   efficiencies=A_Efficiencies(Design)
   list(Design=Design,Plan=plan,Incidences=Incidences,Efficiencies=efficiencies,seed=seed)
