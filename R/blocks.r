@@ -44,9 +44,8 @@
 #' The \code{seed} parameter is an integer used to initialize the random number generator. The 
 #'  default is a random integer but any fixed positive integer can be used instead,if required.   
 #' 
-#' Blocks and treatments are fully randomized within the constraints imposed by the nested blocks design.
+#' Blocks and treatments are fully randomized within the constraints of a nested blocks design.
 #' 
-#'  
 #' @param treatments a list giving a partition of the total number of treatments into equally replicated treatment sets.   
 #' 
 #' @param replicates a list assigning a replication level to each set in the \code{treatments} list. 

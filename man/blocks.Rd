@@ -70,7 +70,7 @@ Increasing the number of searches may improve the efficiency of a design but
 The \code{seed} parameter is an integer used to initialize the random number generator. The
  default is a random integer but any fixed positive integer can be used instead,if required.
 
-Blocks and treatments are fully randomized within the constraints imposed by the nested blocks design.
+Blocks and treatments are fully randomized within the constraints of a nested blocks design.
 }
 \examples{
 # 3 treatments with 2 reps, 2 treatments with 4 reps, 4 treatments with 3 reps
