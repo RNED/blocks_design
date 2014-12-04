@@ -11,8 +11,8 @@ blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
 
 \item{replicates}{a list assigning a replication level to each set in the \code{treatments} list.}
 
-\item{blocklevels}{an optional list of levels where the first level is the number of main blocks and the remaining
-levels, if any, are the levels of a hierarchy of nested sub-blocks in descending order of nesting.
+\item{blocklevels}{a list of block levels where the first level is the number of main blocks and the remaining
+levels, if any, are the numbers of nested sub-blocks in a hierarchy of nested sub-blocks.
 The default is an orthogonal main blocks design.}
 
 \item{searches}{an optional integer for the number of local optima searched during an optimization.
@@ -33,33 +33,30 @@ Constructs nested block designs for unstructured treatment sets with arbitrary r
 not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
-\code{blocks(...)} constructs general block designs by using a swapping algorithm to
-maximize the determinant of
-the information matrix (D-optimality). The algorithm proceeds by making improving swaps between blocks
- in the top stratum
-of a design until no further improvement is possible and then repeating
+\code{blocks(...)} constructs nested block designs that maximize the determinant of
+the information matrix (D-optimality). For general nested block designs, a swapping algorithm makes improving swaps between blocks
+ in the top stratum until no further improvement is possible and then repeats
 the process for each nested stratum in turn until the bottom stratum is reached.
-At each stage, improving swaps are made within the blocks of any existing strata
-to ensure top-down optimization. Certain special lattice block designs with v**2 equally
+At each stage, improving swaps are made within the constraints of existing blocks
+to ensure top-down optimization. For certain special lattice block designs with v**2 equally
 replicated treatments in blocks of size v and with k replicates
- where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 have algebraic optima and
+ where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 algebraic solutions exist and
  these designs are constructed algebraically.
 
-The treatments design is defined by the \code{treatments} and the \code{replicates} parameter lists which
-partition the total required number of treatments into
-sets of equally replicated treatments. The \code{treatments} list defines the size of each set
-and the \code{replicates} list defines the replication. The two lists must be of equal length and the sets
-must be in the same order in both lists. Treatments are numbered consecutively according to the set order
-and treatments with the same replication can be split between two or more sets if a non-standard treatment order
-is required.
+\code{treatments} is a list of sets where the sum of the sets is the required number of treatments
+and the treatments in any one set are all equally replicated.
 
-The blocks design is defined by the \code{blocklevels} list which contains the nested blocks levels
-for each stratum of the design. The first level is the number of main blocks
-and the successive levels, if any, are the numbers of nested sub-blocks in each stratum of
- a hierarchy of nested sub-blocks.
-The length of the list is the number of strata in the design and the
-running products of the levels are the total blocks in each successive strata of the
-design. The blocks in any given stratum are always equal in size or differ by, at most, a
+\code{replicates} is a list of replication numbers for sets in the \code{treatments} list.
+Treatments are numbered consecutively according to the order of the sets
+and treatments with the same replication can be split between two or more sets if required.
+
+\code{blocklevels} is a list of nested block levels for the succesive blocks strata of the design.
+The first level is the number of main blocks
+and the successive levels, if any, are the numbers of sub-blocks in the succesive strata of
+of a nested blocks design.
+The length of the list is the number of strata  and the
+running products of the levels are the total blocks in each successive stratum of the
+design. Blocks in the same stratum are always equal in size or differ by, at most, a
 single unit. The default is the highest common factor of the replication levels,
 which gives a main blocks design with a maximal set of complete orthogonal main blocks.
 

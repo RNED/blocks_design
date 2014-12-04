@@ -7,33 +7,30 @@
 #' 
 #' @details
 #' 
-#' \code{blocks(...)} constructs general block designs by using a swapping algorithm to 
-#' maximize the determinant of
-#' the information matrix (D-optimality). The algorithm proceeds by making improving swaps between blocks
-#'  in the top stratum 
-#' of a design until no further improvement is possible and then repeating 
+#' \code{blocks(...)} constructs nested block designs that maximize the determinant of
+#' the information matrix (D-optimality). For general nested block designs, a swapping algorithm makes improving swaps between blocks
+#'  in the top stratum until no further improvement is possible and then repeats 
 #' the process for each nested stratum in turn until the bottom stratum is reached.
-#' At each stage, improving swaps are made within the blocks of any existing strata
-#' to ensure top-down optimization. Certain special lattice block designs with v**2 equally 
+#' At each stage, improving swaps are made within the constraints of existing blocks
+#' to ensure top-down optimization. For certain special lattice block designs with v**2 equally 
 #' replicated treatments in blocks of size v and with k replicates 
-#'  where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 have algebraic optima and
+#'  where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 algebraic solutions exist and
 #'  these designs are constructed algebraically.  
 #' 
-#' The treatments design is defined by the \code{treatments} and the \code{replicates} parameter lists which
-#' partition the total required number of treatments into
-#' sets of equally replicated treatments. The \code{treatments} list defines the size of each set 
-#' and the \code{replicates} list defines the replication. The two lists must be of equal length and the sets
-#' must be in the same order in both lists. Treatments are numbered consecutively according to the set order
-#' and treatments with the same replication can be split between two or more sets if a non-standard treatment order
-#' is required. 
+#' \code{treatments} is a list of sets where the sum of the sets is the required number of treatments 
+#' and the treatments in any one set are all equally replicated. 
+#' 
+#' \code{replicates} is a list of replication numbers for sets in the \code{treatments} list. 
+#' Treatments are numbered consecutively according to the order of the sets
+#' and treatments with the same replication can be split between two or more sets if required. 
 #'  
-#' The blocks design is defined by the \code{blocklevels} list which contains the nested blocks levels 
-#' for each stratum of the design. The first level is the number of main blocks 
-#' and the successive levels, if any, are the numbers of nested sub-blocks in each stratum of
-#'  a hierarchy of nested sub-blocks.
-#' The length of the list is the number of strata in the design and the 
-#' running products of the levels are the total blocks in each successive strata of the
-#' design. The blocks in any given stratum are always equal in size or differ by, at most, a
+#' \code{blocklevels} is a list of nested block levels for the succesive blocks strata of the design. 
+#' The first level is the number of main blocks 
+#' and the successive levels, if any, are the numbers of sub-blocks in the succesive strata of
+#' of a nested blocks design.
+#' The length of the list is the number of strata  and the 
+#' running products of the levels are the total blocks in each successive stratum of the
+#' design. Blocks in the same stratum are always equal in size or differ by, at most, a
 #' single unit. The default is the highest common factor of the replication levels, 
 #' which gives a main blocks design with a maximal set of complete orthogonal main blocks. 
 #'
@@ -50,8 +47,8 @@
 #' 
 #' @param replicates a list assigning a replication level to each set in the \code{treatments} list. 
 #' 
-#' @param blocklevels an optional list of levels where the first level is the number of main blocks and the remaining
-#' levels, if any, are the levels of a hierarchy of nested sub-blocks in descending order of nesting.
+#' @param blocklevels a list of block levels where the first level is the number of main blocks and the remaining
+#' levels, if any, are the numbers of nested sub-blocks in a hierarchy of nested sub-blocks.
 #' The default is an orthogonal main blocks design.
 #'  
 #' @param searches an optional integer for the number of local optima searched during an optimization. 
@@ -148,36 +145,30 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     for (i in 1:length(Samp)) {
       trts=as.numeric(TF[Samp[[i]]])
       nblks=as.numeric(BF[Samp[[i]]])
-      TT=M11[trts,trts,drop=FALSE]
-      BB=M22[nblks,nblks,drop=FALSE]
-      TB=M12[trts,nblks,drop=FALSE]
-      TT=TT-tcrossprod(diag(TT),rep(1,ncol(TT)))      
-      TT=TT+t(TT)
-      BB=BB-tcrossprod(diag(BB),rep(1,ncol(TT)))      
-      BB=BB+t(BB)
-      TB=TB-tcrossprod(diag(TB),rep(1,ncol(TT)))      
-      TB=1+TB+t(TB)
+      TT=2*M11[trts,trts,drop=FALSE]-tcrossprod(diag(M11[trts,trts,drop=FALSE]),rep(1,length(trts)))-tcrossprod(rep(1,length(trts)), diag(M11[trts,trts,drop=FALSE]))
+      BB=2*M22[nblks,nblks,drop=FALSE]-tcrossprod(diag(M22[nblks,nblks,drop=FALSE]),rep(1,length(nblks)))-tcrossprod(rep(1,length(nblks)),diag(M22[nblks,nblks,drop=FALSE]))
+      TB=1+M12[trts,nblks,drop=FALSE]+t(M12[trts,nblks,drop=FALSE])-
+        tcrossprod(diag(M12[trts,nblks,drop=FALSE]),rep(1,length(trts)))-
+        tcrossprod(rep(1,length(trts)),diag(M12[trts,nblks,drop=FALSE])) 
       detmat[[i]]=TB**2-TT*BB
     }
     detmat
   }
   
   #******************************************************** Updates variance matrix ************************************************************************************
-  UpDate=function(M11,M22,M12,si,sj,TF,BF) {
-    M11T = M11[TF[si],]-M11[TF[sj],]
-    M12T = M12[TF[si],]-M12[TF[sj],]
-    M12B = M12[,BF[si]]-M12[,BF[sj]]
-    M22B = M22[,BF[si]]-M22[,BF[sj]]
+  UpDate=function(M11,M22,M12,ti,tj,bi,bj,TF,BF){
     # updating vectors
-    m11=M11T[TF[si]]-M11T[TF[sj]]
-    m22=M22B[BF[si]]-M22B[BF[sj]]
-    m12=M12T[BF[si]]-M12T[BF[sj]]
+    m11=M11[ti,ti]+M11[tj,tj]-M11[tj,ti]-M11[ti,tj]
+    m22=M22[bi,bi]+M22[bj,bj]-M22[bi,bj]-M22[bj,bi]
+    m12=M12[ti,bi]-M12[tj,bi]-M12[ti,bj]+M12[tj,bj]
     f = sqrt(2+m11+m22-2*m12)
     m = f/sqrt(1-2*m12-m11*m22+m12*m12)/2
-    Z1 = (M12B-M11T)/f 
-    Z2 = (M22B-M12T)/f 
-    W1 = (M11T+M12B - Z1*(m22-m11)/f)*m
-    W2 = (M12T+M22B - Z2*(m22-m11)/f)*m
+    
+    Z1 = (M12[,bi]-M12[,bj]-M11[ti,]+M11[tj,])/f 
+    Z2 = (M22[,bi]-M22[,bj]-M12[ti,]+M12[tj,])/f 
+    W1 = (M11[ti,]-M11[tj,]+M12[,bi]-M12[,bj] - Z1*(m22-m11)/f)*m
+    W2 = (M12[ti,]-M12[tj,]+M22[,bi]-M22[,bj] - Z2*(m22-m11)/f)*m
+    
     M11 = M11 - tcrossprod(Z1) + tcrossprod(W1)
     M22 = M22 - tcrossprod(Z2) + tcrossprod(W2)
     M12 = M12 - tcrossprod(Z1,Z2) + tcrossprod(W1,W2)
@@ -214,7 +205,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
           }	
         }			
         if (grelD>1.00000001) {
-          up=UpDate(M11,M22,M12,gsi,gsj,TF,BF)
+          up=UpDate(M11,M22,M12,TF[gsi],TF[gsj],BF[gsi],BF[gsj],TF,BF)
           M11=up$M11
           M22=up$M22
           M12=up$M12
@@ -248,7 +239,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
           #updates matrices
           if (icount<100) {
             prop_change=prop_change*dswap
-            up=UpDate(M11,M22,M12,s[1],s[2],TF,BF)  
+            up=UpDate(M11,M22,M12,TF[s[1]],TF[s[2]],BF[s[1]],BF[s[2]],TF,BF)
             M11=up$M11
             M22=up$M22
             M12=up$M12
