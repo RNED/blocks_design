@@ -174,6 +174,36 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     M12 = M12 - tcrossprod(Z1,Z2) + tcrossprod(W1,W2)
     up=list(M11=M11,M22=M22,M12=M12)
   } # end of function
+  
+  
+  #******************************************************** Updates variance matrix ************************************************************************************
+  A_Mat=function(M11,M22,M12,ti,tj,bi,bj,TF,BF){
+    # updating vectors
+    m11=M11[ti,ti]+M11[tj,tj]-M11[tj,ti]-M11[ti,tj]
+    m22=M22[bi,bi]+M22[bj,bj]-M22[bi,bj]-M22[bj,bi]
+    m12=M12[ti,bi]-M12[tj,bi]-M12[ti,bj]+M12[tj,bj]
+    f = sqrt(2+m11+m22-2*m12)
+    m = f/sqrt(1-2*m12-m11*m22+m12*m12)/2
+    
+    
+    
+    
+    Z1 = (M12[,bi]-M12[,bj]-M11[ti,]+M11[tj,])/f 
+    Z2 = (M22[,bi]-M22[,bj]-M12[ti,]+M12[tj,])/f 
+    W1 = (M11[ti,]-M11[tj,]+M12[,bi]-M12[,bj] - Z1*(m22-m11)/f)*m
+    W2 = (M12[ti,]-M12[tj,]+M22[,bi]-M22[,bj] - Z2*(m22-m11)/f)*m
+    
+    
+    
+    
+    
+    
+    M11 = M11 - tcrossprod(Z1) + tcrossprod(W1)
+    M22 = M22 - tcrossprod(Z2) + tcrossprod(W2)
+    M12 = M12 - tcrossprod(Z1,Z2) + tcrossprod(W1,W2)
+    up=list(M11=M11,M22=M22,M12=M12)
+  } # end of function
+  
  
   #******************************************************** General optimization ************************************************************************************
   Optimise=function(TF,BF,MF,M11,M22,M12,searches)   {
