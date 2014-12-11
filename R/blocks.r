@@ -139,124 +139,116 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     TM
   }
   
-  #********************************************************Determinants of swaps ************************************************************************************
-  DetMat=function(M11,M22,M12,Samp,TF,BF) {
-    detmat=vector("list", length(Samp))
-    for (i in 1:length(Samp)) {
-      trts=as.numeric(TF[Samp[[i]]])
-      nblks=as.numeric(BF[Samp[[i]]])
-      TT=2*M11[trts,trts,drop=FALSE]-tcrossprod(diag(M11[trts,trts,drop=FALSE]),rep(1,length(trts)))-tcrossprod(rep(1,length(trts)), diag(M11[trts,trts,drop=FALSE]))
-      BB=2*M22[nblks,nblks,drop=FALSE]-tcrossprod(diag(M22[nblks,nblks,drop=FALSE]),rep(1,length(nblks)))-tcrossprod(rep(1,length(nblks)),diag(M22[nblks,nblks,drop=FALSE]))
-      TB=1+M12[trts,nblks,drop=FALSE]+t(M12[trts,nblks,drop=FALSE])-
-        tcrossprod(diag(M12[trts,nblks,drop=FALSE]),rep(1,length(trts)))-
-        tcrossprod(rep(1,length(trts)),diag(M12[trts,nblks,drop=FALSE])) 
-      detmat[[i]]=TB**2-TT*BB
-    }
-    detmat
-  }
-  
   #******************************************************** Updates variance matrix ************************************************************************************
-  UpDate=function(M11,M22,M12,ti,tj,bi,bj,TF,BF){
-    # updating vectors
+  UpDate=function(M11,M22,M12,ploti,plotj,TF,BF) {  
+   
+   ti= TF[ploti]
+   tj= TF[plotj]
+   bi= BF[ploti]
+   bj= BF[plotj]
     m11=M11[ti,ti]+M11[tj,tj]-M11[tj,ti]-M11[ti,tj]
     m22=M22[bi,bi]+M22[bj,bj]-M22[bi,bj]-M22[bj,bi]
     m12=M12[ti,bi]-M12[tj,bi]-M12[ti,bj]+M12[tj,bj]
     f = sqrt(2+m11+m22-2*m12)
-    m = f/sqrt(1-2*m12-m11*m22+m12*m12)/2
-    
-    Z1 = (M12[,bi]-M12[,bj]-M11[ti,]+M11[tj,])/f 
-    Z2 = (M22[,bi]-M22[,bj]-M12[ti,]+M12[tj,])/f 
-    W1 = (M11[ti,]-M11[tj,]+M12[,bi]-M12[,bj] - Z1*(m22-m11)/f)*m
-    W2 = (M12[ti,]-M12[tj,]+M22[,bi]-M22[,bj] - Z2*(m22-m11)/f)*m
-    
+    m = f/sqrt(1-2*m12-m11*m22+m12*m12)/2 
+    Z1 = (M12[,bi]-M12[,bj]-M11[,ti]+M11[,tj])/f     
+    Z2 = (M22[bi,]-M22[bj,]-M12[ti,]+M12[tj,])/f 
+    W1 = (M11[,ti]-M11[,tj]+M12[,bi]-M12[,bj] - Z1*(m22-m11)/f)*m
+    W2 = (M12[ti,]-M12[tj,]+M22[bi,]-M22[bj,] - Z2*(m22-m11)/f)*m
     M11 = M11 - tcrossprod(Z1) + tcrossprod(W1)
     M22 = M22 - tcrossprod(Z2) + tcrossprod(W2)
-    M12 = M12 - tcrossprod(Z1,Z2) + tcrossprod(W1,W2)
+    M12 = M12 - tcrossprod(Z1,Z2) + tcrossprod(W1,W2) 
     up=list(M11=M11,M22=M22,M12=M12)
   } # end of function
-  
-  #******************************************************** General optimization ************************************************************************************
-  Optimise=function(TF,BF,MF,M11,M22,M12,searches)   {
-    # first stage finds an optima by optimizing samples of increasing size in powers of 2
-    globrelD=1
-    locrelD=1
-    globTF=TF
+   
+  #********************************************************Determinants of swaps using samples of increasing size***********************************************
+  D_Max=function(M11,M22,M12,TF,MF,BF) {      
+    relD=1
     nunits=length(TF)
     mainSizes=tabulate(MF)
-    mainBlocks=split(rep(1:nunits),MF)
-    Samp=vector("list", nlevels(MF)) 
-    for (r in 1 : searches) {
-      nSamp=ceiling(  min(nunits,36)*mainSizes/nunits) #sample size is smallest of 36 or nunits or has at least one sample per restriction
-      repeat {
-        relD=0
-        for (i in 1:nlevels(MF)) 
-          Samp[[i]]=sort(sample(mainBlocks[[i]],nSamp[i]))	
-        detmat=DetMat(M11,M22,M12,Samp,TF,BF)
-        grelD=1
-        for (i in 1:nlevels(MF)) {
-          N=which.max(detmat[[i]])
-          ti=1+(N-1)%%nrow(detmat[[i]])
-          tj=1+(N-1)%/%nrow(detmat[[i]])
-          relD=detmat[[i]][ti,tj]
-          if (relD>grelD) {
-            gsi=Samp[[i]][ti]
-            gsj=Samp[[i]][tj]
-            grelD=relD
-          }	
-        }			
-        if (grelD>1.00000001) {
-          up=UpDate(M11,M22,M12,TF[gsi],TF[gsj],BF[gsi],BF[gsj],TF,BF)
+    nSamp=ceiling(min(nunits,36)*mainSizes/nunits)
+    mainBlocks=split(rep(1:nunits),MF)  
+    repeat {
+      improved=FALSE
+      for (k in 1:nlevels(MF)) {
+        Samp=sort(sample(mainBlocks[[k]],nSamp[k]))
+        trts=as.numeric(TF[Samp])
+        blks=as.numeric(BF[Samp])
+        TT=2*M11[trts,trts,drop=FALSE]-tcrossprod(diag(M11[trts,trts,drop=FALSE]),rep(1,length(trts)))-tcrossprod(rep(1,length(trts)), diag(M11[trts,trts,drop=FALSE]))
+        BB=2*M22[blks,blks,drop=FALSE]-tcrossprod(diag(M22[blks,blks,drop=FALSE]),rep(1,length(blks)))-tcrossprod(rep(1,length(blks)),diag(M22[blks,blks,drop=FALSE]))
+        TB=1+M12[trts,blks,drop=FALSE]+t(M12[trts,blks,drop=FALSE])-
+          tcrossprod(diag(M12[trts,blks,drop=FALSE]),rep(1,length(trts)))-
+          tcrossprod(rep(1,length(trts)),diag(M12[trts,blks,drop=FALSE])) 
+        dMat=TB**2-TT*BB
+        sampn=which.max(dMat)
+        sampi=1+(sampn-1)%%nrow(dMat)
+        sampj=1+(sampn-1)%/%nrow(dMat)
+        if ( dMat[sampi,sampj]>1.000001 ) {
+          improved=TRUE
+          relD=relD*dMat[sampi,sampj]
+          up=UpDate(M11,M22,M12,Samp[sampi],Samp[sampj],TF,BF)
           M11=up$M11
           M22=up$M22
           M12=up$M12
-          TF[c(gsi,gsj)]=TF[c(gsj,gsi)]
-          locrelD=grelD*locrelD				
-        } else if ( sum(nSamp) < min(nunits,512)) {
-          nSamp=2*nSamp # doubles sample size and ensures no block sample is bigger than the corresponding block size
-          for (i in 1:nlevels(MF))
-            if (nSamp[i]>mainSizes[i]) nSamp[i]=mainSizes[i]
-        } else break
-      } # repeat	
-      if (locrelD>globrelD) {
-        globrelD=locrelD
-        globTF=TF
+          TF[c(Samp[sampi],Samp[sampj])]=TF[c(Samp[sampj],Samp[sampi])]
+        }
+      } 
+      if (improved) next
+      else if (sum(nSamp) < min(nunits,512)) {
+        for (i in 1:nlevels(MF))
+          nSamp[i]=min(mainSizes[i],2*nSamp[i])
+      } else break
+    } # repeat       
+    dmax=list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
+  }
+  
+  #**************************** General optimization using annealing with multiple searches *******************************************************
+  Optimise=function(TF,BF,MF,M11,M22,M12,searches)   {
+    globrelD=1
+    globTF=TF
+    relD=1
+    for (r in 1 : searches) {
+      dmax=D_Max(M11,M22,M12,TF,MF,BF)  
+      if (dmax$relD>1) {
+        relD=relD*dmax$relD
+        TF=dmax$TF
+        M11=dmax$M11
+        M22=dmax$M22
+        M12=dmax$M12  
+        if (relD>globrelD) {
+          globTF=TF
+          globrelD=relD
+        }
       }
-      if (searches>r) {
-        # escape local optima
-        prop_change=1
-        for (iswap in 1 : 6) {
-          icount=0
-          dswap=1
-          while (icount<100 & (dswap<0.01 | dswap>.999)) {
-            icount=icount+1
-            # proportional change in information due to swapping different treatments in different sub-blocks in same main block
-            s=sample(rep(1:nunits)[MF==sample(nlevels(MF),1)],2)
-            if ( (TF[s[1]]!=TF[s[2]]) & (BF[s[1]]!=BF[s[2]]) ) 	
-              dswap=(1+M12[TF[s[1]],BF[s[2]]]+M12[TF[s[2]],BF[s[1]]]-M12[TF[s[1]],BF[s[1]]]-M12[TF[s[2]],BF[s[2]]])**2-
+      if (r==searches) break
+      for (iswap in 1 : 6) {
+        icount=0
+        while(icount<100) {
+          icount=icount+1
+          s=sample(rep(1:nunits)[MF==sample(nlevels(MF),1)],2)
+          if ( (TF[s[1]]==TF[s[2]]) | (BF[s[1]]==BF[s[2]]) ) 	next
+          dswap=(1+M12[TF[s[1]],BF[s[2]]]+M12[TF[s[2]],BF[s[1]]]-M12[TF[s[1]],BF[s[1]]]-M12[TF[s[2]],BF[s[2]]])**2-
               (2*M11[TF[s[1]],TF[s[2]]]-M11[TF[s[1]],TF[s[1]]]-M11[TF[s[2]],TF[s[2]]])*
               (2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])
-          }
-          #updates matrices
-          if (icount<100) {
-            prop_change=prop_change*dswap
-            up=UpDate(M11,M22,M12,TF[s[1]],TF[s[2]],BF[s[1]],BF[s[2]],TF,BF)
-            M11=up$M11
-            M22=up$M22
-            M12=up$M12
-            TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
-          }
-        } 
-        locrelD=locrelD*prop_change
+          if (dswap>0.01 & dswap<.999) break
+        }
+        if (icount==100) next 
+        relD=relD*dswap
+        up=UpDate(M11,M22,M12,s[1],s[2],TF,BF)
+        M11=up$M11
+        M22=up$M22
+        M12=up$M12
+        TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
       } 
-    } # next for
+    }  
     globTF
   } # end of function
   
   #******************************************************** Initializes design***************************************************************************************
-  GenOpt=function(TF,NF,MF,searches)  {   
+  GenOpt=function(TF,BF,MF,searches)  {   
     singular=FALSE  
     TB=TreatContrasts(MF,TF)
-    NB=BlockContrasts(MF,NF) 
+    NB=BlockContrasts(MF,BF) 
     DD=crossprod(cbind(TB,NB))
     count=0
       while ( qr(DD)$rank<ncol(DD) & count<1000 ) 
@@ -270,18 +262,18 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     if (count<1000) {
       V=chol2inv(chol(DD))
       M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))	
-      M22=matrix(0,nrow=nlevels(NF),ncol=nlevels(NF))
-      M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(NF))
+      M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+      M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
       M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
       M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
       M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
-      sortR=c(1:nlevels(NF))%%(nlevels(NF)/nlevels(MF))==0
+      sortR=c(1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0
       sortC=NULL
       sortN=NULL
       perm=order(order(c(sortR,sortC,sortN)))
       M12=M12[,perm]
       M22=M22[perm,perm]	
-      TF=Optimise(TF,NF,MF,M11,M22,M12,searches)
+      TF=Optimise(TF,BF,MF,M11,M22,M12,searches)
     }	
     TF
   }
@@ -508,6 +500,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
  }
  
  #********************************************************builds design ************************************************************************************ 
+
  testout=testInputs(treatments,replicates,blocklevels,searches,seed) 
   if (!isTRUE(testout)) stop(testout)
   if (is.null(seed)) seed=sample(1:100000,1)
