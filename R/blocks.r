@@ -95,7 +95,7 @@
 #' @export
 #' 
 
-blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=NULL) { 
+blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=NULL,A_opt=FALSE) { 
 
   #******************************************************** sizes ************************************************************************************ 
   Sizes=function(sizes,blocklevels) { 
@@ -148,7 +148,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
    bj= BF[plotj]
     m11=M11[ti,ti]+M11[tj,tj]-M11[tj,ti]-M11[ti,tj]
     m22=M22[bi,bi]+M22[bj,bj]-M22[bi,bj]-M22[bj,bi]
-    m12=M12[ti,bi]-M12[tj,bi]-M12[ti,bj]+M12[tj,bj]
+    m12=M12[ti,bi]-M12[tj,bi]-M12[ti,bj]+M12[tj,bj]   
     f = sqrt(2+m11+m22-2*m12)
     m = f/sqrt(1-2*m12-m11*m22+m12*m12)/2 
     Z1 = (M12[,bi]-M12[,bj]-M11[,ti]+M11[,tj])/f     
@@ -159,11 +159,10 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     M22 = M22 - tcrossprod(Z2) + tcrossprod(W2)
     M12 = M12 - tcrossprod(Z1,Z2) + tcrossprod(W1,W2) 
     up=list(M11=M11,M22=M22,M12=M12)
-  } # end of function
-   
+  } # end of function  
   #********************************************************Determinants of swaps using samples of increasing size***********************************************
   D_Max=function(M11,M22,M12,TF,MF,BF) {      
-    relD=1
+    locrelD=1
     nunits=length(TF)
     mainSizes=tabulate(MF)
     nSamp=ceiling(min(nunits,36)*mainSizes/nunits)
@@ -185,7 +184,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         sampj=1+(sampn-1)%/%nrow(dMat)
         if ( dMat[sampi,sampj]>1.000001 ) {
           improved=TRUE
-          relD=relD*dMat[sampi,sampj]
+          locrelD=locrelD*dMat[sampi,sampj]
           up=UpDate(M11,M22,M12,Samp[sampi],Samp[sampj],TF,BF)
           M11=up$M11
           M22=up$M22
@@ -199,26 +198,59 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
           nSamp[i]=min(mainSizes[i],2*nSamp[i])
       } else break
     } # repeat       
-    dmax=list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
+    dmax=list(M11=M11,M22=M22,M12=M12,TF=TF,locrelD=locrelD)
   }
   
+  #********************************************************Determinants of swaps ************************************************************************************
+  A_Mat=function(M11,M22,M12,MF,TF,BF) {
+    
+    TT=2*M11[TF,TF,drop=FALSE]-tcrossprod(diag(M11[TF,TF,drop=FALSE]),rep(1,length(TF)))-tcrossprod(rep(1,length(TF)), diag(M11[TF,TF,drop=FALSE]))
+    BB=2*M22[BF,BF,drop=FALSE]-tcrossprod(diag(M22[BF,BF,drop=FALSE]),rep(1,length(BF)))-tcrossprod(rep(1,length(BF)),diag(M22[BF,BF,drop=FALSE]))
+    TB=1+M12[TF,BF,drop=FALSE]+t(M12[TF,BF,drop=FALSE])-
+      tcrossprod(diag(M12[TF,BF,drop=FALSE]),rep(1,length(TF)))-
+      tcrossprod(rep(1,length(TF)),diag(M12[TF,BF,drop=FALSE])) 
+    dMat=TB**2-TT*BB
+    for (i in 1:(ncol(dMat)-1)) {
+      for (j in (i+1):nrow(dMat)) {
+        if (dMat[i,j]<1 | TF[i]==TF[j] | BF[i]==BF[j]) next
+        ti= TF[i]
+        tj= TF[j]
+        bi= BF[i]
+        bj= BF[j]
+        m11=M11[ti,ti]+M11[tj,tj]-M11[tj,ti]-M11[ti,tj]
+        m22=M22[bi,bi]+M22[bj,bj]-M22[bi,bj]-M22[bj,bi]
+        m12=M12[ti,bi]-M12[tj,bi]-M12[ti,bj]+M12[tj,bj]   
+        f = sqrt(2+m11+m22-2*m12)
+        m = f/sqrt(1-2*m12-m11*m22+m12*m12)/2 
+        sz = sum((M12[,bi]-M12[,bj]-M11[,ti]+M11[,tj])/f)   
+        
+        Z = (M12[,bi]-M12[,bj]-M11[,ti]+M11[,tj])/f  
+        
+        sw = sum((M11[,ti]-M11[,tj]+M12[,bi]-M12[,bj] - Z*(m22-m11)/f)*m)
+        a=nrow(M11)*(sw-sz) - sw*sw -sz*sz +2*sw*sz
+        print(round(a,3))
+      } 
+    }
+      TF
+    }
+    
   #**************************** General optimization using annealing with multiple searches *******************************************************
   Optimise=function(TF,BF,MF,M11,M22,M12,searches)   {
-    globrelD=1
-    globTF=TF
     relD=1
+    globrelD=0
     for (r in 1 : searches) {
       dmax=D_Max(M11,M22,M12,TF,MF,BF)  
-      if (dmax$relD>1) {
-        relD=relD*dmax$relD
-        TF=dmax$TF
-        M11=dmax$M11
-        M22=dmax$M22
-        M12=dmax$M12  
-        if (relD>globrelD) {
-          globTF=TF
-          globrelD=relD
-        }
+      relD=relD*dmax$locrelD
+      TF=dmax$TF
+      M11=dmax$M11
+      M22=dmax$M22
+      M12=dmax$M12  
+      if (relD>globrelD) {
+        globTF=TF
+        globrelD=relD
+        globM11=M11
+        globM22=M22
+        globM12=M12
       }
       if (r==searches) break
       for (iswap in 1 : 6) {
@@ -230,7 +262,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
           dswap=(1+M12[TF[s[1]],BF[s[2]]]+M12[TF[s[2]],BF[s[1]]]-M12[TF[s[1]],BF[s[1]]]-M12[TF[s[2]],BF[s[2]]])**2-
               (2*M11[TF[s[1]],TF[s[2]]]-M11[TF[s[1]],TF[s[1]]]-M11[TF[s[2]],TF[s[2]]])*
               (2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])
-          if (dswap>0.01 & dswap<.999) break
+          if (dswap>0.05 & dswap<.995) break
         }
         if (icount==100) next 
         relD=relD*dswap
@@ -240,13 +272,12 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         M12=up$M12
         TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
       } 
-    }  
-    globTF
+    } 
+    opt=list(M11=globM11,M22=globM22,M12=globM12,TF=globTF)
   } # end of function
   
   #******************************************************** Initializes design***************************************************************************************
-  GenOpt=function(TF,BF,MF,searches)  {   
-    singular=FALSE  
+  GenOpt=function(TF,BF,MF,searches,A_opt) {   
     TB=TreatContrasts(MF,TF)
     NB=BlockContrasts(MF,BF) 
     DD=crossprod(cbind(TB,NB))
@@ -259,22 +290,27 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         DD=crossprod(cbind(TB , NB))
         count=count+1
     }
-    if (count<1000) {
-      V=chol2inv(chol(DD))
-      M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))	
-      M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
-      M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
-      M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
-      M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
-      M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
-      sortR=c(1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0
-      sortC=NULL
-      sortN=NULL
-      perm=order(order(c(sortR,sortC,sortN)))
-      M12=M12[,perm]
-      M22=M22[perm,perm]	
-      TF=Optimise(TF,BF,MF,M11,M22,M12,searches)
-    }	
+    if (count==1000) return(TF)
+    
+    V=chol2inv(chol(DD))
+    M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))	
+    M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+    M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
+    M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
+    M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
+    M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
+    sortR=c(1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0
+    sortC=NULL
+    sortN=NULL
+    perm=order(order(c(sortR,sortC,sortN)))
+    M12=M12[,perm]
+    M22=M22[perm,perm]	
+    opt=Optimise(TF,BF,MF,M11,M22,M12,searches)
+    TF=opt$TF
+    M11=opt$M11
+    M22=opt$M22
+    M12=opt$M12  
+    TF=A_Mat(M11,M22,M12,MF,TF,BF)  
     TF
   }
   
@@ -291,7 +327,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
  
   #******************************************************** builds lattice designs  ************************************************************************************
-    optTF=function(Design,treatlevs,replevs,searches) {
+    optTF=function(Design,treatlevs,replevs,searches,A_opt) {
     nunits=nrow(Design)
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
@@ -352,7 +388,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
             TF=c(TF, rep(1:(v*v))[order(tens2)])
           }
         } else {	
-          TF=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches)
+          TF=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches,A_opt)
         }
       }
     }
@@ -532,7 +568,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   for (r in 1 : strata) 
     Design[,r+1]=rep(facMat[,r],blocksizes)
  Design[,r+2]=rep(1:nunits)
- TF=optTF(Design,treatlevs,replevs,searches) 
+ TF=optTF(Design,treatlevs,replevs,searches,A_opt) 
   Design=cbind(Design,as.factor(TF)) 
   # add back single replicate treatments here 
   if ( !all(replicates>1) & !all(replicates==1) ) 

@@ -4,7 +4,7 @@
 \title{Block designs}
 \usage{
 blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
-  seed = NULL)
+  seed = NULL, A_opt = FALSE)
 }
 \arguments{
 \item{treatments}{a list giving a partition of the total number of treatments into equally replicated treatment sets.}
