@@ -203,35 +203,60 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   
   #********************************************************Determinants of swaps ************************************************************************************
   A_Mat=function(M11,M22,M12,MF,TF,BF) {
-    
-    TT=2*M11[TF,TF,drop=FALSE]-tcrossprod(diag(M11[TF,TF,drop=FALSE]),rep(1,length(TF)))-tcrossprod(rep(1,length(TF)), diag(M11[TF,TF,drop=FALSE]))
-    BB=2*M22[BF,BF,drop=FALSE]-tcrossprod(diag(M22[BF,BF,drop=FALSE]),rep(1,length(BF)))-tcrossprod(rep(1,length(BF)),diag(M22[BF,BF,drop=FALSE]))
-    TB=1+M12[TF,BF,drop=FALSE]+t(M12[TF,BF,drop=FALSE])-
-      tcrossprod(diag(M12[TF,BF,drop=FALSE]),rep(1,length(TF)))-
-      tcrossprod(rep(1,length(TF)),diag(M12[TF,BF,drop=FALSE])) 
+    U=rep(1,length(TF))
+    TT=2*M11[TF,TF,drop=FALSE]-tcrossprod(diag(M11[TF,TF,drop=FALSE]),U)-tcrossprod(U,diag(M11[TF,TF,drop=FALSE]))
+    BB=2*M22[BF,BF,drop=FALSE]-tcrossprod(diag(M22[BF,BF,drop=FALSE]),U)-tcrossprod(U,diag(M22[BF,BF,drop=FALSE]))
+    TB=1+M12[TF,BF,drop=FALSE]+t(M12[TF,BF,drop=FALSE])- tcrossprod(diag(M12[TF,BF,drop=FALSE]),U)-tcrossprod(U,diag(M12[TF,BF,drop=FALSE])) 
     dMat=TB**2-TT*BB
-    for (i in 1:(ncol(dMat)-1)) {
-      for (j in (i+1):nrow(dMat)) {
-        if (dMat[i,j]<1 | TF[i]==TF[j] | BF[i]==BF[j]) next
-        ti= TF[i]
-        tj= TF[j]
-        bi= BF[i]
-        bj= BF[j]
-        m11=M11[ti,ti]+M11[tj,tj]-M11[tj,ti]-M11[ti,tj]
-        m22=M22[bi,bi]+M22[bj,bj]-M22[bi,bj]-M22[bj,bi]
-        m12=M12[ti,bi]-M12[tj,bi]-M12[ti,bj]+M12[tj,bj]   
-        f = sqrt(2+m11+m22-2*m12)
-        m = f/sqrt(1-2*m12-m11*m22+m12*m12)/2 
-        sz = sum((M12[,bi]-M12[,bj]-M11[,ti]+M11[,tj])/f)   
-        
-        Z = (M12[,bi]-M12[,bj]-M11[,ti]+M11[,tj])/f  
-        
-        sw = sum((M11[,ti]-M11[,tj]+M12[,bi]-M12[,bj] - Z*(m22-m11)/f)*m)
-        a=nrow(M11)*(sw-sz) - sw*sw -sz*sz +2*sw*sz
-        print(round(a,3))
-      } 
+    #print(dMat)
+    dMat=(tcrossprod(as.numeric(BF),U)!=tcrossprod(U,as.numeric(BF)) &
+          tcrossprod(as.numeric(TF),U)!=tcrossprod(U,as.numeric(TF)) &
+          lower.tri(dMat, diag = FALSE) & dMat==1 )
+    #print(dMat)
+   N=which(dMat) 
+   swapi=NULL
+   swapj=NULL
+   amin=0
+   if (length(N)>0) { 
+    for (z in N) {
+    i=1+(z-1)%%nrow(dMat)
+    j=1+(z-1)%/%nrow(dMat)
+    ti= TF[i]
+    tj= TF[j]
+    bi= BF[i]
+    bj= BF[j]
+    m11=M11[ti,ti]+M11[tj,tj]-M11[tj,ti]-M11[ti,tj]
+    m22=M22[bi,bi]+M22[bj,bj]-M22[bi,bj]-M22[bj,bi]
+    m12=M12[ti,bi]-M12[tj,bi]-M12[ti,bj]+M12[tj,bj]   
+    f = sqrt(2+m11+m22-2*m12)
+    m = f/sqrt(1-2*m12-m11*m22+m12*m12)/2 
+    Z1 = (M12[,bi]-M12[,bj]-M11[,ti]+M11[,tj])/f     
+    W1 = (M11[,ti]-M11[,tj]+M12[,bi]-M12[,bj] - Z1*(m22-m11)/f)*m
+    sww=sum(W1*W1)
+    szz=sum(Z1*Z1)
+    sw=sum(Z1)
+    sz=sum(W1)
+    # negative A will reduce pairwise difference variances and will increase A-efficiency
+    a = nlevels(TF)*(sww-szz) + sz*sz - sw*sw 
+    if (!isTRUE(all.equal(a,0)) ){
+    if (a<amin) {
+      swapi=i
+      swapj=j
+      amin=a
     }
-      TF
+    }
+   }
+   }
+   
+   if (amin<0) {
+   print("swapped")
+   print(amin)
+   print(swapi)
+   print(swapj)
+   TF[c(swapi,swapj)]=TF[c(swapj,swapi)] 
+   }
+  
+   TF
     }
     
   #**************************** General optimization using annealing with multiple searches *******************************************************
@@ -309,10 +334,55 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     TF=opt$TF
     M11=opt$M11
     M22=opt$M22
-    M12=opt$M12  
+    M12=opt$M12    
+    print(A_test(TF,BF))
+    print(efficTest(TF,BF))
     TF=A_Mat(M11,M22,M12,MF,TF,BF)  
+    print(A_test(TF,BF)) 
+    print(efficTest(TF,BF))    
     TF
   }
+  
+  efficTest=function(TF,BF){
+    ntrts=nlevels(TF)
+    nunits=length(TF) 
+    reps=nunits/ntrts
+    nblocks=nlevels(BF)
+    T=matrix(0,nrow=nunits,ncol=ntrts)	
+    T[cbind(rep(1:nunits),TF)]=1
+    r=apply(T, 2, sum)		
+      B=matrix(0,nrow=nunits,ncol=nblocks)
+      B[cbind(rep(1:nunits),BF)]=1
+      B=B[ , (1:(ncol(B)-1)),drop=FALSE ]
+      B=crossprod(t(B),diag(1/sqrt(apply(B, 2, sum)),nrow=ncol(B)))
+      V=solve(diag(r,nrow = ntrts)-crossprod(crossprod(B,T)))
+      D= crossprod( t(rep(1,ntrts))  ,t(diag(V)))   +  crossprod( t(diag(V)), t(rep(1,ntrts) )) - 2*V		
+      eff=2*ntrts*(ntrts-1)/sum(D)/reps
+    eff
+  }  
+  
+  # A-Efficiencies function 
+  A_test=function(TF,BF)  {
+    nunits=length(TF)
+    treps=tabulate(TF)
+    ntrts=nlevels(TF)
+   
+      bSize=tabulate(BF)
+      nblks=nlevels(BF)
+      if (ntrts<=nblks) {
+        X=crossprod( diag(1/sqrt(bSize),nrow = nblks),  table(BF,TF ) )
+        A= diag(ntrts) - crossprod(crossprod(t(X), diag(1/sqrt(treps),nrow = ntrts)))   
+        aeff = 1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)])
+      } else {
+        X=crossprod( diag(1/sqrt(treps),nrow = ntrts),  table(TF,BF ) )
+        A=diag(nblks) - crossprod(crossprod(t(X), diag(1/sqrt(bSize), nrow = nblks)))  
+        aeff=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
+        aeff=(ntrts-1)/ (ntrts-nblks+(nblks-1)/aeff )
+      }
+    aeff
+  }
+  
+  
   
   #******************************************************** HCF of replicates************************************************************************************
   HCF=function(replevs)  {
