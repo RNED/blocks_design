@@ -224,19 +224,20 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         while(icount<100) {
           icount=icount+1
           s=sample(rep(1:nunits)[MF==sample(nlevels(MF),1)],2)
-          if ( (TF[s[1]]==TF[s[2]]) | (BF[s[1]]==BF[s[2]]) ) 	next
-          dswap=(1+M12[TF[s[1]],BF[s[2]]]+M12[TF[s[2]],BF[s[1]]]-M12[TF[s[1]],BF[s[1]]]-M12[TF[s[2]],BF[s[2]]])**2-
-              (2*M11[TF[s[1]],TF[s[2]]]-M11[TF[s[1]],TF[s[1]]]-M11[TF[s[2]],TF[s[2]]])*
-              (2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])
+          i=s[1]
+          j=s[2]
+          if ( TF[i]==TF[j] | BF[i]==BF[j] ) 	next
+          dswap=(1+M12[TF[i],BF[j]]+M12[TF[j],BF[i]]-M12[TF[i],BF[i]]-M12[TF[j],BF[j]])**2-
+              (2*M11[TF[i],TF[j]]-M11[TF[i],TF[i]]-M11[TF[j],TF[j]])*(2*M22[BF[i],BF[j]]-M22[BF[i],BF[i]]-M22[BF[j],BF[j]])
           if (dswap>0.05 & dswap<.995) break
         }
         if (icount==100) next 
         relD=relD*dswap
-        up=UpDate(M11,M22,M12,s[1],s[2],TF,BF)
+        up=UpDate(M11,M22,M12,i,j,TF,BF)
         M11=up$M11
         M22=up$M22
         M12=up$M12
-        TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
+        TF[c(i,j)]=TF[c(j,i)]	
       } 
     } 
     globTF
@@ -444,14 +445,11 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   #******************************************************** Plan output************************************************************************************
   Plan=function(Design,facMat,designnames)  {
     strata=ncol(Design)-2
-    bSizes=tabulate(Design[,strata])
-    nblocks=length(bSizes)
+    bSizes=c(0,tabulate(Design[,strata]))
+    nblocks=length(bSizes)-1
     plotTrts=matrix(nrow=nblocks,ncol=max(bSizes)) 
-    counter=0
-    for (i in 1:nblocks) {
-      plotTrts[i,c(1 : bSizes[i])]=Design[ c((1+counter) : (counter+bSizes[i]))  , strata+2]  
-      counter=counter+bSizes[i]
-    }
+    for (i in 1:nblocks) 
+      plotTrts[i, (1 : bSizes[i+1])] = Design[(1 + sum(bSizes[1:i])) : sum(bSizes[1:(i+1)]) , strata+2]  
     plotTrts[is.na(plotTrts)]  = " "
     Plan=as.data.frame(cbind(facMat, rep(" ",nblocks), plotTrts))
     designnames=c(designnames, "Sub_plots", 1:ncol(plotTrts) )
