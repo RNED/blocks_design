@@ -179,30 +179,33 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         trtblkvars=diag(M12[trts,blks,drop=FALSE])
         TT=2*M11[trts,trts,drop=FALSE]-tcrossprod(trtvars+U) + tcrossprod(trtvars) + 1
         BB=2*M22[blks,blks,drop=FALSE]-tcrossprod(blkvars+U) + tcrossprod(blkvars) + 1
-        TB=1+M12[trts,blks,drop=FALSE]+t(M12[trts,blks,drop=FALSE])-tcrossprod(trtblkvars+U) + tcrossprod(trtblkvars) + 1 
+        TB=M12[trts,blks,drop=FALSE]+t(M12[trts,blks,drop=FALSE])-tcrossprod(trtblkvars+U) + tcrossprod(trtblkvars) + 2
         dMat=TB**2-TT*BB
         sampn=which.max(dMat)
         sampi=1+(sampn-1)%%length(Samp)
         sampj=1+(sampn-1)%/%length(Samp)
-        if ( dMat[sampi,sampj]>1.000001 ) {
+        relD=dMat[sampi,sampj]
+        i=Samp[sampi]
+        j=Samp[sampj]
+        if ( relD>1.000001 ) {
           improved=TRUE
-          locrelD=locrelD*dMat[sampi,sampj]
-          up=UpDate(M11,M22,M12,Samp[sampi],Samp[sampj],TF,BF)
+          locrelD=locrelD*relD
+          up=UpDate(M11,M22,M12,i,j,TF,BF)
           M11=up$M11
           M22=up$M22
           M12=up$M12
-          TF[c(Samp[sampi],Samp[sampj])]=TF[c(Samp[sampj],Samp[sampi])]
+          TF[c(i,j)]=TF[c(j,i)]
         }
       } 
       if (improved) next
-      else if (sum(nSamp) < min(nunits,512)) {
+      if (sum(nSamp) < min(nunits,512)) {
         for (i in 1:nlevels(MF))
           nSamp[i]=min(mainSizes[i],2*nSamp[i])
       } else break
     } # repeat       
     dmax=list(M11=M11,M22=M22,M12=M12,TF=TF,locrelD=locrelD)
   }
-   
+     
   #**************************** General optimization using annealing with multiple searches *******************************************************
   Optimise=function(TF,BF,MF,M11,M22,M12,searches)   {
     relD=1
@@ -224,20 +227,21 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         while(icount<100) {
           icount=icount+1
           s=sample(rep(1:nunits)[MF==sample(nlevels(MF),1)],2)
-          i=s[1]
-          j=s[2]
-          if ( TF[i]==TF[j] | BF[i]==BF[j] ) 	next
-          dswap=(1+M12[TF[i],BF[j]]+M12[TF[j],BF[i]]-M12[TF[i],BF[i]]-M12[TF[j],BF[j]])**2-
-              (2*M11[TF[i],TF[j]]-M11[TF[i],TF[i]]-M11[TF[j],TF[j]])*(2*M22[BF[i],BF[j]]-M22[BF[i],BF[i]]-M22[BF[j],BF[j]])
+          ti=TF[s[1]]
+          tj=TF[s[2]]
+          bi=BF[s[1]]
+          bj=BF[s[2]]
+          if ( ti==tj | bi==bj ) 	next
+          dswap = (1+M12[ti,bj]+M12[tj,bi]-M12[ti,bi]-M12[tj,bj])**2-(2*M11[ti,tj]-M11[ti,ti]-M11[tj,tj])*(2*M22[bi,bj]-M22[bi,bi]-M22[bj,bj])  
           if (dswap>0.05 & dswap<.995) break
         }
         if (icount==100) next 
         relD=relD*dswap
-        up=UpDate(M11,M22,M12,i,j,TF,BF)
+        up=UpDate(M11,M22,M12,s[1],s[2],TF,BF)
         M11=up$M11
         M22=up$M22
         M12=up$M12
-        TF[c(i,j)]=TF[c(j,i)]	
+        TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
       } 
     } 
     globTF
