@@ -141,7 +141,6 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   
   #******************************************************** Updates variance matrix ************************************************************************************
   UpDate=function(M11,M22,M12,ploti,plotj,TF,BF) {  
-   
    ti= TF[ploti]
    tj= TF[plotj]
    bi= BF[ploti]
@@ -178,9 +177,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         trtvars=diag(M11[trts,trts,drop=FALSE])
         blkvars=diag(M22[blks,blks,drop=FALSE])
         trtblkvars=diag(M12[trts,blks,drop=FALSE])
-        TT=2*M11[trts,trts,drop=FALSE]-tcrossprod(trtvars,U)-tcrossprod(U,trtvars)
-        BB=2*M22[blks,blks,drop=FALSE]-tcrossprod(blkvars,U)-tcrossprod(U,blkvars)
-        TB=1+M12[trts,blks,drop=FALSE]+t(M12[trts,blks,drop=FALSE])-tcrossprod(trtblkvars,U)-tcrossprod(U,trtblkvars) 
+        TT=2*M11[trts,trts,drop=FALSE]-tcrossprod(trtvars+U) + tcrossprod(trtvars) + 1
+        BB=2*M22[blks,blks,drop=FALSE]-tcrossprod(blkvars+U) + tcrossprod(blkvars) + 1
+        TB=1+M12[trts,blks,drop=FALSE]+t(M12[trts,blks,drop=FALSE])-tcrossprod(trtblkvars+U) + tcrossprod(trtblkvars) + 1 
         dMat=TB**2-TT*BB
         sampn=which.max(dMat)
         sampi=1+(sampn-1)%%length(Samp)
@@ -257,8 +256,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         DD=crossprod(cbind(TB , NB))
         count=count+1
     }
-    if (count==1000) return(TF)
-    
+    if (count==1000) return(TF)   
     V=chol2inv(chol(DD))
     M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))	
     M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
