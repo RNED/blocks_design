@@ -209,6 +209,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   #**************************** General optimization using annealing with multiple searches *******************************************************
   Optimise=function(TF,BF,MF,M11,M22,M12,searches)   {
     relD=1
+    globM11=M11
     globrelD=0
     for (r in 1 : searches) {
       dmax=D_Max(M11,M22,M12,TF,MF,BF)  
@@ -219,6 +220,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       M12=dmax$M12  
       if (relD>globrelD) {
         globTF=TF
+        globM11=M11
         globrelD=relD
       }
       if (r==searches) break
@@ -245,6 +247,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       } 
     } 
     globTF
+
   } # end of function
   
   #******************************************************** Initializes design***************************************************************************************
@@ -320,7 +323,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
             for (j in 0: (v-1)) 
               for (k in 0: (v-1)) 
                 set=c(set, (j+k)%%v )
-            TF=c(TF, rep(1:(v*v))[order(set)])	
+            TF=c(TF, rep(1:(v*v))[order(set)])
           }		
         } else if ( i==(ortho+1)  & primelattice ) {  		
           TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
@@ -401,20 +404,23 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     TF=Design$Treatments
     treps=tabulate(TF)
     ntrts=nlevels(TF)
-    aeff=rep(0,strata)  
+    aeff=rep(0,strata) 
+    deff=rep(0,strata)    
     for (i in 1:strata) { 
       bSize=tabulate(Design[,i])
       nblks=nlevels(Design[,i])
       if (ntrts<=nblks) {
         X=crossprod( diag(1/sqrt(bSize),nrow = nblks),  table(Design[,i],TF ) )
-        A= diag(ntrts) - crossprod(crossprod(t(X), diag(1/sqrt(treps),nrow = ntrts)))   
-        aeff[i] = 1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)])
+        A= diag(ntrts) - crossprod(crossprod(t(X), diag(1/sqrt(treps),nrow = ntrts)))
+        e=eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
       } else {
         X=crossprod( diag(1/sqrt(treps),nrow = ntrts),  table(TF,Design[,i] ) )
-        A=diag(nblks) - crossprod(crossprod(t(X), diag(1/sqrt(bSize), nrow = nblks)))  
-        aeff[i]=1/mean(1/eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
-        aeff[i]=(ntrts-1)/ (ntrts-nblks+(nblks-1)/aeff[i] )
-      }
+        A=diag(nblks) - crossprod(crossprod(t(X), diag(1/sqrt(bSize), nrow = nblks))) 
+        e=eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)]
+        e=c( rep(1,(ntrts-nblks)), e)
+      }       
+    aeff[i] = 1/mean(1/e)       
+    deff[i] = exp(sum(log(e))/(ntrts-1))
     }
     bounds=rep(NA,strata)
     blocks=rep(0,strata)
@@ -424,14 +430,15 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       for (i in 1:strata)  
         if (nunits%%blocks[i] == 0) 
           bounds[i]=upper_bounds(nunits,ntrts,blocks[i])    
-    Efficiencies=as.data.frame(cbind(blocks, aeff, bounds))
-    colnames(Efficiencies)=c("Blocks","A-Efficiencies", "Upper Bounds")
+    Efficiencies=as.data.frame(cbind(blocks, deff, aeff, bounds))
+    colnames(Efficiencies)=c("Blocks","D-Efficiencies","A-Efficiencies", "A-Upper Bounds")
     rnames=c("Main")
     if (strata>1)
       for (i in 1 : (strata-1)) rnames=c(rnames,paste("Sub",i))
     rownames(Efficiencies)=rnames 
     Efficiencies
   }
+ 
   
   #******************************************************** Randomizes blocks within strata************************************************************************************ 
   randBlocks=function(Design,facMat) {
