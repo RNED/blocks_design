@@ -410,13 +410,12 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     for (i in 1:strata) { 
       bSize=tabulate(Design[,i])
       nblks=nlevels(Design[,i])
+      X =  t( t( table(TF,Design[,i])*(1/sqrt(treps)) ) * (1/sqrt(bSize))) 
       if (ntrts<=nblks) {
-        X=crossprod( diag(1/sqrt(bSize),nrow = nblks),  table(Design[,i],TF ) )
-        A= diag(ntrts) - crossprod(tcrossprod(X, diag(1/sqrt(treps),nrow = ntrts))) 
+        A= diag(ntrts) - tcrossprod(X) 
         e=eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
       } else {
-        X=crossprod( diag(1/sqrt(treps),nrow = ntrts),  table(TF,Design[,i] ) )
-        A=diag(nblks) - crossprod(tcrossprod(X, diag(1/sqrt(bSize), nrow = nblks))) 
+        A=diag(nblks)  - crossprod(X) 
         e=eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)]
         e=c( rep(1,(ntrts-nblks)), e)
       }       
