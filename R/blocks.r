@@ -408,9 +408,8 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     aeff=rep(0,strata) 
     deff=rep(0,strata)    
     for (i in 1:strata) { 
-      bSize=tabulate(Design[,i])
       nblks=nlevels(Design[,i])
-      X =  t( t( table(TF,Design[,i])*(1/sqrt(treps)) ) * (1/sqrt(bSize))) 
+      X =  t( t( table(TF,Design[,i])*(1/sqrt(treps)) ) * (1/sqrt(tabulate(Design[,i])))) 
       if (ntrts<=nblks) {
         A= diag(ntrts) - tcrossprod(X) 
         e=eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
