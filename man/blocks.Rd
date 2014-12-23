@@ -4,15 +4,16 @@
 \title{Block designs}
 \usage{
 blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
-  seed = NULL, A_opt = FALSE)
+  seed = NULL)
 }
 \arguments{
-\item{treatments}{a list giving a partition of the total number of treatments into equally replicated treatment sets.}
+\item{treatments}{a list giving a partition of the total number of treatments into
+sets where treatments in the same set have the same replication.}
 
-\item{replicates}{a list assigning a replication level to each set in the \code{treatments} list.}
+\item{replicates}{a list assigning the replication level of each set in the \code{treatments} list.}
 
 \item{blocklevels}{a list of block levels where the first level is the number of main blocks and the remaining
-levels, if any, are the numbers of nested sub-blocks in a hierarchy of nested sub-blocks.
+levels, if any, are the succesive nested levels of a hierarchy of nested sub-blocks.
 The default is an orthogonal main blocks design.}
 
 \item{searches}{an optional integer for the number of local optima searched during an optimization.
@@ -29,19 +30,19 @@ is a random seed.}
 \item{seed}{Numerical seed for random number generator}
 }
 \description{
-Constructs nested block designs for unstructured treatment sets with arbitrary replication,
+Constructs nested block designs for unstructured treatments with arbitrary replication,
 not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
-\code{blocks(...)} constructs nested block designs that maximize the determinant of
-the information matrix (D-optimality). For general nested block designs, a swapping algorithm makes improving swaps between blocks
- in the top stratum until no further improvement is possible and then repeats
-the process for each nested stratum in turn until the bottom stratum is reached.
-At each stage, improving swaps are made within the constraints of existing blocks
-to ensure top-down optimization. For certain special lattice block designs with v**2 equally
-replicated treatments in blocks of size v and with k replicates
- where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 algebraic solutions exist and
- these designs are constructed algebraically.
+\code{blocks(...)} optimizes the succesive strata of a nested blocks design where each nested stratum is
+optimized conditional on the design of the preceding higher-order blocks strata, if any.
+Designs with k replicates and v**2 equally replicated treatments in blocks of size v
+where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 are lattice designs
+and are constructed algebraically.
+All other designs are constructed algorithmically by a swapping algorithm that makes improving swaps between the blocks
+in the top stratum of the design until no further improvement is possible and then repeats
+the process for each nested stratum until the bottom stratum is reached.
+Improving swaps are always made within the constraints of any existing higher-order blocks blocks to ensure top-down optimization.
 
 \code{treatments} is a list of sets where the sum of the sets is the required number of treatments
 and the treatments in any one set are all equally replicated.
@@ -50,7 +51,7 @@ and the treatments in any one set are all equally replicated.
 Treatments are numbered consecutively according to the order of the sets
 and treatments with the same replication can be split between two or more sets if required.
 
-\code{blocklevels} is a list of nested block levels for the succesive blocks strata of the design.
+\code{blocklevels} is a list of nested block levels for the succesive nested blocks strata of the design.
 The first level is the number of main blocks
 and the successive levels, if any, are the numbers of sub-blocks in the succesive strata of
 of a nested blocks design.
