@@ -402,26 +402,26 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   A_Efficiencies=function(Design)  {
     strata=ncol(Design)-2
     nunits=nrow(Design)
-    TF=Design$Treatments
-    treps=tabulate(TF)
-    ntrts=nlevels(TF)
-    aeff=rep(0,strata) 
-    deff=rep(0,strata)    
+    treps=tabulate(Design$Treatments)
+    ntrts=nlevels(Design$Treatments)
+    aeff=rep(1,strata) 
+    deff=rep(1,strata)    
     for (i in 1:strata) { 
       nblks=nlevels(Design[,i])
-      X =  t( t( table(TF,Design[,i])*(1/sqrt(treps)) ) * (1/sqrt(tabulate(Design[,i])))) 
+      if (ntrts>1 & nblks>1) {
       if (ntrts<=nblks) {
-        A= diag(ntrts) - tcrossprod(X) 
+        A= diag(ntrts) - crossprod(t(table(Design$Treatments, Design[,i])*(1/sqrt(treps)) ) * (1/sqrt(tabulate(Design[,i])))           ) 
         e=eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
-      } else {
-        A=diag(nblks)  - crossprod(X) 
+      } else {      
+        A=diag(nblks)  - tcrossprod(t(table(Design$Treatments, Design[,i])*(1/sqrt(treps)) ) * (1/sqrt(tabulate(Design[,i])))          ) 
         e=eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)]
         e=c( rep(1,(ntrts-nblks)), e)
-      }       
+      }    
     aeff[i] = 1/mean(1/e)       
     deff[i] = exp(sum(log(e))/(ntrts-1))
+      }
     }
-    bounds=rep(NA,strata)
+    bounds=rep(1,strata)
     blocks=rep(0,strata)
     for (i in 1:strata)   
       blocks[i]=nlevels(Design[,i])    
