@@ -142,11 +142,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
   
   #******************************************************** Updates variance matrix ************************************************************************************
-  UpDate=function(M11,M22,M12,ploti,plotj,TF,BF) {  
-   ti= TF[ploti]
-   tj= TF[plotj]
-   bi= BF[ploti]
-   bj= BF[plotj]
+  UpDate=function(M11,M22,M12,ti,tj,bi,bj,TF,BF) {  
     m11=M11[ti,ti]+M11[tj,tj]-M11[tj,ti]-M11[ti,tj]
     m22=M22[bi,bi]+M22[bj,bj]-M22[bi,bj]-M22[bj,bi]
     m12=M12[ti,bi]-M12[tj,bi]-M12[ti,bj]+M12[tj,bj]   
@@ -192,7 +188,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         if ( relD>1.000001 ) {
           improved=TRUE
           locrelD=locrelD*relD
-          up=UpDate(M11,M22,M12,i,j,TF,BF)
+          up=UpDate(M11,M22,M12,TF[i],TF[j], BF[i], BF[j], TF,BF)
           M11=up$M11
           M22=up$M22
           M12=up$M12
@@ -241,7 +237,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         }
         if (icount==100) next 
         relD=relD*dswap
-        up=UpDate(M11,M22,M12,s[1],s[2],TF,BF)
+        up=UpDate(M11,M22,M12,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]],TF,BF)
         M11=up$M11
         M22=up$M22
         M12=up$M12
