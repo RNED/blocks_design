@@ -127,7 +127,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     BM[cbind(1:length(BF),as.numeric(BF))]=1 # factor indicator matrix
     BM=BM[,rep(c(rep(TRUE,((nlevels(BF)/nlevels(MF))-1)),FALSE),nlevels(MF)),drop=FALSE]
     for (i in 1: nlevels(MF)) 
-      BM[(as.numeric(MF)==i),]=scale(BM[(as.numeric(MF)==i),], center = TRUE, scale = FALSE) # scaling within main blocks
+      BM[MF==i,]=scale(BM[MF==i,], center = TRUE, scale = FALSE) # scaling within main blocks
     BM
   } 
   
@@ -399,16 +399,13 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     for (i in 1:strata) { 
       nblks=nlevels(Design[,i])
       if (ntrts>1 & nblks>1) {
-      if (ntrts<=nblks) {
-        A= diag(ntrts) - crossprod(t(table(Design$Treatments, Design[,i])*(1/sqrt(treps)) ) * (1/sqrt(tabulate(Design[,i])))           ) 
-        e=eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
-      } else {      
-        A=diag(nblks)  - tcrossprod(t(table(Design$Treatments, Design[,i])*(1/sqrt(treps)) ) * (1/sqrt(tabulate(Design[,i])))          ) 
-        e=eigen(A, symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)]
-        e=c( rep(1,(ntrts-nblks)), e)
-      }    
-    aeff[i] = 1/mean(1/e)       
-    deff[i] = exp(sum(log(e))/(ntrts-1))
+       NN= t(table(Design$Treatments, Design[,i])*(1/sqrt(treps)) ) * (1/sqrt(tabulate(Design[,i])))  
+      if (ntrts<=nblks) 
+        e=eigen( (diag(ntrts)-crossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
+       else       
+        e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
+      aeff[i] = 1/mean(1/e)       
+      deff[i] = exp(sum(log(e))/(ntrts-1))
       }
     }
     bounds=rep(1,strata)
