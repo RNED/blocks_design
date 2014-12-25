@@ -7,16 +7,13 @@
 #' 
 #' @details
 #' 
-#' \code{blocks(...)} optimizes the succesive strata of a nested blocks design where each nested stratum is
-#' optimized conditional on the design of the preceding higher-order blocks strata, if any.
-#' Designs with k replicates and v**2 equally replicated treatments in blocks of size v
-#' where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 are lattice designs 
-#' and are constructed algebraically.  
-#' All other designs are constructed algorithmically by a swapping algorithm that makes improving swaps between the blocks
-#' in the top stratum of the design until no further improvement is possible and then repeats 
-#' the process for each nested stratum until the bottom stratum is reached. 
-#' Improving swaps are always made within the constraints of any existing higher-order blocks blocks to ensure top-down optimization.
-
+#' \code{blocks(...)} provides top-down optimization of the succesive strata of a nested blocks design
+#'  where the blocks of each nested strata are optimized conditional on the blocks of the preceding strata, if any, remaining unchanged. 
+#' If the top stratum has k replicates with v**2 equally replicated treatments in blocks of size v
+#' and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10, that stratum is a lattice and is constructed algebraically.  
+#' All other strata are constructed algorithmically by a D-optimality algorithm that makes improving swaps between the stratum blocks within
+#' the constraints of any larger existing blocks until no further improvement is possible. The process strats with the top stratum and is repeated
+#' for each nested stratum until the bottom stratum is reached. 
 #' 
 #' \code{treatments} is a list of sets where the sum of the sets is the required number of treatments 
 #' and the treatments in any one set are all equally replicated. 
