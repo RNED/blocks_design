@@ -227,12 +227,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         while(icount<100) {
           icount=icount+1
           s=sample(rep(1:nunits)[MF==sample(nlevels(MF),1)],2)
-          ti=TF[s[1]]
-          tj=TF[s[2]]
-          bi=BF[s[1]]
-          bj=BF[s[2]]
-          if ( ti==tj | bi==bj ) 	next
-          dswap = (1+M12[ti,bj]+M12[tj,bi]-M12[ti,bi]-M12[tj,bj])**2-(2*M11[ti,tj]-M11[ti,ti]-M11[tj,tj])*(2*M22[bi,bj]-M22[bi,bi]-M22[bj,bj])  
+          if ( TF[s[1]]==TF[s[2]]| BF[s[1]]==BF[s[2]]) 	next
+          dswap = (1+M12[TF[s[1]],BF[s[2]]]+M12[TF[s[2]],BF[s[1]]]-M12[TF[s[1]],BF[s[1]]]-M12[TF[s[2]],BF[s[2]]])**2-
+            (2*M11[TF[s[1]],TF[s[2]]]-M11[TF[s[1]],TF[s[1]]]-M11[TF[s[2]],TF[s[2]]])*(2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])  
           if (dswap>0.05 & dswap<.995) break
         }
         if (icount==100) next 
@@ -269,10 +266,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
     M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
     M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
-    sortR=c(1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0
-    sortC=NULL
-    sortN=NULL
-    perm=order(order(c(sortR,sortC,sortN)))
+    perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
     M12=M12[,perm]
     M22=M22[perm,perm]	
     TF=Optimise(TF,BF,MF,M11,M22,M12,searches)
