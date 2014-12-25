@@ -156,7 +156,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     M22 = M22 - tcrossprod(Z2) + tcrossprod(W2)
     M12 = M12 - tcrossprod(Z1,Z2) + tcrossprod(W1,W2) 
     up=list(M11=M11,M22=M22,M12=M12)
-  } # end of function  
+  }   
   
   #********************************************************Determinants of swaps using samples of increasing size***********************************************
   D_Max=function(M11,M22,M12,TF,MF,BF) {      
@@ -200,7 +200,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
           nSamp=pmin(mainSizes,2*nSamp)
        else 
          break
-    } # repeat       
+    }       
     dmax=list(M11=M11,M22=M22,M12=M12,TF=TF,locrelD=locrelD)
   }
      
@@ -242,7 +242,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       } 
     } 
     globTF
-  } # end of function
+  } 
   
   #******************************************************** Initializes design***************************************************************************************
   GenOpt=function(TF,BF,MF,searches) {   
@@ -468,7 +468,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   if (!all(treatments>=1)) 
      return("Treatments must be integers greater than zero")
   if (!all(replicates>=1)) 
-    return("Replicates must be integers greater than zero")   
+    return("Replicates must be integers greater than zero")  
+  if (all(replicates==1)) 
+    return("Not all treatments can have only a single replication" )  
    if (!is.null(blocklevels)) {
      if (anyNA(blocklevels) ) return(" NA blocklevels values not allowed") 
      if (!all(is.finite(blocklevels)) | !all(!is.nan(blocklevels)) ) return(" Blocklevels can contain only finite integers ")
@@ -490,19 +492,13 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
  }
  
  #********************************************************builds design ************************************************************************************ 
-
  testout=testInputs(treatments,replicates,blocklevels,searches,seed) 
   if (!isTRUE(testout)) stop(testout)
   if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed) 
   # omit any single replicate treatments here 
-   if (all(replicates==1)) {
-    treatlevs=treatments
-    replevs = replicates
-  } else {
    treatlevs=treatments[replicates>1]
    replevs = replicates[replicates>1]
-  }
   if (is.null(blocklevels)) 
     blocklevels=HCF(replevs)
   nunits=sum(treatlevs*replevs) 
@@ -525,7 +521,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
  TF=optTF(Design,treatlevs,replevs,searches) 
   Design=cbind(Design,as.factor(TF)) 
   # add back single replicate treatments here 
-  if ( !all(replicates>1) & !all(replicates==1) ) 
+  if (!all(replicates>1) )
    Design= fullDesign(Design,treatments,replicates,blocksizes,blocklevels) 
  Design=as.data.frame(Design)[,c(2:ncol(Design))] 
  Design[]=lapply(Design, factor)   
