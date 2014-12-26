@@ -76,5 +76,5 @@ upper_bounds=function(nplots,ntrts,nblocks) {
     ntrts = temp
     bound = (ntrts - 1)/((ntrts - nblocks) + (nblocks - 1)/bound)
   }			
-  round(bound,5)
+  bound
 }	

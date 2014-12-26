@@ -8,7 +8,7 @@ blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
 }
 \arguments{
 \item{treatments}{a list giving a partition of the total number of treatments into
-sets where treatments in the same set have the same replication.}
+sets where all treatments in the same set have the same replication.}
 
 \item{replicates}{a list assigning the replication level of each set in the \code{treatments} list.}
 
@@ -34,13 +34,17 @@ Constructs nested block designs for unstructured treatments with arbitrary repli
 not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
-\code{blocks(...)} provides top-down optimization of the succesive strata of a nested blocks design
- where the blocks of each nested strata are optimized conditional on the blocks of the preceding strata, if any, remaining unchanged.
-If the top stratum has k replicates with v**2 equally replicated treatments in blocks of size v
-and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10, that stratum is a lattice and is constructed algebraically.
-All other strata are constructed algorithmically by a D-optimality algorithm that makes improving swaps between the stratum blocks within
-the constraints of any larger existing blocks until no further improvement is possible. The process strats with the top stratum and is repeated
-for each nested stratum until the bottom stratum is reached.
+\code{blocks(...)} provides top-down optimization of the succesive blocks strata of a nested blocks design. The
+ blocks of each nested stratum are optimized within the blocks of the containing stratum so the
+ blocks of any contained strata are conditional on the blocks of the containing strata whereas the blocks of any
+ containing strata are independent of the blocks of the contained strata.
+
+If the blocks in the top stratum have k replicates with v**2 equally replicated treatments in blocks of size v
+and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10,
+then the stratum is a lattice block design and is constructed algebraically.
+
+All other blocks are constructed algoritmically by a D-optimality algorithm that makes
+improving swaps between nested blocks within containing blocks until no further improvement is possible.
 
 \code{treatments} is a list of sets where the sum of the sets is the required number of treatments
 and the treatments in any one set are all equally replicated.
@@ -52,7 +56,7 @@ and treatments with the same replication can be split between two or more sets i
 \code{blocklevels} is a list of nested block levels for the succesive nested blocks strata of the design.
 The first level is the number of main blocks
 and the successive levels, if any, are the numbers of sub-blocks in the succesive strata of
-of a nested blocks design.
+the nested blocks design.
 The length of the list is the number of strata  and the
 running products of the levels are the total blocks in each successive stratum of the
 design. Blocks in the same stratum are always equal in size or differ by, at most, a
@@ -90,6 +94,17 @@ crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
 
 # concurrence matrix for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks
 crossprod(blocks(c(13,13),c(4,1),13,searches=100)$Incidences[[1]])
+
+#
+blocks(treatments=4,replicates=3,blocklevels=c(3,2))
+blocks(treatments=4,replicates=3,blocklevels=c(3,2))
+ blocks(treatments=4,replicates=3,blocklevels=c(3,2))
+blocks(treatments=4,replicates=3,blocklevels=c(3,2))
+blocks(treatments=4,replicates=3,blocklevels=c(3,2))
+blocks(treatments=4,replicates=3,blocklevels=c(3,2))
+ blocks(treatments=4,replicates=3,blocklevels=c(3,2))
+ blocks(treatments=4,replicates=3,blocklevels=c(3,2))
+ blocks(treatments=4,replicates=3,blocklevels=c(3,2))
 }
 \references{
 Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes
