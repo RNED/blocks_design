@@ -231,7 +231,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
       
   #**************************** General optimization using annealing with multiple searches *******************************************************
-  Optimise=function(TF,BF,MF,M11,M22,M12,searches,Build)  {
+  Optimise=function(TF,BF,MF,M11,M22,M12,searches,Iterations)  {
     relD=1
     globM11=M11
     globrelD=0
@@ -257,7 +257,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         globM11=M11
         globrelD=relD
         test=optTest(globTF,BF,treps,breps,ntrts,nblks) 
-        Build=rbind(Build,c(r,test$deff,test$aeff))
+        Iterations=rbind(Iterations,c(r,test$deff,test$aeff))
         if (isTRUE( all.equal(bound,test$aeff))) break
       }
       if (r==searches) break
@@ -280,11 +280,11 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
       } 
     } 
-    list(TF=globTF,Build=Build)
+    list(TF=globTF,Iterations=Iterations)
   } 
   
   #******************************************************** Initializes design***************************************************************************************
-  GenOpt=function(TF,BF,MF,searches,Build) {   
+  GenOpt=function(TF,BF,MF,searches,Iterations) {   
     TB=TreatContrasts(MF,TF)
     NB=BlockContrasts(MF,BF) 
     DD=crossprod(cbind(TB,NB))
@@ -308,8 +308,8 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
     M12=M12[,perm]
     M22=M22[perm,perm]	
-    opt=Optimise(TF,BF,MF,M11,M22,M12,searches,Build)
-    list(TF=opt$TF,Build=opt$Build)
+    opt=Optimise(TF,BF,MF,M11,M22,M12,searches,Iterations)
+    list(TF=opt$TF,Iterations=opt$Iterations)
   }
   
   #******************************************************** HCF of replicates************************************************************************************
@@ -324,8 +324,8 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     v[1]
   }
  
-  #******************************************************** builds lattice designs  ************************************************************************************
-    optTF=function(Design,treatlevs,replevs,searches,Build)  {
+  #********************************************************  lattice designs  ************************************************************************************
+    optTF=function(Design,treatlevs,replevs,searches,Iterations)  {
     nunits=nrow(Design)
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
@@ -386,16 +386,16 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
             TF=c(TF, rep(1:(v*v))[order(tens2)])
           }
         } else {	
-          opt=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches,Build[[i]])
+          opt=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches,Iterations[[i]])
           TF=opt$TF
-          Build[[i]]=opt$Build
+          Iterations[[i]]=opt$Iterations
         }
       }
     }
-    list(TF=TF,Build=Build)  
+    list(TF=TF,Iterations=Iterations)  
   }
   
-  #******************************************************** Puts back single rep treatments *************************************************************************** 
+  #******************************************************** replaces single rep treatments *************************************************************************** 
   fullDesign=function(Design,treatments,replicates,blocksizes,blocklevels) {
     strata=ncol(Design)-3
     TF=as.factor(Design[,ncol(Design)])
@@ -532,7 +532,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
    return(TRUE)
  }
  
- #********************************************************builds design ************************************************************************************ 
+ #********************************************************Iterationss design ************************************************************************************ 
  testout=testInputs(treatments,replicates,blocklevels,searches,seed) 
   if (!isTRUE(testout)) stop(testout)
   if (is.null(seed)) seed=sample(1:100000,1)
@@ -550,9 +550,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
  else
    blocklevels=1
   strata=length(blocklevels)
- Build=vector("list", strata)
+ Iterations=vector("list", strata)
  for (i in 1:strata)
-   Build[[i]]=matrix(0,nrow=1,ncol=3) 
+   Iterations[[i]]=matrix(0,nrow=1,ncol=3) 
  for (i in 1:strata)
   blocksizes=Sizes(nunits,blocklevels)
  totblocks=prod(blocklevels)
@@ -563,9 +563,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   for (r in 1 : strata) 
     Design[,r+1]=rep(facMat[,r],blocksizes)
  Design[,r+2]=rep(1:nunits)
- opt=optTF(Design,treatlevs,replevs,searches,Build) 
+ opt=optTF(Design,treatlevs,replevs,searches,Iterations) 
  TF=opt$TF
- Build=opt$Build
+ Iterations=opt$Iterations
   Design=cbind(Design,as.factor(TF)) 
   # add back single replicate treatments here 
   if (!all(replicates>1) )
@@ -577,25 +577,23 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   designnames=c("Main_blocks")
   if (strata>1)
     for (i in 1:(strata-1))
-      designnames=c(designnames,paste("Sub",i,"_blocks", sep=""))
+      designnames=c(designnames,paste("Sub",i,"_blocks", sep=""))  
   colnames(Design)=c(designnames,"Sub-plots","Treatments")   
   rownames(Design) = NULL 
   # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
- 
+ names(Incidences)=designnames
  for (i in 1:strata) {
-   if (nrow(Build[[i]])==1)
-     Build[[i]]=rbind(  Build[[i]] ,c(1,1,1)  )
-
-  Build[[i]] = Build[[i]] [  2:nrow(Build[[i]]),    ,drop=FALSE]
-
-  Build[[i]]=as.data.frame(Build[[i]] )
-
- colnames(Build[[i]])=c("Searches","D-efficiency","A-efficiency")  
+   if (nrow(Iterations[[i]])==1)
+     Iterations[[i]]=rbind(  Iterations[[i]] ,c(1,1,1)  )
+  Iterations[[i]] = Iterations[[i]] [  2:nrow(Iterations[[i]]),    ,drop=FALSE]
+  Iterations[[i]]=as.data.frame(Iterations[[i]] )
+ colnames(Iterations[[i]])=c("Searches","D-efficiency","A-efficiency")  
  }
+ names(Iterations)=designnames
   plan=Plan(Design,facMat,designnames)
   efficiencies=A_Efficiencies(Design)
-  list(Design=Design,Plan=plan,Incidences=Incidences,Build=Build,Efficiencies=efficiencies,seed=seed) 
+  list(Design=Design,Plan=plan,Incidences=Incidences,Iterations=Iterations,Efficiencies=efficiencies,seed=seed) 
 } 
