@@ -218,22 +218,10 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     list(M11=M11,M22=M22,M12=M12,TF=TF,locrelD=locrelD)
   }
   
-  #**************************** Test for A-optimality *******************************************************
-  optTest=function(TF,BF,treps,breps,ntrts,nblks)   {
-      NN= t(table(TF, BF)*(1/sqrt(treps)) ) * (1/sqrt(breps))  
-      if (ntrts<=nblks) 
-        e=eigen( (diag(ntrts)-crossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
-     else       
-      e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
-    aeff = 1/mean(1/e) 
-    deff = exp(sum(log(e))/(ntrts-1))
-    list(deff=deff,aeff=aeff)
-  }
-      
+     
   #**************************** General optimization using annealing with multiple searches *******************************************************
   Optimise=function(TF,BF,MF,M11,M22,M12,searches,Iterations)  {
     relD=1
-    globM11=M11
     globrelD=0
     treps=tabulate(TF)
     ntrts=nlevels(TF)
@@ -252,32 +240,29 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       M11=dmax$M11
       M22=dmax$M22
       M12=dmax$M12  
-      if (relD>globrelD) {
+        if (relD>globrelD) {
         globTF=TF
-        globM11=M11
         globrelD=relD
-        test=optTest(globTF,BF,treps,breps,ntrts,nblks) 
+        test=optEffics(globTF,BF,treps,breps,ntrts,nblks) 
         Iterations=rbind(Iterations,c(r,test$deff,test$aeff))
         if (isTRUE( all.equal(bound,test$aeff))) break
-      }
+        }
       if (r==searches) break
-      for (iswap in 1 : 6) {
-        icount=0
-        while(icount<100) {
-          icount=icount+1
+      for (iswap in 1 : 5) {
+      for (icount in 1 : 100) {
           s=sample(rep(1:nunits)[MF==sample(nlevels(MF),1)],2)
           if ( TF[s[1]]==TF[s[2]]| BF[s[1]]==BF[s[2]]) 	next
           dswap = (1+M12[TF[s[1]],BF[s[2]]]+M12[TF[s[2]],BF[s[1]]]-M12[TF[s[1]],BF[s[1]]]-M12[TF[s[2]],BF[s[2]]])**2-
             (2*M11[TF[s[1]],TF[s[2]]]-M11[TF[s[1]],TF[s[1]]]-M11[TF[s[2]],TF[s[2]]])*(2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])  
-          if (dswap>0.05 & dswap<.995) break
+          if ( isTRUE(all.equal(dswap,0)) | isTRUE(all.equal(dswap,1)) ) next
+          relD=relD*dswap
+          up=UpDate(M11,M22,M12,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]],TF,BF)
+          M11=up$M11
+          M22=up$M22
+          M12=up$M12
+          TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
+          break
         }
-        if (icount==100) next 
-        relD=relD*dswap
-        up=UpDate(M11,M22,M12,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]],TF,BF)
-        M11=up$M11
-        M22=up$M22
-        M12=up$M12
-        TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
       } 
     } 
     list(TF=globTF,Iterations=Iterations)
@@ -324,13 +309,16 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     v[1]
   }
  
-  #********************************************************  lattice designs  ************************************************************************************
-    optTF=function(Design,treatlevs,replevs,searches,Iterations)  {
+  #********************************************************  algorithm   ************************************************************************************
+    optTF=function(Design,treatlevs,replevs,searches)  {
     nunits=nrow(Design)
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
     v=sqrt(ntrts)
     strata=ncol(Design)-2
+    Iterations=vector("list", strata)
+    for (i in 1:strata)
+      Iterations[[i]]=matrix(0,nrow=1,ncol=3) 
     orthbsize=nunits/hcf 
     ortho=0
     for (i in 1 : strata) 
@@ -426,7 +414,19 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     Design[,r+2]=rep(1:nunits)
     Design[,r+3]=as.factor(TF)  
     Design
-  }  
+  } 
+  
+  #**************************** Test for A-optimality *******************************************************
+  optEffics=function(TF,BF,treps,breps,ntrts,nblks)   {
+    NN= t(table(TF, BF)*(1/sqrt(treps)) ) * (1/sqrt(breps))  
+    if (ntrts<=nblks) 
+      e=eigen( (diag(ntrts)-crossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
+    else       
+      e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
+    aeff = 1/mean(1/e) 
+    deff = exp(sum(log(e))/(ntrts-1))
+    list(deff=deff,aeff=aeff)
+  }
   
   #******************************************************** A-efficiencies ************************************************************************************
   # A-Efficiencies function 
@@ -439,14 +439,11 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     deff=rep(1,strata)    
     for (i in 1:strata) { 
       nblks=nlevels(Design[,i])
+      breps=tabulate(Design[,i])
       if (ntrts>1 & nblks>1) {
-       NN= t(table(Design$Treatments, Design[,i])*(1/sqrt(treps)) ) * (1/sqrt(tabulate(Design[,i])))  
-      if (ntrts<=nblks) 
-        e=eigen( (diag(ntrts)-crossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
-       else       
-        e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
-      aeff[i] = 1/mean(1/e)       
-      deff[i] = exp(sum(log(e))/(ntrts-1))
+        effics=optEffics(Design$Treatments,Design[,i],treps,breps,ntrts,nblks)  
+        aeff[i] = effics$aeff       
+        deff[i] = effics$deff
       }
     }
     bounds=rep(1,strata)
@@ -480,7 +477,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
  
   #******************************************************** Plan output************************************************************************************
-  Plan=function(Design,facMat,designnames)  {
+  Plan=function(Design,facMat,stratumnames)  {
     strata=ncol(Design)-2
     bSizes=c(0,tabulate(Design[,strata]))
     nblocks=length(bSizes)-1
@@ -489,8 +486,8 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       plotTrts[i, (1 : bSizes[i+1])] = Design[(1 + sum(bSizes[1:i])) : sum(bSizes[1:(i+1)]) , strata+2]  
     plotTrts[is.na(plotTrts)]  = " "
     Plan=as.data.frame(cbind(facMat, rep(" ",nblocks), plotTrts))
-    designnames=c(designnames, "Sub_plots", 1:ncol(plotTrts) )
-    colnames(Plan)=designnames
+    stratumnames=c(stratumnames, "Sub_plots", 1:ncol(plotTrts) )
+    colnames(Plan)=stratumnames
     Plan
   }
   
@@ -550,9 +547,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
  else
    blocklevels=1
   strata=length(blocklevels)
- Iterations=vector("list", strata)
- for (i in 1:strata)
-   Iterations[[i]]=matrix(0,nrow=1,ncol=3) 
+ 
  for (i in 1:strata)
   blocksizes=Sizes(nunits,blocklevels)
  totblocks=prod(blocklevels)
@@ -563,7 +558,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   for (r in 1 : strata) 
     Design[,r+1]=rep(facMat[,r],blocksizes)
  Design[,r+2]=rep(1:nunits)
- opt=optTF(Design,treatlevs,replevs,searches,Iterations) 
+ opt=optTF(Design,treatlevs,replevs,searches) 
  TF=opt$TF
  Iterations=opt$Iterations
   Design=cbind(Design,as.factor(TF)) 
@@ -574,26 +569,29 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
  Design[]=lapply(Design, factor)   
  # randomization
   Design=randBlocks(Design,facMat)
-  designnames=c("Main_blocks")
+  stratumnames=c("Main_blocks")
   if (strata>1)
     for (i in 1:(strata-1))
-      designnames=c(designnames,paste("Sub",i,"_blocks", sep=""))  
-  colnames(Design)=c(designnames,"Sub-plots","Treatments")   
+      stratumnames=c(stratumnames,paste("Sub",i,"_blocks", sep=""))  
+  colnames(Design)=c(stratumnames,"Sub-plots","Treatments")   
   rownames(Design) = NULL 
   # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
- names(Incidences)=designnames
+ names(Incidences)=stratumnames
+ 
+ names(Iterations)=stratumnames
+  plan=Plan(Design,facMat,stratumnames)
+  efficiencies=A_Efficiencies(Design)
+  
  for (i in 1:strata) {
    if (nrow(Iterations[[i]])==1)
-     Iterations[[i]]=rbind(  Iterations[[i]] ,c(1,1,1)  )
+     Iterations[[i]]=rbind(  Iterations[[i]] ,c(1,efficiencies[i,2],efficiencies[i,3] )  )
   Iterations[[i]] = Iterations[[i]] [  2:nrow(Iterations[[i]]),    ,drop=FALSE]
   Iterations[[i]]=as.data.frame(Iterations[[i]] )
- colnames(Iterations[[i]])=c("Searches","D-efficiency","A-efficiency")  
+  colnames(Iterations[[i]])=c("Searches","D-efficiency","A-efficiency")  
  }
- names(Iterations)=designnames
-  plan=Plan(Design,facMat,designnames)
-  efficiencies=A_Efficiencies(Design)
+ 
   list(Design=Design,Plan=plan,Incidences=Incidences,Iterations=Iterations,Efficiencies=efficiencies,seed=seed) 
 } 
