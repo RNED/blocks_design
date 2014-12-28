@@ -7,10 +7,8 @@
 #' 
 #' @details
 #' 
-#' \code{blocks(...)} provides top-down optimization of the succesive blocks strata of a nested blocks design. The 
-#'  blocks of each nested stratum are optimized within the blocks of the containing stratum so the 
-#'  blocks of any contained strata are conditional on the blocks of the containing strata whereas the blocks of any
-#'  containing strata are independent of the blocks of the contained strata.
+#' \code{blocks(...)} provides a top-down optimization of a nested blocks design where the top stratum blocks are optimized unconditionally and
+#'  the blocks of any nested strata are optimized conditionally within the blocks of each preceding stratum. 
 #'  
 #' If the blocks in the top stratum have k replicates with v**2 equally replicated treatments in blocks of size v
 #' and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10, 
@@ -95,17 +93,6 @@
 #' # concurrence matrix for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks 
 #' crossprod(blocks(c(13,13),c(4,1),13,searches=100)$Incidences[[1]])
 #' 
-#' # 
-#' blocks(treatments=4,replicates=3,blocklevels=c(3,2))
-#' blocks(treatments=4,replicates=3,blocklevels=c(3,2))
-#'  blocks(treatments=4,replicates=3,blocklevels=c(3,2))
-#' blocks(treatments=4,replicates=3,blocklevels=c(3,2))  
-#' blocks(treatments=4,replicates=3,blocklevels=c(3,2))
-#' blocks(treatments=4,replicates=3,blocklevels=c(3,2)) 
-#'  blocks(treatments=4,replicates=3,blocklevels=c(3,2))
-#'  blocks(treatments=4,replicates=3,blocklevels=c(3,2))  
-#'  blocks(treatments=4,replicates=3,blocklevels=c(3,2)) 
-#'    
 #'     
 #'       
 #' @export
@@ -175,42 +162,33 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   #********************************************************Determinants of swaps using samples of increasing size***********************************************
   D_Max=function(M11,M22,M12,TF,MF,BF) {      
     locrelD=1
-    nunits=length(TF)
     mainSizes=tabulate(MF)
     nSamp=pmin(rep(8,nlevels(MF)),mainSizes)
-    mainBlocks=split(rep(1:nunits),MF)  
+    mainBlocks=split(rep(1:length(TF)),MF)  
     repeat {
       improved=FALSE
       for (k in 1:nlevels(MF)) {
-        Samp=sort(sample(mainBlocks[[k]],nSamp[k]))
-        trts=as.numeric(TF[Samp])
-        blks=as.numeric(BF[Samp])
-        U=rep(1,nSamp[k])
-        trtvars=M11[cbind(trts,trts)]
-        blkvars=M22[cbind(blks,blks)]
-        trtblkvars=M12[cbind(trts,blks)]        
-        TT=2*M11[trts,trts,drop=FALSE]-tcrossprod(trtvars+U) + tcrossprod(trtvars) + 1
-        BB=2*M22[blks,blks,drop=FALSE]-tcrossprod(blkvars+U) + tcrossprod(blkvars) + 1
-        TB=M12[trts,blks,drop=FALSE]+t(M12[trts,blks,drop=FALSE])-tcrossprod(trtblkvars+U) + tcrossprod(trtblkvars) + 2
+        S=sort(sample(mainBlocks[[k]],nSamp[k]))  
+        TT=2*M11[TF[S],TF[S],drop=FALSE]-tcrossprod(M11[cbind(TF[S],TF[S])]+rep(1,nSamp[k])) + tcrossprod(M11[cbind(TF[S],TF[S])]) + 1
+        BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,nSamp[k])) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
+        TB=M12[TF[S],BF[S],drop=FALSE]+t(M12[TF[S],BF[S],drop=FALSE])-tcrossprod(M12[cbind(TF[S],BF[S])]+rep(1,nSamp[k]))+tcrossprod(M12[cbind(TF[S],BF[S])]) + 2
         dMat=TB**2-TT*BB
-        sampn=which.max(dMat)
-        sampi=1+(sampn-1)%%nSamp[k]
-        sampj=1+(sampn-1)%/%nSamp[k]
-        relD=dMat[sampi,sampj]
-        i=Samp[sampi]
-        j=Samp[sampj]
+        sampn=which.max(dMat)   
+        i=1+(sampn-1)%%nSamp[k]
+        j=1+(sampn-1)%/%nSamp[k]
+        relD=dMat[i,j]
         if ( relD>1.000001 ) {
           improved=TRUE
           locrelD=locrelD*relD
-          up=UpDate(M11,M22,M12,TF[i],TF[j], BF[i], BF[j], TF,BF)
+          up=UpDate(M11,M22,M12,TF[S[i]],TF[S[j]], BF[S[i]], BF[S[j]], TF,BF)
           M11=up$M11
           M22=up$M22
           M12=up$M12
-          TF[c(i,j)]=TF[c(j,i)]
+          TF[c(S[i],S[j])]=TF[c(S[j],S[i])]
         }
       } 
       if (improved) next
-      if (sum(nSamp) < min(nunits,512))
+      if (sum(nSamp) < min(length(TF),512))
           nSamp=pmin(mainSizes,2*nSamp)
        else 
          break
@@ -224,13 +202,10 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     relD=1
     globrelD=0
     treps=tabulate(TF)
-    ntrts=nlevels(TF)
-    nblks=nlevels(BF)
     breps=tabulate(BF)
-    nunits=length(TF)
     if ( all(treps==treps[1]) )
-      if (nunits%%nblks == 0) 
-        bound=upper_bounds(nunits,ntrts,nblks) 
+      if (length(TF)%%nlevels(BF) == 0) 
+        bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
     else
       bound=NA
     for (r in 1 : searches) {
@@ -243,14 +218,14 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         if (relD>globrelD) {
         globTF=TF
         globrelD=relD
-        test=optEffics(globTF,BF,treps,breps,ntrts,nblks) 
+        test=optEffics(globTF,BF,treps,breps,nlevels(TF),nlevels(BF)) 
         Iterations=rbind(Iterations,c(r,test$deff,test$aeff))
         if (isTRUE( all.equal(bound,test$aeff))) break
         }
       if (r==searches) break
       for (iswap in 1 : 5) {
       for (icount in 1 : 100) {
-          s=sample(rep(1:nunits)[MF==sample(nlevels(MF),1)],2)
+          s=sample(rep(1:length(TF))[MF==sample(nlevels(MF),1)],2)
           if ( TF[s[1]]==TF[s[2]]| BF[s[1]]==BF[s[2]]) 	next
           dswap = (1+M12[TF[s[1]],BF[s[2]]]+M12[TF[s[2]],BF[s[1]]]-M12[TF[s[1]],BF[s[1]]]-M12[TF[s[2]],BF[s[2]]])**2-
             (2*M11[TF[s[1]],TF[s[2]]]-M11[TF[s[1]],TF[s[1]]]-M11[TF[s[2]],TF[s[2]]])*(2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])  
