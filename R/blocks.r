@@ -8,14 +8,15 @@
 #' @details
 #' 
 #' \code{blocks(...)} provides a top-down optimization of a nested blocks design where the top stratum blocks are optimized unconditionally and
-#'  the blocks of any nested strata are optimized conditionally within the blocks of each preceding stratum. 
+#'  any nested blocks are optimized conditionally within the blocks of the preceding stratum. 
 #'  
 #' If the blocks in the top stratum have k replicates with v**2 equally replicated treatments in blocks of size v
 #' and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10, 
-#' then the stratum is a lattice block design and is constructed algebraically.  
+#' the top stratum is a regular lattice design and is constructed algebraically.  
 #'
-#' All other blocks are constructed algoritmically by a D-optimality algorithm that makes 
-#' improving swaps between nested blocks within containing blocks until no further improvement is possible.
+#' All other block designs are constructed algoritmically by a D-optimality algorithm that makes 
+#' improving swaps between blocks unconditionally in the top stratum or conditional on blocks being nested within 
+#' the blocks of a preceding stratum for nested blocks.
 #'  
 #' \code{treatments} is a list of sets where the sum of the sets is the required number of treatments 
 #' and the treatments in any one set are all equally replicated. 
@@ -28,7 +29,7 @@
 #' The first level is the number of main blocks 
 #' and the successive levels, if any, are the numbers of sub-blocks in the succesive strata of
 #' the nested blocks design.
-#' The length of the list is the number of strata  and the 
+#' The length of the list is the number of strata and the
 #' running products of the levels are the total blocks in each successive stratum of the
 #' design. Blocks in the same stratum are always equal in size or differ by, at most, a
 #' single unit. The default is the highest common factor of the replication levels, 
@@ -61,9 +62,11 @@
 #' @return  
 #' \item{Design}{Data frame showing the listing of treatments allocated to blocks}
 #' \item{Plan}{Data frame showing a plan of treatments allocated to sub-plots within blocks}
-#' \item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum of the design}
-#' \item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum of the design together with an upper bound, where available}
-#' \item{seed}{Numerical seed for random number generator}
+#' \item{Incidences}{Blocks-by-treatments incidence matrices, one for each stratum of the design}
+#' \item{Iterations}{Data frames showing the number of searches for each improvement in design efficiency for each stratum of the design}
+#' \item{Efficiencies}{Data frame showing the achieved efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
+#' \item{Seed}{Numerical seed for random number generator}
+#' \item{Searches}{Maximum number of searches in each stratum}
 #'
 #' @references
 #' 
@@ -196,7 +199,18 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     list(M11=M11,M22=M22,M12=M12,TF=TF,locrelD=locrelD)
   }
   
-     
+  #**************************** Calculates A-optimality *******************************************************
+  optEffics=function(TF,BF,treps,breps,ntrts,nblks)   {
+    NN= t(table(TF, BF)*(1/sqrt(treps)) ) * (1/sqrt(breps))  
+    if (ntrts<=nblks) 
+      e=eigen( (diag(ntrts)-crossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
+    else       
+      e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
+    aeff = 1/mean(1/e) 
+    deff = exp(sum(log(e))/(ntrts-1))
+    c(deff,aeff)
+  }
+  
   #**************************** General optimization using annealing with multiple searches *******************************************************
   Optimise=function(TF,BF,MF,M11,M22,M12,searches,Iterations)  {
     relD=1
@@ -390,18 +404,6 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     Design
   } 
   
-  #**************************** Test for A-optimality *******************************************************
-  optEffics=function(TF,BF,treps,breps,ntrts,nblks)   {
-    NN= t(table(TF, BF)*(1/sqrt(treps)) ) * (1/sqrt(breps))  
-    if (ntrts<=nblks) 
-      e=eigen( (diag(ntrts)-crossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
-    else       
-      e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
-    aeff = 1/mean(1/e) 
-    deff = exp(sum(log(e))/(ntrts-1))
-    c(deff,aeff)
-  }
-  
   #******************************************************** A-efficiencies ************************************************************************************
   A_Efficiencies=function(Design)  {
     strata=ncol(Design)-2
@@ -506,7 +508,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     blocklevels=HCF(replevs)
   nunits=sum(treatlevs*replevs) 
   if (is.null(searches)) 
-   searches=min(32, ceiling(4096/nunits))
+   searches=min(64, ceiling(4096/nunits))
  if (!all(blocklevels==1))
     blocklevels=blocklevels[blocklevels>1]
  else
@@ -558,5 +560,5 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   colnames(Iterations[[i]])=c("Searches","D-efficiency","A-efficiency")  
  }
  
-  list(Design=Design,Plan=plan,Incidences=Incidences,Iterations=Iterations,Efficiencies=efficiencies,seed=seed) 
+  list(Design=Design,Plan=plan,Incidences=Incidences,Iterations=Iterations,Efficiencies=efficiencies,Seed=seed,Searches=searches) 
 } 

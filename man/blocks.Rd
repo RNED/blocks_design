@@ -25,26 +25,27 @@ is a random seed.}
 \value{
 \item{Design}{Data frame showing the listing of treatments allocated to blocks}
 \item{Plan}{Data frame showing a plan of treatments allocated to sub-plots within blocks}
-\item{Incidences}{List of blocks-by-treatments incidence matrices, one for each stratum of the design}
-\item{Efficiencies}{Data frame showing the A-efficiency factor for each stratum of the design together with an upper bound, where available}
-\item{seed}{Numerical seed for random number generator}
+\item{Incidences}{Blocks-by-treatments incidence matrices, one for each stratum of the design}
+\item{Iterations}{Data frames showing the number of searches for each incremental improvement in design efficiency for each stratum of the design}
+\item{Efficiencies}{Data frame showing the achieved efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
+\item{Seed}{Numerical seed for random number generator}
+\item{Searches}{Maximum number of searches in each stratum}
 }
 \description{
 Constructs nested block designs for unstructured treatments with arbitrary replication,
 not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
-\code{blocks(...)} provides top-down optimization of the succesive blocks strata of a nested blocks design. The
- blocks of each nested stratum are optimized within the blocks of the containing stratum so the
- blocks of any contained strata are conditional on the blocks of the containing strata whereas the blocks of any
- containing strata are independent of the blocks of the contained strata.
+\code{blocks(...)} provides a top-down optimization of a nested blocks design where the top stratum blocks are optimized unconditionally and
+ any nested blocks are optimized conditionally within the blocks of the preceding stratum.
 
 If the blocks in the top stratum have k replicates with v**2 equally replicated treatments in blocks of size v
 and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10,
-then the stratum is a lattice block design and is constructed algebraically.
+the top stratum is a regular lattice design and is constructed algebraically.
 
-All other blocks are constructed algoritmically by a D-optimality algorithm that makes
-improving swaps between nested blocks within containing blocks until no further improvement is possible.
+All other block designs are constructed algoritmically by a D-optimality algorithm that makes
+improving swaps between blocks unconditionally in the top stratum or conditional on blocks being nested within
+the blocks of a preceding stratum for nested blocks.
 
 \code{treatments} is a list of sets where the sum of the sets is the required number of treatments
 and the treatments in any one set are all equally replicated.
@@ -57,7 +58,7 @@ and treatments with the same replication can be split between two or more sets i
 The first level is the number of main blocks
 and the successive levels, if any, are the numbers of sub-blocks in the succesive strata of
 the nested blocks design.
-The length of the list is the number of strata  and the
+The length of the list is the number of strata and the
 running products of the levels are the total blocks in each successive stratum of the
 design. Blocks in the same stratum are always equal in size or differ by, at most, a
 single unit. The default is the highest common factor of the replication levels,
@@ -94,17 +95,6 @@ crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
 
 # concurrence matrix for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks
 crossprod(blocks(c(13,13),c(4,1),13,searches=100)$Incidences[[1]])
-
-#
-blocks(treatments=4,replicates=3,blocklevels=c(3,2))
-blocks(treatments=4,replicates=3,blocklevels=c(3,2))
- blocks(treatments=4,replicates=3,blocklevels=c(3,2))
-blocks(treatments=4,replicates=3,blocklevels=c(3,2))
-blocks(treatments=4,replicates=3,blocklevels=c(3,2))
-blocks(treatments=4,replicates=3,blocklevels=c(3,2))
- blocks(treatments=4,replicates=3,blocklevels=c(3,2))
- blocks(treatments=4,replicates=3,blocklevels=c(3,2))
- blocks(treatments=4,replicates=3,blocklevels=c(3,2))
 }
 \references{
 Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes
