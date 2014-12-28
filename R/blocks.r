@@ -203,11 +203,10 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     globrelD=0
     treps=tabulate(TF)
     breps=tabulate(BF)
-    if ( all(treps==treps[1]) )
-      if (length(TF)%%nlevels(BF) == 0) 
+    if ( all(treps==treps[1]) & all(breps==breps[1])  )
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
     else
-      bound=NA
+      bound=NA  
     for (r in 1 : searches) {
       dmax=D_Max(M11,M22,M12,TF,MF,BF)  
       relD=relD*dmax$locrelD
@@ -219,8 +218,8 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         globTF=TF
         globrelD=relD
         test=optEffics(globTF,BF,treps,breps,nlevels(TF),nlevels(BF)) 
-        Iterations=rbind(Iterations,c(r,test$deff,test$aeff))
-        if (isTRUE( all.equal(bound,test$aeff))) break
+        Iterations=rbind(Iterations,c(r,test))
+        if (isTRUE( all.equal(bound,test[2]))) break
         }
       if (r==searches) break
       for (iswap in 1 : 5) {
@@ -400,42 +399,33 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
     aeff = 1/mean(1/e) 
     deff = exp(sum(log(e))/(ntrts-1))
-    list(deff=deff,aeff=aeff)
+    c(deff,aeff)
   }
   
   #******************************************************** A-efficiencies ************************************************************************************
-  # A-Efficiencies function 
   A_Efficiencies=function(Design)  {
     strata=ncol(Design)-2
-    nunits=nrow(Design)
     treps=tabulate(Design$Treatments)
-    ntrts=nlevels(Design$Treatments)
+    effics=matrix(1,nrow=strata,ncol=2)
     aeff=rep(1,strata) 
-    deff=rep(1,strata)    
+    deff=rep(1,strata)  
+    bounds=rep(NA,strata) 
+    blocks=rep(0,strata)  
     for (i in 1:strata) { 
-      nblks=nlevels(Design[,i])
+      blocks[i]=nlevels(Design[,i])
       breps=tabulate(Design[,i])
-      if (ntrts>1 & nblks>1) {
-        effics=optEffics(Design$Treatments,Design[,i],treps,breps,ntrts,nblks)  
-        aeff[i] = effics$aeff       
-        deff[i] = effics$deff
-      }
+      if ( all(treps==treps[1]) & all(breps==breps[1]))
+        bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Treatments),blocks[i])    
+      if (nlevels(Design$Treatments)>1 & nlevels(Design[,i])>1)
+        effics[i,]=optEffics(Design$Treatments,Design[,i],treps,breps,nlevels(Design$Treatments),blocks[i])  
     }
-    bounds=rep(1,strata)
-    blocks=rep(0,strata)
-    for (i in 1:strata)   
-      blocks[i]=nlevels(Design[,i])    
-    if ( all(treps==treps[1]) )
-      for (i in 1:strata)  
-        if (nunits%%blocks[i] == 0) 
-          bounds[i]=upper_bounds(nunits,ntrts,blocks[i])    
-    Efficiencies=as.data.frame(cbind(blocks, deff, aeff, bounds))
-    colnames(Efficiencies)=c("Blocks","D-Efficiencies","A-Efficiencies", "A-Upper Bounds")
+    efficiencies=as.data.frame(cbind(blocks, effics, bounds))    
+    colnames(efficiencies)=c("Blocks","D-Efficiencies","A-Efficiencies", "A-Upper Bounds")
     rnames=c("Main")
     if (strata>1)
       for (i in 1 : (strata-1)) rnames=c(rnames,paste("Sub",i))
-    rownames(Efficiencies)=rnames 
-    Efficiencies
+    rownames(efficiencies)=rnames 
+    efficiencies
   }
    
   #******************************************************** Randomizes blocks within strata************************************************************************************ 
