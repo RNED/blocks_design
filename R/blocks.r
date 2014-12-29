@@ -180,7 +180,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         i=1+(sampn-1)%%nSamp[k]
         j=1+(sampn-1)%/%nSamp[k]
         relD=dMat[i,j]
-        if ( relD>1.000001 ) {
+        if ( !isTRUE(all.equal(relD,1)) & relD>1) {
           improved=TRUE
           locrelD=locrelD*relD
           up=UpDate(M11,M22,M12,TF[S[i]],TF[S[j]], BF[S[i]], BF[S[j]], TF,BF)
@@ -217,10 +217,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     globrelD=0
     treps=tabulate(TF)
     breps=tabulate(BF)
+    bound=NA
     if ( all(treps==treps[1]) & all(breps==breps[1])  )
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
-    else
-      bound=NA  
     for (r in 1 : searches) {
       dmax=D_Max(M11,M22,M12,TF,MF,BF)  
       relD=relD*dmax$locrelD
@@ -228,7 +227,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       M11=dmax$M11
       M22=dmax$M22
       M12=dmax$M12  
-        if (relD>globrelD) {
+        if ( !isTRUE(all.equal(relD,globrelD)) & relD>globrelD) {
         globTF=TF
         globrelD=relD
         test=optEffics(globTF,BF,treps,breps,nlevels(TF),nlevels(BF)) 
