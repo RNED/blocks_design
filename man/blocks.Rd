@@ -4,7 +4,7 @@
 \title{Block designs}
 \usage{
 blocks(treatments, replicates, blocklevels = NULL, searches = NULL,
-  seed = NULL)
+  seed = NULL, jumps = NULL)
 }
 \arguments{
 \item{treatments}{a list giving a partition of the total number of treatments into
@@ -16,20 +16,24 @@ sets where all treatments in the same set have the same replication.}
 levels, if any, are the succesive nested levels of a hierarchy of nested sub-blocks.
 The default is an orthogonal main blocks design.}
 
-\item{searches}{an optional integer for the number of local optima searched during an optimization.
+\item{searches}{an optional integer parameter for the number of local optima searched during an optimization.
 The default is the minimum of 32 or the ceiling of 4096 divided by the number of units.}
 
-\item{seed}{an optional integer seed for initializing the random number generator. The default
-is a random seed.}
+\item{seed}{an optional integer parameter for initializing the random number generator. The default
+is a random integer seed in the range 1:100000.}
+
+\item{jumps}{an optional integer parameter for the number of random jumps needed to escape local maxima at the end of each search in each stratum.
+The default is a single jump.}
 }
 \value{
 \item{Design}{Data frame showing the listing of treatments allocated to blocks}
 \item{Plan}{Data frame showing a plan of treatments allocated to sub-plots within blocks}
 \item{Incidences}{Blocks-by-treatments incidence matrices, one for each stratum of the design}
-\item{Iterations}{Data frames showing the number of searches for each incremental improvement in design efficiency for each stratum of the design}
+\item{Iterations}{Data frames showing the number of searches for each improvement in design efficiency for each stratum of the design}
 \item{Efficiencies}{Data frame showing the achieved efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
 \item{Seed}{Numerical seed for random number generator}
 \item{Searches}{Maximum number of searches in each stratum}
+\item{Jumps}{Number of jumps to escape local maxima in each stratum}
 }
 \description{
 Constructs nested block designs for unstructured treatments with arbitrary replication,
@@ -44,7 +48,7 @@ and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 
 the top stratum is a regular lattice design and is constructed algebraically.
 
 All other block designs are constructed algoritmically by a D-optimality algorithm that makes
-improving swaps between blocks unconditionally in the top stratum or conditional on blocks being nested within
+improving jumps between blocks unconditionally in the top stratum or conditional on blocks being nested within
 the blocks of a preceding stratum for nested blocks.
 
 \code{treatments} is a list of sets where the sum of the sets is the required number of treatments

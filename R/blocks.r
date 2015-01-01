@@ -15,7 +15,7 @@
 #' the top stratum is a regular lattice design and is constructed algebraically.  
 #'
 #' All other block designs are constructed algoritmically by a D-optimality algorithm that makes 
-#' improving swaps between blocks unconditionally in the top stratum or conditional on blocks being nested within 
+#' improving jumps between blocks unconditionally in the top stratum or conditional on blocks being nested within 
 #' the blocks of a preceding stratum for nested blocks.
 #'  
 #' \code{treatments} is a list of sets where the sum of the sets is the required number of treatments 
@@ -52,12 +52,15 @@
 #' @param blocklevels a list of block levels where the first level is the number of main blocks and the remaining
 #' levels, if any, are the succesive nested levels of a hierarchy of nested sub-blocks.
 #' The default is an orthogonal main blocks design.
-#'  
-#' @param searches an optional integer for the number of local optima searched during an optimization. 
+#' 
+#' @param seed an optional integer parameter for initializing the random number generator. The default 
+#' is a random integer seed in the range 1:100000.
+#' 
+#' @param searches an optional integer parameter for the number of local optima searched during an optimization. 
 #' The default is the minimum of 32 or the ceiling of 4096 divided by the number of units.
 #' 
-#' @param seed an optional integer seed for initializing the random number generator. The default 
-#' is a random seed.
+#' @param jumps an optional integer parameter for the number of random jumps needed to escape local maxima at the end of each search in each stratum. 
+#' The default is a single jump.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the listing of treatments allocated to blocks}
@@ -67,6 +70,7 @@
 #' \item{Efficiencies}{Data frame showing the achieved efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
 #' \item{Seed}{Numerical seed for random number generator}
 #' \item{Searches}{Maximum number of searches in each stratum}
+#' \item{Jumps}{Number of jumps to escape local maxima in each stratum}
 #'
 #' @references
 #' 
@@ -100,8 +104,7 @@
 #'       
 #' @export
 #' 
-
-blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=NULL) { 
+blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=NULL,jumps=NULL) { 
 
   #******************************************************** sizes ************************************************************************************ 
   Sizes=function(sizes,blocklevels) { 
@@ -162,7 +165,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     list(M11=M11,M22=M22,M12=M12)
   }   
   
-  #********************************************************Determinants of swaps using samples of increasing size***********************************************
+  #********************************************************Determinants of jumps using samples of increasing size***********************************************
   D_Max=function(M11,M22,M12,TF,MF,BF) {      
     locrelD=1
     mainSizes=tabulate(MF)
@@ -195,13 +198,13 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
           nSamp=pmin(mainSizes,2*nSamp)
        else 
          break
-    }       
+    }  
     list(M11=M11,M22=M22,M12=M12,TF=TF,locrelD=locrelD)
   }
   
   #**************************** Calculates A-optimality *******************************************************
-  optEffics=function(TF,BF,treps,breps,ntrts,nblks)   {
-    NN= t(table(TF, BF)*(1/sqrt(treps)) ) * (1/sqrt(breps))  
+  optEffics=function(TF,BF,ntrts,nblks)   {
+    NN= t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF)))  
     if (ntrts<=nblks) 
       e=eigen( (diag(ntrts)-crossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
     else       
@@ -212,13 +215,14 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
   
   #**************************** General optimization using annealing with multiple searches *******************************************************
-  Optimise=function(TF,BF,MF,M11,M22,M12,searches,Iterations)  {
+  Optimise=function(TF,BF,MF,M11,M22,M12,searches,Iterations,jumps)  {
     relD=1
     globrelD=0
-    treps=tabulate(TF)
-    breps=tabulate(BF)
+    globTF=TF
+    treps=as.integer(tabulate(TF))
+    breps=as.integer(tabulate(BF))
     bound=NA
-    if ( all(treps==treps[1]) & all(breps==breps[1])  )
+    if (identical(max(treps),min(treps)) & identical(max(breps),min(breps))  )
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
     for (r in 1 : searches) {
       dmax=D_Max(M11,M22,M12,TF,MF,BF)  
@@ -227,41 +231,42 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       M11=dmax$M11
       M22=dmax$M22
       M12=dmax$M12  
-        if ( !isTRUE(all.equal(relD,globrelD)) & relD>globrelD) {
+        if (relD>globrelD) {
         globTF=TF
         globrelD=relD
-        test=optEffics(globTF,BF,treps,breps,nlevels(TF),nlevels(BF)) 
-        Iterations=rbind(Iterations,c(r,test))
-        if (isTRUE( all.equal(bound,test[2]))) break
+        effics=optEffics(globTF,BF,nlevels(TF),nlevels(BF)) 
+        Iterations=rbind(Iterations,c(r,effics))
+        if (isTRUE( all.equal(bound,effics[2]))) break
         }
       if (r==searches) break
-      for (iswap in 1 : 5) {
-      for (icount in 1 : 100) {
+      for (iswap in 1 : jumps) {   
+        for (icount in 1 : 100) {
           s=sample(rep(1:length(TF))[MF==sample(nlevels(MF),1)],2)
-          if ( TF[s[1]]==TF[s[2]]| BF[s[1]]==BF[s[2]]) 	next
+          if ( identical(TF[s[1]],TF[s[2]]) | identical(BF[s[1]],BF[s[2]])  ) next
           dswap = (1+M12[TF[s[1]],BF[s[2]]]+M12[TF[s[2]],BF[s[1]]]-M12[TF[s[1]],BF[s[1]]]-M12[TF[s[2]],BF[s[2]]])**2-
             (2*M11[TF[s[1]],TF[s[2]]]-M11[TF[s[1]],TF[s[1]]]-M11[TF[s[2]],TF[s[2]]])*(2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])  
-          if ( isTRUE(all.equal(dswap,0)) | isTRUE(all.equal(dswap,1)) ) next
-          relD=relD*dswap
-          up=UpDate(M11,M22,M12,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]],TF,BF)
-          M11=up$M11
-          M22=up$M22
-          M12=up$M12
-          TF[c(s[1],s[2])]=TF[c(s[2],s[1])]	
-          break
+          if (!isTRUE(all.equal(dswap,0)) & dswap>0) {
+            relD=relD*dswap
+            up=UpDate(M11,M22,M12,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]],TF,BF)
+            M11=up$M11
+            M22=up$M22
+            M12=up$M12
+            TF[c(s[1],s[2])]=TF[c(s[2],s[1])]  
+            break
+          }
         }
-      } 
+      }
     } 
     list(TF=globTF,Iterations=Iterations)
   } 
   
   #******************************************************** Initializes design***************************************************************************************
-  GenOpt=function(TF,BF,MF,searches,Iterations) {   
+  GenOpt=function(TF,BF,MF,searches,Iterations,jumps) {   
     TB=TreatContrasts(MF,TF)
     NB=BlockContrasts(MF,BF) 
     DD=crossprod(cbind(TB,NB))
     count=0
-      while ( qr(DD)$rank<ncol(DD) & count<1000 ) 
+      while ( !identical(qr(DD)$rank,ncol(DD)) & count<100 ) 
       {
         rand=sample(1:length(TF))
         TF=TF[rand][order(MF[rand])] 
@@ -269,7 +274,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         DD=crossprod(cbind(TB , NB))
         count=count+1
       }
-    if (count==1000) return(TF)   
+    if (count==100) return(TF)   
     V=chol2inv(chol(DD))
     M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))	
     M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
@@ -280,7 +285,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
     M12=M12[,perm]
     M22=M22[perm,perm]	
-    opt=Optimise(TF,BF,MF,M11,M22,M12,searches,Iterations)
+    opt=Optimise(TF,BF,MF,M11,M22,M12,searches,Iterations,jumps)
     list(TF=opt$TF,Iterations=opt$Iterations)
   }
   
@@ -297,7 +302,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
  
   #********************************************************  algorithm   ************************************************************************************
-    optTF=function(Design,treatlevs,replevs,searches)  {
+    optTF=function(Design,treatlevs,replevs,searches,jumps)  {
     nunits=nrow(Design)
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
@@ -361,7 +366,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
             TF=c(TF, rep(1:(v*v))[order(tens2)])
           }
         } else {	
-          opt=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches,Iterations[[i]])
+          opt=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches,Iterations[[i]],jumps)
           TF=opt$TF
           Iterations[[i]]=opt$Iterations
         }
@@ -418,7 +423,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       if ( all(treps==treps[1]) & all(breps==breps[1]))
         bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Treatments),blocks[i])    
       if (nlevels(Design$Treatments)>1 & nlevels(Design[,i])>1)
-        effics[i,]=optEffics(Design$Treatments,Design[,i],treps,breps,nlevels(Design$Treatments),blocks[i])  
+        effics[i,]=optEffics(Design$Treatments,Design[,i],nlevels(Design$Treatments),blocks[i])  
     }
     efficiencies=as.data.frame(cbind(blocks, effics, bounds))    
     colnames(efficiencies)=c("Blocks","D-Efficiencies","A-Efficiencies", "A-Upper Bounds")
@@ -458,7 +463,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
   
  #******************************************************** Validates inputs************************************************************************************
- testInputs=function(treatments,replicates,blocklevels,searches,seed) {  
+ testInputs=function(treatments,replicates,blocklevels,searches,seed,jumps) {  
    if (missing(treatments) | missing(replicates) )  
      return(" Treatments or replicates not defined ")   
    if (is.null(treatments) | is.null(replicates))  
@@ -485,6 +490,13 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
      if ( !all(is.finite(searches)) | !all(!is.nan(searches))) return(" Searches must be a finite integer ") 
      if (searches<1)  return(" Repeats must be at least one ")   
    }  
+  
+  if (!is.null(jumps)) {
+    if (anyNA(jumps) ) return(" NA jumps values not allowed") 
+    if ( !all(is.finite(jumps)) | !all(!is.nan(jumps))) return(" jumps must be a finite integer ") 
+    if (jumps<1)  return(" Random jumps must be at least one ")   
+  }  
+  
    if (!is.null(seed)) {
      if (anyNA(seed) ) return(" NA seed values not allowed") 
      if ( !all(is.finite(searches)) | !all(!is.nan(searches))) return(" Seed must be a finite integer ") 
@@ -496,10 +508,11 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
  }
  
  #********************************************************Iterationss design ************************************************************************************ 
- testout=testInputs(treatments,replicates,blocklevels,searches,seed) 
+ testout=testInputs(treatments,replicates,blocklevels,searches,seed,jumps) 
   if (!isTRUE(testout)) stop(testout)
   if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed) 
+ if (is.null(jumps)) jumps=1
   # omit any single replicate treatments here 
    treatlevs=treatments[replicates>1]
    replevs = replicates[replicates>1]
@@ -524,7 +537,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   for (r in 1 : strata) 
     Design[,r+1]=rep(facMat[,r],blocksizes)
  Design[,r+2]=rep(1:nunits)
- opt=optTF(Design,treatlevs,replevs,searches) 
+ opt=optTF(Design,treatlevs,replevs,searches,jumps) 
  TF=opt$TF
  Iterations=opt$Iterations
   Design=cbind(Design,as.factor(TF)) 
@@ -559,5 +572,5 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   colnames(Iterations[[i]])=c("Searches","D-efficiency","A-efficiency")  
  }
  
-  list(Design=Design,Plan=plan,Incidences=Incidences,Iterations=Iterations,Efficiencies=efficiencies,Seed=seed,Searches=searches) 
+  list(Design=Design,Plan=plan,Incidences=Incidences,Iterations=Iterations,Efficiencies=efficiencies,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
