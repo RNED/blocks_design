@@ -7,29 +7,29 @@
 #' 
 #' @details
 #' 
-#' The algorithm optimizes the allocation of treatments to blocks for a nested blocks design 
-#' with arbitrary treatment replicaton and arbitrary depth of nesting.
-#' The main blocks in the top stratum of the design are optimized unconditionally and then the nested blocks, if any, 
-#' are optimized hierarchically from largest to smallest with each new set of nested blocks optimized within the blocks of the preceding strata.
-#' Thus each blocks stratum is optimized conditionally allowing for preceding blocks in the hierarchy but ignoring 
-#' succeeding blocks. 
+#' The algorithm optimizes the allocation of treatments to blocks for nested blocks designs 
+#' with arbitrary treatment replication and arbitrary depth of nesting.
+#' First, the main blocks in the top stratum are optimized unconditionally and then the nested blocks, if any, 
+#' are optimized hierarchically from the top-down with each new set of nested blocks optimized within the blocks of the preceding stratum.
+#' Each new set of nested blocks is optimized within the preceding set of blocks but ignores the 
+#' succeeding sets, if any. 
 #'  
 #' If the blocks in the top stratum have k replicates with v**2 equally replicated treatments in blocks of size v
 #' and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10, 
-#' the top stratum is a regular lattice design and is constructed algebraically.  
-#' All other block designs are constructed algoritmically by a D-optimality algorithm that makes 
-#' improving treatment swaps between blocks unconditionally in the top stratum or conditional on blocks being nested within 
-#' the blocks of a preceding stratum for nested blocks.
+#' they are a regular lattice design and are constructed algebraically.  
+#' All other blocks are constructed by a D-optimality algorithm that makes 
+#' improving treatment swaps between blocks nested within 
+#' any preceding blocks.
 #'  
-#' The algorithm searches for a local maxima in each stratum of the design with the number of searches dependent on the \code{searches} parameter.
-#' Prior to strating a new search, the algorithm escapes any existing local maxima by one or more random jumps dependent on the \code{jumps} parameter.
+#' The algorithm searches for local maxima in each stratum of the design where the number of searches depends on the \code{searches} parameter.
+#' Prior to starting a new search, the algorithm escapes the current local maxima by making one or more random jumps, dependent on the \code{jumps} parameter.
 #' 
-#' The design outputs include a data design frame showing the allocation of blocks and treatments to plots, a plan data design frame showing a schematic 
+#' The design outputs include a design data frame showing the allocation of blocks and treatments to plots, a plan data frame showing a schematic 
 #' allocation of treatments to blocks, a set of incidence matrices, one for each stratum, showing the incidences of treatments with blocks, 
-#' an efficiencies data frame showing the achieved A- and D-efficiencies together with A-upper bounds, where available, for the completed design and 
-#' finally an improvements data frame showing the progressive improvements for repeated searches. The Improvemnents table shows the number of searches, the D-efficiency and the
-#' A-efficiency for each improvement in the design and can be useful for assessing whether furthersearches are needed. Channges
-#' in the \code{jumps} parameter can also be assessed by comparing Improvements for different jump parameters.
+#' an efficiencies data frame showing the final achieved A- and D-efficiencies together with A-upper bounds, where available and 
+#' a Progress_Log data frame showing progressive improvements due to repeated searches. The Progress_Log shows the number of searches, the D-efficiency and the
+#' A-efficiency for each improvement in the design and can be useful for assessing whether further searches are needed. Channges
+#' in the \code{jumps} parameter can be assessed by comparing the ProgressLog for different jump parameters.
 #'  
 #' \code{treatments} is a list of sets where the sum of the sets is the required number of treatments 
 #' and the treatments in any one set are all equally replicated. 
@@ -80,7 +80,7 @@
 #' \item{Plan}{Data frame showing a plan of treatments allocated to sub-plots within blocks}
 #' \item{Incidences}{Blocks-by-treatments incidence matrices, one for each stratum of the design}
 #' \item{Efficiencies}{Data frame showing the achieved efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
-#' \item{Improvements}{Data frames showing the number of searches for each progressive improvement in design efficiency for each stratum of the design} 
+#' \item{Progress_Log}{Data frames showing the number of searches for each progressive improvement in design efficiency for each stratum of the design} 
 #' \item{Seed}{Numerical seed for random number generator}
 #' \item{Searches}{Maximum number of searches in each stratum}
 #' \item{Jumps}{Number of jumps to escape a local maxima in each stratum}
@@ -105,7 +105,7 @@
 #' blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 #' 
 #' # 64 treatments with 2 reps and 2 main blocks with five 2-level nested factors   
-#' blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2),searches=4)
+#' blocks(treatmentsblocks =64,replicates=2,blocklevels=c(2,2,2,2,2,2),searches=4)
 #' 
 #' # concurrence matrices of 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
 #' crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
@@ -585,5 +585,5 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   colnames(Iterations[[i]])=c("Searches","D-efficiency","A-efficiency")  
  }
  
-  list(Design=Design,Plan=plan,Incidences=Incidences,Efficiencies=efficiencies,Improvements=Iterations,Seed=seed,Searches=searches,Jumps=jumps) 
+  list(Design=Design,Plan=plan,Incidences=Incidences,Efficiencies=efficiencies,Progress_Log=Iterations,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
