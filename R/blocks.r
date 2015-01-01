@@ -27,9 +27,9 @@
 #' The design outputs include a data design frame showing the allocation of blocks and treatments to plots, a plan data design frame showing a schematic 
 #' allocation of treatments to blocks, a set of incidence matrices, one for each stratum, showing the incidences of treatments with blocks, 
 #' an efficiencies data frame showing the achieved A- and D-efficiencies together with A-upper bounds, where available, for the completed design and 
-#' finally a progression data frame showing progressive steps with repeated searches. Progression shows the number of searches, the D-efficiency and the
-#' A-efficiency for each improvement in the design and may be useful for assessing whether a larger number of searches are needed. The effects of channges
-#' in the \code{jumps} parameter can be assessed by comparing between runs.
+#' finally an improvements data frame showing the progressive improvements for repeated searches. The Improvemnents table shows the number of searches, the D-efficiency and the
+#' A-efficiency for each improvement in the design and can be useful for assessing whether furthersearches are needed. Channges
+#' in the \code{jumps} parameter can also be assessed by comparing Improvements for different jump parameters.
 #'  
 #' \code{treatments} is a list of sets where the sum of the sets is the required number of treatments 
 #' and the treatments in any one set are all equally replicated. 
@@ -80,7 +80,7 @@
 #' \item{Plan}{Data frame showing a plan of treatments allocated to sub-plots within blocks}
 #' \item{Incidences}{Blocks-by-treatments incidence matrices, one for each stratum of the design}
 #' \item{Efficiencies}{Data frame showing the achieved efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
-#' \item{Progression}{Data frames showing the number of searches for each progressive improvement in design efficiency for each stratum of the design} 
+#' \item{Improvements}{Data frames showing the number of searches for each progressive improvement in design efficiency for each stratum of the design} 
 #' \item{Seed}{Numerical seed for random number generator}
 #' \item{Searches}{Maximum number of searches in each stratum}
 #' \item{Jumps}{Number of jumps to escape a local maxima in each stratum}
@@ -585,5 +585,5 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   colnames(Iterations[[i]])=c("Searches","D-efficiency","A-efficiency")  
  }
  
-  list(Design=Design,Plan=plan,Incidences=Incidences,Efficiencies=efficiencies,Progression=Iterations,Seed=seed,Searches=searches,Jumps=jumps) 
+  list(Design=Design,Plan=plan,Incidences=Incidences,Efficiencies=efficiencies,Improvements=Iterations,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
