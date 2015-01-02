@@ -7,47 +7,45 @@
 #' 
 #' @details
 #' 
-#' The algorithm optimizes the allocation of treatments to blocks for nested blocks designs 
-#' with arbitrary treatment replication and arbitrary depth of nesting.
-#' First, the main blocks in the top stratum are optimized unconditionally and then the nested blocks, if any, 
-#' are optimized hierarchically from the top-down with each new set of nested blocks optimized within the blocks of the preceding stratum.
-#' Each new set of nested blocks is optimized within the preceding set of blocks but ignores the 
-#' succeeding sets, if any. 
+#' The algorithm optimizes the allocation of treatments to blocks for nested blocks designs.
+#' Treatments can have any arbitrary replication not necessarily all equal and the blocks can be simple main blocks or can
+#' be nested blocks with any feasible depth of nesting. Block sizes in any particular stratum are always equal or differ, at most, by a single unit. 
+#' 
+#' Treatments are defined by a partition into treatment sets where all treatments in the
+#' same set have the same replication. The required partition is defined in the \code{treatments} list and the 
+#' corresponding replication for each treatment set is defined in the \code{replicates} list. The two lists must be the same length 
+#' and must be in matching order. Treatments are numbered consecutively according to the ordering of the treatment sets but 
+#' different sets with the same replication can be used if arbitrary numbering is required. Single replicate treatments sets are permitted provided 
+#' that not every treatment in the design is unreplicated.
+#' 
+#' The blocks design is defined by the \code{blocklevels} list, which contains one block level for each stratum of the design. 
+#' The first level is the number of main blocks and the successive levels, if any, are the numbers of nested sub-blocks in each succesive strata of
+#' the design. The length of the list is the total number of strata in the design. \code{blocklevels} has a single default value
+#' which is the highest common factor of the replication levels and which gives a main blocks design with a maximal set of orthogonal main blocks.  
+#' 
+#' The blocks design is optimized hierarchically with the top level blocks optimized unconditionally and the succesive nested blocks, if any, 
+#' optimized hierarchically from top-down with the blocks of each new nested stratum optimized within the blocks of each preceding stratum.
+#' Thus nested blocks are optimized conditionally with respect to any higher level blocks in the design but unconditionally with respect to any lower level blocks.
 #'  
 #' If the blocks in the top stratum have k replicates with v**2 equally replicated treatments in blocks of size v
 #' and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10, 
-#' they are a regular lattice design and are constructed algebraically.  
-#' All other blocks are constructed by a D-optimality algorithm that makes 
-#' improving treatment swaps between blocks nested within 
-#' any preceding blocks.
+#' they are regular lattice blocks and are constructed algebraically. All other blocks are constructed by a D-optimal swapping algorithm. 
 #'  
-#' The algorithm searches for local maxima in each stratum of the design where the number of searches depends on the \code{searches} parameter.
-#' Prior to starting a new search, the algorithm escapes the current local maxima by making one or more random jumps, dependent on the \code{jumps} parameter.
+#' The algorithm searches for a local maxima in each stratum by making improving swaps between blocks nested within existing blocks 
+#' until no further improving swaps can be found. If the \code{searches} parameter is greater than one the algorithm 
+#' then escapes the current local maxima by making one or more random jumps according to the \code{jumps} parameter and then finds another local maxima. 
+#' The process continues for the required number of searches and then the best overall design is returned. 
 #' 
-#' The design outputs include a design data frame showing the allocation of blocks and treatments to plots, a plan data frame showing a schematic 
-#' allocation of treatments to blocks, a set of incidence matrices, one for each stratum, showing the incidences of treatments with blocks, 
-#' an efficiencies data frame showing the final achieved A- and D-efficiencies together with A-upper bounds, where available and 
-#' a Progress_Log data frame showing progressive improvements due to repeated searches. The Progress_Log shows the number of searches, the D-efficiency and the
-#' A-efficiency for each improvement in the design and can be useful for assessing whether further searches are needed. Channges
-#' in the \code{jumps} parameter can be assessed by comparing the ProgressLog for different jump parameters.
+#' The design outputs include the Design showing the allocation of blocks and treatments to plots, a Plan showing a schematic 
+#' layout of treatments in blocks, a set of Incidence matrices showing the incidences of treatments and blocks in each stratum, 
+#' an Efficiencies table showing the final achieved A- and D-efficiencies of the overall best design together with A-upper bounds, where available and 
+#' a Searches_Log showing the progress of the search algorithm for design improvements in each stratum of the design. 
+#' The Searches_Log shows the number of searches, the D-efficiency and the A-efficiency for each improving swap in the optimization process
+#'  and can be useful for assessing whether further searches are needed or whether the \code{jumps} parameter setting
+#'  is appropritae for a particular design search.
 #'  
-#' \code{treatments} is a list of sets where the sum of the sets is the required number of treatments 
-#' and the treatments in any one set are all equally replicated. 
-#' 
-#' \code{replicates} is a list of replication numbers for sets in the \code{treatments} list. 
-#' Treatments are numbered consecutively according to the order of the sets
-#' and treatments with the same replication can be split between two or more sets if required. 
+#'  Designs are fully randomised with small blocks randomised within large blocks and treatment plots randomised within blocks.  
 #'  
-#' \code{blocklevels} is a list of nested block levels for the succesive nested blocks strata of the design. 
-#' The first level is the number of main blocks 
-#' and the successive levels, if any, are the numbers of sub-blocks in the succesive strata of
-#' the nested blocks design.
-#' The length of the list is the number of strata and the
-#' running products of the levels are the total blocks in each successive stratum of the
-#' design. Blocks in the same stratum are always equal in size or differ by, at most, a
-#' single unit. The default is the highest common factor of the replication levels, 
-#' which gives a main blocks design with a maximal set of complete orthogonal main blocks. 
-#'
 #' The \code{searches} parameter is the number of local optima searched during an optimization. 
 #' Increasing the number of searches may improve the efficiency of a design but
 #'  will also increase the search time.
@@ -80,10 +78,10 @@
 #' \item{Plan}{Data frame showing a plan of treatments allocated to sub-plots within blocks}
 #' \item{Incidences}{Blocks-by-treatments incidence matrices, one for each stratum of the design}
 #' \item{Efficiencies}{Data frame showing the achieved efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
-#' \item{Progress_Log}{Data frames showing the number of searches for each progressive improvement in design efficiency for each stratum of the design} 
-#' \item{Seed}{Numerical seed for random number generator}
-#' \item{Searches}{Maximum number of searches in each stratum}
-#' \item{Jumps}{Number of jumps to escape a local maxima in each stratum}
+#' \item{Searches_Log}{Data frames showing the number of searches for each progressive improvement in design efficiency for each stratum of the design} 
+#' \item{seed}{Numerical seed for random number generator}
+#' \item{searches}{Maximum number of searches in each stratum}
+#' \item{jumps}{Number of jumps to escape a local maxima in each stratum}
 #'
 #' @references
 #' 
@@ -105,7 +103,7 @@
 #' blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 #' 
 #' # 64 treatments with 2 reps and 2 main blocks with five 2-level nested factors   
-#' blocks(treatmentsblocks =64,replicates=2,blocklevels=c(2,2,2,2,2,2),searches=4)
+#'  blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2),searches=4)
 #' 
 #' # concurrence matrices of 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
 #' crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
@@ -113,8 +111,7 @@
 #' # concurrence matrix for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks 
 #' crossprod(blocks(c(13,13),c(4,1),13,searches=100)$Incidences[[1]])
 #' 
-#'     
-#'       
+#'          
 #' @export
 #' 
 blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=NULL,jumps=NULL) { 
