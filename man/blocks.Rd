@@ -40,13 +40,26 @@ Constructs nested block designs for unstructured treatments with arbitrary repli
 not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
-The algorithm optimizes the allocation of treatments to blocks for nested blocks designs.
-The treatments can have any arbitrary replication not necessarily all equal and the blocks can be simple main blocks or can
-be nested blocks with any feasible depth of nesting. Block sizes in any particular stratum are all equal or differ, at most, by a single unit.
+The \code{blocks} function optimizes the allocation of treatments to blocks for nested blocks designs where treatments
+can have any arbitrary level of replication, not necessarily all equal, and blocks can have either a simple main blocks design or
+a nested blocks design with any feasible depth of nesting.
 
-Blocks are optimized hierarchically with the top level blocks optimized unconditionally and the succesive nested blocks, if any,
-optimized hierarchically from top-down with the blocks of each new nested stratum optimized within the blocks of each preceding stratum.
-Thus nested blocks are optimized conditionally with respect to any higher level blocks in the design but unconditionally with respect to any lower level blocks.
+Treatments are defined by a partition of the total required number of treatments into treatment sets where all treatments in the
+same set have the same replication. The required sets are defined in the \code{treatments} list and the
+required replication for each set is defined in the \code{replicates} list. The two lists must be the same length
+and must be in matching order. Treatments are numbered consecutively according to the ordering of the treatment sets but
+different sets with the same replication can be used if arbitrary numbering is required. Single replicate treatments sets are permitted provided
+that not every treatment in the design is unreplicated.
+
+The blocks design is defined by the \code{blocklevels} list, which defines the number of nested block levels in each stratum of the design.
+The first level is the number of main blocks and the successive levels, if any, are the numbers of nested sub-blocks for each succesive stratum of
+the design. The length of the list is the total number of strata in the design and blocks in any stratum are always equal in size or differ, at most,
+by a single unit. The default value of the \code{blocklevels} list is the highest common factor of the replication levels.
+
+The algorithm optimizes each blocks stratum individually, first optimizing the main blocks stratum and then optimizing any nested blocks
+strata in turn from largest to smallest block size. The blocks of each new nested stratum are optimized within the blocks of each preceding stratum
+therefore each nested blocks stratum is optimized conditionally with respect to any higher level strata in the design but
+ unconditionally with respect to any lower level strata.
 
 If the blocks in the top stratum have k replicates with v**2 equally replicated treatments in blocks of size v
 and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10,
@@ -66,24 +79,6 @@ The Searches_Log shows the number of searches, the D-efficiency and the A-effici
  is appropritae for a particular design search.
 
  Designs are fully randomised with small blocks randomised within large blocks and treatment plots randomised within blocks.
-
-\code{treatments} is a partition of the total required number of treatments into sets of equally replicated treatments.
-Any number of sets is permitted provided that all treatments in the same set have the same replication.
-Treatments are numbered consecutively according to the order of the sets but treatments with the same replication can be split between different sets
- if arbitrary treatment leabelling is required. Single replicate treatments sets are permitted provided
-that not every treatment is unreplicated. \code{replicates} is a list of replication numbers for the \code{treatments} sets taken in order and must be the
-same length as the \code{treatments} list.
-
-\code{blocklevels} is a list of nested block levels for the succesive nested blocks strata of the design.
-The first level is the number of main blocks
-and the successive levels, if any, are the numbers of sub-blocks in the succesive strata of
-the nested blocks design.
-
-The length of the list is the number of strata and the
-running products of the levels are the total blocks in each successive stratum of the
-design. Blocks in the same stratum are always equal in size or differ by, at most, a
-single unit. The default is the highest common factor of the replication levels,
-which gives a main blocks design with a maximal set of complete orthogonal main blocks.
 
 The \code{searches} parameter is the number of local optima searched during an optimization.
 Increasing the number of searches may improve the efficiency of a design but
