@@ -211,12 +211,11 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
   
   #**************************** Calculates A-optimality *******************************************************
-  optEffics=function(TF,BF,ntrts,nblks)   {
-    NN= t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF)))  
+  optEffics=function(TF,BF,ntrts,nblks)   { 
     if (ntrts<=nblks) 
-      e=eigen( (diag(ntrts)-crossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
+      e=eigen( (diag(ntrts)-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
     else       
-      e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(NN)), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
+      e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
     aeff = 1/mean(1/e) 
     deff = exp(sum(log(e))/(ntrts-1))
     c(deff,aeff)
