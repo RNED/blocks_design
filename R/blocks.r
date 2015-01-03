@@ -11,65 +11,58 @@
 #' can have any arbitrary level of replication, not necessarily all equal, and blocks can have either a simple main blocks design or
 #' a nested blocks design with any feasible depth of nesting. 
 #' 
-#' Treatments are defined by a partition of the total required number of treatments into treatment sets where all treatments in the
+#' Treatments are defined by a partition of the total required number of treatments into sets where all treatments in the
 #' same set have the same replication. The required sets are defined in the \code{treatments} list and the 
-#' required replication for each set is defined in the \code{replicates} list. The two lists must be the same length 
+#' required replication for each set is defined in the \code{replicates} list. The two lists must be of the same length 
 #' and must be in matching order. Treatments are numbered consecutively according to the ordering of the treatment sets but 
 #' different sets with the same replication can be used if arbitrary numbering is required. Single replicate treatments sets are permitted provided 
 #' that not every treatment in the design is unreplicated.
 #' 
 #' The blocks design is defined by the \code{blocklevels} list, which defines the number of nested block levels in each stratum of the design. 
 #' The first level is the number of main blocks and the successive levels, if any, are the numbers of nested sub-blocks for each succesive stratum of
-#' the design. The length of the list is the total number of strata in the design and blocks in any stratum are always equal in size or differ, at most, 
-#' by a single unit. The default value of the \code{blocklevels} list is the highest common factor of the replication levels. 
-#'   
-#' The algorithm optimizes each blocks stratum individually, first optimizing the main blocks stratum and then optimizing any nested blocks
-#' strata in turn from largest to smallest block size. The blocks of each new nested stratum are optimized within the blocks of each preceding stratum 
-#' therefore each nested blocks stratum is optimized conditionally with respect to any higher level strata in the design but
-#'  unconditionally with respect to any lower level strata.
+#' the design. The length of the list is the total number of strata in the design. Block sizes in the same stratum are always equal 
+#' or differ, at most, by a single experimental unit. The default setting for the \code{blocklevels} list is
+#'  the highest common factor of the replication levels which gives a single stratum main blocks design with the maximum possible 
+#'  number of orthogonal main blocks. 
+#'    
+#' Main blocks designs with k replicates and v**2 equally replicated treatments in blocks of size v
+#' where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 
+#' are regular lattice blocks and are constructed algebraically. All other block designs are constructed
+#'  by a D-optimal swapping algorithm as follows. 
 #'  
-#' If the blocks in the top stratum have k replicates with v**2 equally replicated treatments in blocks of size v
-#' and k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10, 
-#' they are regular lattice blocks and are constructed algebraically. All other blocks are constructed by a D-optimal swapping algorithm. 
-#'  
-#' The algorithm searches for a local maxima in each stratum by making improving swaps between blocks nested within existing blocks 
-#' until no further improving swaps can be found. If the \code{searches} parameter is greater than one the algorithm 
-#' then escapes the current local maxima by making one or more random jumps according to the \code{jumps} parameter and then finds another local maxima. 
-#' The process continues for the required number of searches and then the best overall design is returned. 
+#' First, the algorithm makes improving swaps between the main blocks
+#' until no further improvement is possible. If the number of searches is greater than one, the algorithm 
+#' then escapes the current local maxima by making one or more random jumps according to the \code{jumps}
+#' parameter and then commences another search. The process continues for the required number of searches and
+#' the best overall main block design is retained. If the design has nested strata, the algorithm then proceeds to the first nested strata
+#' and repeats the same optimization process except that improving swaps between nested blocks are constrained within main blocks. 
+#' The process is repeated for each nested stratum with improving swaps always constrained by the blocks of the previous stratum
+#' until the bottom stratum is optimized when the process stops.  
 #' 
-#' The design outputs include the Design showing the allocation of blocks and treatments to plots, a Plan showing a schematic 
-#' layout of treatments in blocks, a set of Incidence matrices showing the incidences of treatments and blocks in each stratum, 
-#' an Efficiencies table showing the final achieved A- and D-efficiencies of the overall best design together with A-upper bounds, where available and 
-#' a Searches_Log showing the progress of the search algorithm for design improvements in each stratum of the design. 
-#' The Searches_Log shows the number of searches, the D-efficiency and the A-efficiency for each improving swap in the optimization process
+#' If the \code{searches} parameter is greater than one
+#' Design outputs include a data frame showing the allocation of blocks and treatments to plots, a data frame showing a schematic 
+#' plan layout of treatments in blocks, a set of matrices showing the incidences of treatments and blocks in each stratum, 
+#' a table showing the final achieved A- and D-efficiencies of the overall best design together with A-upper bounds, where available and 
+#' a log showing the step improvements in each stratum of the design during the design search. 
+#' The search log shows the number of searches, the D-efficiency and the A-efficiency after each improving swap during optimization
 #'  and can be useful for assessing whether further searches are needed or whether the \code{jumps} parameter setting
-#'  is appropritae for a particular design search.
+#'  is appropriate. The total available number of searches, the randomization seed and the number of jumps between searches are also available as outputs. 
 #'  
 #'  Designs are fully randomised with small blocks randomised within large blocks and treatment plots randomised within blocks.  
 #'  
-#' The \code{searches} parameter is the number of local optima searched during an optimization. 
-#' Increasing the number of searches may improve the efficiency of a design but
-#'  will also increase the search time.
-#'  
-#' The \code{seed} parameter is an integer used to initialize the random number generator. The 
-#'  default is a random integer but any fixed positive integer can be used instead,if required.   
-#' 
-#' Blocks and treatments are fully randomized within the constraints of a nested blocks design.
-#' 
 #' @param treatments a list giving a partition of the total number of treatments into 
 #' sets where all treatments in the same set have the same replication.   
 #' 
 #' @param replicates a list assigning the replication level of each set in the \code{treatments} list. 
 #' 
 #' @param blocklevels a list of block levels where the first level is the number of main blocks and the remaining
-#' levels, if any, are the succesive nested levels of a hierarchy of nested sub-blocks.
-#' The default is an orthogonal main blocks design.
+#' levels, if any, are the succesive levels of a hierarchy of nested sub-blocks. The default is an orthogonal main blocks design.
 #' 
 #' @param seed an optional integer parameter for initializing the random number generator. The default 
 #' is a random integer seed in the range 1:100000.
 #' 
-#' @param searches an optional integer parameter for the number of local optima searched during an optimization. 
-#' The default is the minimum of 32 or the ceiling of 4096 divided by the number of units.
+#' @param searches an optional parameter for the maximum total number of local optima searched during an optimization. 
+#' The default is the minimum of 64 or the ceiling of 4096 divided by the number of units.
 #' 
 #' @param jumps an optional integer parameter for the number of random jumps used to escape a local maxima in each stratum. 
 #' The default is a single jump.
