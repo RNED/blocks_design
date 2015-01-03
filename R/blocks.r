@@ -27,13 +27,15 @@
 #'    
 #' Main blocks designs with k replicates and v**2 equally replicated treatments in blocks of size v
 #' where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 
-#' are regular lattice blocks and are constructed algebraically. All other block designs are constructed
+#' are regular lattice blocks and are constructed algebraically. Lattice designs with prime-power number of treatments are constructed using the \code{\link[crossdes]{MOLS}}
+#' package.
+#' All other block designs are constructed
 #'  by a D-optimal swapping algorithm as follows. 
 #'  
 #' First, the algorithm makes improving swaps between the main blocks
 #' until no further improvement is possible. If the number of searches is greater than one, the algorithm 
-#' then escapes the current local maxima by making one or more random jumps according to the \code{jumps}
-#' parameter and then commences another search. The process continues for the required number of searches and
+#' escapes the current local maxima by making one or more random jumps according to the \code{jumps}
+#' parameter and then commences another search. This process continues for the required number of searches and
 #' the best overall main block design is retained. If the design has nested strata, the algorithm then proceeds to the first nested strata
 #' and repeats the same optimization process except that improving swaps between nested blocks are constrained within main blocks. 
 #' The process is repeated for each nested stratum with improving swaps always constrained by the blocks of the previous stratum
