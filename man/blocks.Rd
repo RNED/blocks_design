@@ -5,7 +5,7 @@
 \usage{
 blocks(treatments, replicates, blocklevels = HCF(replicates),
   searches = ceiling(min(64, 4096/sum(treatments * replicates))),
-  seed = sample(1e+05, 1), jumps = 1, track = FALSE, digits = 4)
+  seed = sample(1e+05, 1), jumps = 1, track = FALSE, digits = 8)
 }
 \arguments{
 \item{treatments}{a list giving a partition of the total number of treatments into
@@ -26,6 +26,8 @@ Defaults to a single jump.}
 
 \item{track}{option to tabulate improving searches and efficiency factors for each improving search in each stratum during optimization.
 Defaults to FALSE}
+
+\item{digits}{sets the options environment for the number of digits shown for printed output. Defaults to 8}
 }
 \value{
 \item{Design}{Data frame showing the optimized block and treatment factors in plot order}
@@ -46,37 +48,38 @@ The \code{blocks} function optimizes the allocation of treatments to blocks for 
 can have any arbitrary level of replication, not necessarily all equal, and blocks can be either a simple main blocks design or
 a nested blocks design with any feasible depth of nesting.
 
-Treatments are defined by a partition of the total required number of treatments into sets where all the treatments in the
+Treatments are defined by a partition of the required number of treatments into sets where all the treatments in the
 same set have the same replication. The required sets are defined in the \code{treatments} list and the
 required replication for each set is defined in the \code{replicates} list. The two lists must be of the same length
 and must be in matching order. Treatments are numbered consecutively according to the ordering of the treatment sets but
 different sets with the same replication can be used if arbitrary numbering is required. Single replicate treatments sets are permitted provided
 that not every treatment in the design is unreplicated.
 
-Blocks are defined by the \code{blocklevels} list which defines both the number of strata and the number of nested blocks in each stratum. The
-length of the list is the number of strata and the value of each element is the number of nested blocks in each stratum where the
-first element is the number of main blocks and the successive elements, if any, are the numbers of nested sub-blocks for each succesive stratum of
-the design. The default setting is a single element equal to the highest common factor of the replication levels
-which gives a single stratum main blocks design with the maximum possible number of orthogonal main blocks.
+Blocks are defined by the \code{blocklevels} list which defines both the number of strata and the nested blocks in each stratum. The
+length of the list is the number of strata and the value of each element is the number of nested blocks per stratum where the
+first element is the number of main blocks and the successive elements, if any, are the numbers of nested sub-blocks for each succesive stratum.
+ The default setting is the highest common factor of the replication levels
+which gives a single stratum main blocks design with maximum possible number of orthogonal main blocks.
 
 Blocks in the same stratum are always equal in size or differ, at most, by a single experimental unit and
-designs are fully randomised with the lower stratum blocks randomised within the higher stratum blocks and the treatments randomised within the blocks.
+designs are fully randomised with nested blocks randomised within higher stratum blocks and treatments randomised within blocks.
 
-Main blocks designs with k replicates and v**2 equally replicated treatments in blocks of size v where k <= 3 for any v,
-or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 are regular lattice blocks and are constructed algebraically.
-Lattice designs with prime-power number of treatments are constructed by using the \code{\link[crossdes]{MOLS}} package.
-All other non-orthogonal block designs are constructed by the following swapping algorithm:
+Complete block designs are constructed directly while designs with k treatment replicates and v**2 treatments in blocks of size v where k <= 3 for any v,
+or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 are regular lattice designs and are constructed algebraically.
+Lattice designs with prime-power number of treatments require the \code{\link[crossdes]{MOLS}} package.
+
+All other block designs are constructed algorithmically by the following recursive procedure:
 
 i) Start with a randomly selected set of new blocks selected within the blocks of any existing strata
-ii) Make improving swaps between the new blocks constrained within the existing blocks stratum until no further improvement in D-optimality is possible \cr
+ii) Make improving swaps between new blocks constrained within the blocks of any existing strata until no further improvement in D-optimality is possible \cr
 iii) If the number of searches is greater than one, escape the current local maxima by making a number of random jumps specified by the \code{jumps} parameter \cr
 iv) Commence another search and repeat for the required number of searches retaining the best overall new blocks design after each search \cr
 v) Repeat for each additional nested blocks stratum, taken in order, until the bottom stratum is reached \cr
 
 Improvements in design efficiency during optimization can be tracked by setting the track option to True. This will tabulate any improving searches
-during optimization and will show the search number and the A and D-efficencies for each improving swap. This might sometimes be useful for deciding
-if an increased number of \code{searches} or an increased number of \code{jumps} is needed. NB the search process will automatically terminate
-if the A-efficiency attains an upper bound.
+during optimization and will show the search number and the A and D-efficencies for each improving swap. This might sometimes be useful when determining
+the required number of \code{searches} and the required number of \code{jumps}. NB the search process terminates automatically
+if an A-efficiency upper bound is atttained.
 }
 \examples{
 # 3 treatments with 2 reps, 2 treatments with 4 reps, 4 treatments with 3 reps
