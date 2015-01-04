@@ -18,69 +18,60 @@
 #' different sets with the same replication can be used if arbitrary numbering is required. Single replicate treatments sets are permitted provided 
 #' that not every treatment in the design is unreplicated.
 #' 
-#' The blocks design is defined by the \code{blocklevels} list which defines the number of nested block levels in each stratum of the design. 
-#' The first level is the number of main blocks and the successive levels, if any, are the numbers of nested sub-blocks for each succesive stratum of
-#' the design. The length of the list is the total number of strata. The default setting for the \code{blocklevels} list is
-#' the highest common factor of the replication levels which gives a single stratum main blocks design with the maximum possible 
-#' number of orthogonal main blocks. 
+#' Blocks are defined by the \code{blocklevels} list which defines both the number of strata and the number of nested blocks in each stratum. The
+#' length of the list is the number of strata and the value of each element is the number of nested blocks in each stratum where the   
+#' first element is the number of main blocks and the successive elements, if any, are the numbers of nested sub-blocks for each succesive stratum of
+#' the design. The default setting is a single element equal to the highest common factor of the replication levels 
+#' which gives a single stratum main blocks design with the maximum possible number of orthogonal main blocks. 
 #'  
 #' Blocks in the same stratum are always equal in size or differ, at most, by a single experimental unit and 
-#' designs are fully randomised with small blocks randomised within large blocks and treatments randomised within blocks.  
+#' designs are fully randomised with the lower stratum blocks randomised within the higher stratum blocks and the treatments randomised within the blocks.  
 #'    
-#' Main blocks designs with k replicates and v**2 equally replicated treatments in blocks of size v
-#' where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 
-#' are regular lattice blocks and are constructed algebraically. Lattice designs with prime-power number of treatments are constructed by 
-#' using the \code{\link[crossdes]{MOLS}} package.
-#' 
-#' All other block designs are constructed by the following swapping algorithm:
+#' Main blocks designs with k replicates and v**2 equally replicated treatments in blocks of size v where k <= 3 for any v,
+#' or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 are regular lattice blocks and are constructed algebraically. 
+#' Lattice designs with prime-power number of treatments are constructed by using the \code{\link[crossdes]{MOLS}} package.
+#' All other non-orthogonal block designs are constructed by the following swapping algorithm:
 #'  
-#' i)   Make improving swaps between the main blocks until no further improvement in D-optimality is possible \cr
-#' ii)  If the number of searches is greater than one, escape the current local maxima by making the number of random jumps specified by the \code{jumps} parameter \cr
-#' iii) Commence another search and repeat for the required number of searches retaining the best overall main block design after each search \cr
-#' iv)  Repeat steps i-iii for the first nested blocks stratum, if any, with improving swaps between nested blocks constrained within the main blocks \cr
-#' v)   Repeat step iv for each additional nested blocks stratum, taken in order, with improving swaps between nested blocks 
-#'      constrained within the blocks of the immediately preceeding stratum \cr
-#'
-#' The design outputs for the optimized design include:
+#' i) Start with a randomly selected set of new blocks selected within the blocks of any existing strata   
+#' ii) Make improving swaps between the new blocks constrained within the existing blocks stratum until no further improvement in D-optimality is possible \cr
+#' iii) If the number of searches is greater than one, escape the current local maxima by making a number of random jumps specified by the \code{jumps} parameter \cr
+#' iv) Commence another search and repeat for the required number of searches retaining the best overall new blocks design after each search \cr
+#' v) Repeat for each additional nested blocks stratum, taken in order, until the bottom stratum is reached \cr
 #' 
-#' i)  A data frame showing the block and treatment factors in plot order\cr
-#' ii) A data frame showing the bottom stratum blocks arranged as a plan layout \cr
-#' iii) Incidence matrices showing the incidences of treatments and blocks in each stratum of the design \cr
-#' iv) Efficiencies showing a table of the final achieved D- and A-efficiency factors in each stratum of the deign together with an A-efficiency bound where available \cr
-#' v) A track of the design efficiency factors showing the actual search number and the A and D-efficency where an improvement was achieved, 
-#' 
-#' The track of the design efficiency shows the number of searches needed for an improvement and might sometimes be useful for deciding if an increased
-#' number of \code{searches} is needed or if the \code{jumps} parameter needs to be increased.
-#'   
-#'  The design outputs also include the total available number of searches, the randomization seed and the number of jumps between searches. 
+#' Improvements in design efficiency during optimization can be tracked by setting the track option to True. This will tabulate any improving searches
+#' during optimization and will show the search number and the A and D-efficencies for each improving swap. This might sometimes be useful for deciding 
+#' if an increased number of \code{searches} or an increased number of \code{jumps} is needed. NB the search process will automatically terminate
+#' if the A-efficiency attains an upper bound.
 #' 
 #' @param treatments a list giving a partition of the total number of treatments into 
 #' sets where all treatments in the same set have the same replication.   
 #' 
 #' @param replicates a list assigning the replication level of each set in the \code{treatments} list. 
 #' 
-#' @param blocklevels a list of block levels where the first level is the number of main blocks and the remaining
-#' levels, if any, are the succesive levels of a hierarchy of nested sub-blocks. The default is an orthogonal main blocks design.
+#' @param blocklevels an optional list of block levels where the first level is the number of main blocks and the remaining
+#' levels, if any, are the succesive levels in a hierarchy of nested sub-blocks. Defaults to an orthogonal main blocks design.
 #' 
-#' @param seed an optional integer parameter for initializing the random number generator. The default 
-#' is a random integer seed in the range 1:100000.
+#' @param seed an optional integer for initializing the random number generator. Default is a random integer in the range 1:100000.
 #' 
-#' @param searches an optional parameter for the maximum total number of local optima searched during an optimization. 
-#' The default is the smaller of 64 or the ceiling of 4096 divided by the number of units.
+#' @param searches an optional integer for the maximum number of searches during an optimization. 
+#' Default is 64 or the ceiling of 4096 divided by the number of units, whichever is the smaller.
 #' 
-#' @param jumps an optional integer parameter for the number of random jumps used to escape a local maxima in each stratum. 
-#' The default is a single jump.
+#' @param jumps an optional integer for the number of random jumps used to escape a local maxima in each stratum. 
+#' Defaults to a single jump.
+#' 
+#' @param track option to tabulate improving searches and efficiency factors for each improving search in each stratum during optimization. 
+#' Defaults to FALSE
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the optimized block and treatment factors in plot order}
 #' \item{Plan}{Data frame showing the treatment allocation to blocks in the bottom stratum of the design}
 #' \item{Incidences}{Blocks-by-treatments incidence matrices in each stratum of the design}
 #' \item{Efficiencies}{The achieved A- and D-efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
-#' \item{Track}{Improvement in design efficiency for each improving search in each stratum of the design} 
+#' \item{Track}{Tables showing the search number and the efficiency factors for each improving search in each stratum of the design} 
 #' \item{seed}{Numerical seed for random number generator}
 #' \item{searches}{Maximum number of searches in each stratum}
 #' \item{jumps}{Number of jumps to escape a local maxima in each stratum}
-#'
+
 #' @references
 #' 
 #' Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes
@@ -100,8 +91,8 @@
 #' # as above but with 20 additional single replicate treatments, one to each block
 #' blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 #' 
-#' # 64 treatments with 2 reps and 2 main blocks with five 2-level nested factors   
-#'  blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2),searches=4)
+#' # 64 treatments with 2 reps and 2 main blocks with five 2-level nested factors and 4 searches including tracking    
+#'  blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2),searches=4,track=TRUE,digits=10)
 #' 
 #' # concurrence matrices of 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
 #' crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
@@ -112,8 +103,8 @@
 #'          
 #' @export
 #' 
-blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=NULL,jumps=NULL) { 
-
+blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=ceiling(min(64, 4096/sum(treatments*replicates))),seed=sample(100000,1),jumps=1,track=FALSE,digits=4) { 
+  
   #******************************************************** sizes ************************************************************************************ 
   Sizes=function(sizes,blocklevels) { 
     for  (i in 1:length(blocklevels)) {    
@@ -216,13 +207,13 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
       e=eigen( (diag(ntrts)-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
     else       
       e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
-    aeff = 1/mean(1/e) 
+    aeff =1/mean(1/e) 
     deff = exp(sum(log(e))/(ntrts-1))
     c(deff,aeff)
   }
   
   #**************************** General optimization using annealing with multiple searches *******************************************************
-  Optimise=function(TF,BF,MF,M11,M22,M12,searches,Track,jumps)  {
+  Optimise=function(TF,BF,MF,M11,M22,M12,searches,Track,jumps,track)  {
     relD=1
     globrelD=0
     globTF=TF
@@ -241,7 +232,9 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
         if (relD>globrelD) {
         globTF=TF
         globrelD=relD
-        effics=optEffics(globTF,BF,nlevels(TF),nlevels(BF)) 
+        if ( !is.na(bound) | track==TRUE )
+          effics=optEffics(globTF,BF,nlevels(TF),nlevels(BF)) 
+        if (track==TRUE)
         Track=rbind(Track,c(r,effics))
         if (isTRUE( all.equal(bound,effics[2]))) break
         }
@@ -268,7 +261,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   } 
   
   #******************************************************** Initializes design***************************************************************************************
-  GenOpt=function(TF,BF,MF,searches,Track,jumps) {   
+  GenOpt=function(TF,BF,MF,searches,Track,jumps,track) {   
     TB=TreatContrasts(MF,TF)
     NB=BlockContrasts(MF,BF) 
     DD=crossprod(cbind(TB,NB))
@@ -292,7 +285,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
     M12=M12[,perm]
     M22=M22[perm,perm]	
-    opt=Optimise(TF,BF,MF,M11,M22,M12,searches,Track,jumps)
+    opt=Optimise(TF,BF,MF,M11,M22,M12,searches,Track,jumps,track)
     list(TF=opt$TF,Track=opt$Track)
   }
   
@@ -309,13 +302,16 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
  
   #********************************************************  algorithm   ************************************************************************************
-    optTF=function(Design,treatlevs,replevs,searches,jumps)  {
+    optTF=function(Design,treatlevs,replevs,searches,jumps,track)  {
     nunits=nrow(Design)
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
     v=sqrt(ntrts)
     strata=ncol(Design)-2
+    Track=NULL
+    if (track==TRUE)
     Track=vector("list", strata)
+    if (track==TRUE)
     for (i in 1:strata)
       Track[[i]]=matrix(0,nrow=1,ncol=3) 
     orthbsize=nunits/hcf 
@@ -373,7 +369,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
             TF=c(TF, rep(1:(v*v))[order(tens2)])
           }
         } else {	
-          opt=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches,Track[[i]],jumps)
+          opt=GenOpt(as.factor(TF),as.factor(Design[,(i+1)]),as.factor(Design[,i]),searches,Track[[i]],jumps,track)
           TF=opt$TF
           Track[[i]]=opt$Track
         }
@@ -470,7 +466,8 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   }
   
  #******************************************************** Validates inputs************************************************************************************
- testInputs=function(treatments,replicates,blocklevels,searches,seed,jumps) {  
+ testInputs=function(treatments,replicates,blocklevels,searches,seed,jumps,track,digits) {  
+ 
    if (missing(treatments) | missing(replicates) )  
      return(" Treatments or replicates not defined ")   
    if (is.null(treatments) | is.null(replicates))  
@@ -504,19 +501,31 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     if (jumps<1)  return(" Random jumps must be at least one ")   
   }  
   
+  if (missing(track)) return(" track must be TRUE or FALSE - default is FALSE ") 
+  if  ( !(identical(track, TRUE) | identical(track, FALSE))  ) return(" track must be TRUE or FALSE - default is FALSE  ") 
+  
    if (!is.null(seed)) {
      if (anyNA(seed) ) return(" NA seed values not allowed") 
-     if ( !all(is.finite(searches)) | !all(!is.nan(searches))) return(" Seed must be a finite integer ") 
+     if ( !all(is.finite(seed)) | !all(!is.nan(seed))) return(" Seed must be a finite integer ") 
      if (seed<1)  return(" Seed must be at least one ")   
    }  
+  
+  if (!is.null(digits)) {
+    if (anyNA(digits) ) return(" NA digit value not allowed") 
+    if ( !all(is.finite(digits)) | !all(!is.nan(digits))) return(" digits must be a finite integer ") 
+    if (digits<1)  return(" digits must be at least one ")   
+    if (digits>14)  return(" too many digits must be less than 15 ") 
+  }  
+  
    if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)) ) 
      return("Design cannot be fitted :  too many blocks and treatments for the available plots")  
    return(TRUE)
  }
  
  #********************************************************Tracks design ************************************************************************************ 
- testout=testInputs(treatments,replicates,blocklevels,searches,seed,jumps) 
+ testout=testInputs(treatments,replicates,blocklevels,searches,seed,jumps,track,digits) 
   if (!isTRUE(testout)) stop(testout)
+ options(digits=digits)
   if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed) 
  if (is.null(jumps)) jumps=1
@@ -533,7 +542,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
  else
    blocklevels=1
   strata=length(blocklevels)
- 
+
  for (i in 1:strata)
   blocksizes=Sizes(nunits,blocklevels)
  totblocks=prod(blocklevels)
@@ -544,7 +553,7 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
   for (r in 1 : strata) 
     Design[,r+1]=rep(facMat[,r],blocksizes)
  Design[,r+2]=rep(1:nunits)
- opt=optTF(Design,treatlevs,replevs,searches,jumps) 
+ opt=optTF(Design,treatlevs,replevs,searches,jumps,track) 
  TF=opt$TF
  Track=opt$Track
   Design=cbind(Design,as.factor(TF)) 
@@ -567,10 +576,12 @@ blocks = function(treatments, replicates, blocklevels=NULL, searches=NULL, seed=
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
  names(Incidences)=stratumnames
  
+ if (track==TRUE)
  names(Track)=stratumnames
   plan=Plan(Design,facMat,stratumnames)
   efficiencies=A_Efficiencies(Design)
-  
+ 
+if (track==TRUE)
  for (i in 1:strata) {
    if (nrow(Track[[i]])==1)
      Track[[i]]=rbind(  Track[[i]] ,c(1,efficiencies[i,2],efficiencies[i,3] )  )
