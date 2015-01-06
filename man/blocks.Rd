@@ -5,7 +5,7 @@
 \usage{
 blocks(treatments, replicates, blocklevels = HCF(replicates),
   searches = ceiling(min(64, 4096/sum(treatments * replicates))),
-  seed = sample(1e+05, 1), jumps = 1, track = FALSE, digits = 8)
+  seed = sample(1e+05, 1), jumps = 1)
 }
 \arguments{
 \item{treatments}{a list giving a partition of the total number of treatments into
@@ -14,27 +14,21 @@ sets where all treatments in the same set have the same replication.}
 \item{replicates}{a list assigning the replication level of each set in the \code{treatments} list.}
 
 \item{blocklevels}{an optional list of block levels where the first level is the number of main blocks and the remaining
-levels, if any, are the succesive levels in a hierarchy of nested sub-blocks. Defaults to an orthogonal main blocks design.}
+levels, if any, are the succesive levels in a hierarchy of nested sub-blocks. Default is an orthogonal main blocks design.}
 
 \item{searches}{an optional integer for the maximum number of searches during an optimization.
-Default is 64 or the ceiling of 4096 divided by the number of units, whichever is the smaller.}
+Default is the smaller of 64 or the ceiling of 4096 divided by the number of units.}
 
-\item{seed}{an optional integer for initializing the random number generator. Default is a random integer in the range 1:100000.}
+\item{seed}{an optional integer for initializing the random number generator. Default is a random integer less than 100000.}
 
 \item{jumps}{an optional integer for the number of random jumps used to escape a local maxima in each stratum.
-Defaults to a single jump.}
-
-\item{track}{option to tabulate improving searches and efficiency factors for each improving search in each stratum during optimization.
-Defaults to FALSE}
-
-\item{digits}{sets the options environment for the number of digits shown for printed output. Defaults to 8}
+Default is a single jump.}
 }
 \value{
 \item{Design}{Data frame showing the optimized block and treatment factors in plot order}
 \item{Plan}{Data frame showing the treatment allocation to blocks in the bottom stratum of the design}
 \item{Incidences}{Blocks-by-treatments incidence matrices in each stratum of the design}
 \item{Efficiencies}{The achieved A- and D-efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
-\item{Track}{Tables showing the search number and the efficiency factors for each improving search in each stratum of the design}
 \item{seed}{Numerical seed for random number generator}
 \item{searches}{Maximum number of searches in each stratum}
 \item{jumps}{Number of jumps to escape a local maxima in each stratum}
@@ -44,7 +38,7 @@ Constructs nested block designs for unstructured treatments with arbitrary repli
 not necessarily all equal, and arbitrary depth of nesting.
 }
 \details{
-The \code{blocks} function optimizes the allocation of treatments to blocks for nested blocks designs where treatments
+The \code{blocks} function optimizes nested blocks designs where treatments
 can have any arbitrary level of replication, not necessarily all equal, and blocks can be either a simple main blocks design or
 a nested blocks design with any feasible depth of nesting.
 
@@ -55,54 +49,50 @@ and must be in matching order. Treatments are numbered consecutively according t
 different sets with the same replication can be used if arbitrary numbering is required. Single replicate treatments sets are permitted provided
 that not every treatment in the design is unreplicated.
 
-Blocks are defined by the \code{blocklevels} list which defines both the number of strata and the nested blocks in each stratum. The
-length of the list is the number of strata and the value of each element is the number of nested blocks per stratum where the
-first element is the number of main blocks and the successive elements, if any, are the numbers of nested sub-blocks for each succesive stratum.
- The default setting is the highest common factor of the replication levels
-which gives a single stratum main blocks design with maximum possible number of orthogonal main blocks.
+Blocks are defined by the \code{blocklevels} list which defines both the number of strata and the number of nested blocks in each stratum. The
+length of the list is the number of strata and the values of the elements are the numbers of blocks for each succesive strata taken in order.
+The first number is the number of main blocks, the second number, if any, is the number of sub-blocks per main block, the third number, if any,
+is the number of sub-sub-blocks per sub-block and so on. The default is a main blocks design with the maximum number of orthogonal main blocks.
 
-Blocks in the same stratum are always equal in size or differ, at most, by a single experimental unit and
-designs are fully randomised with nested blocks randomised within higher stratum blocks and treatments randomised within blocks.
+Blocks in the same stratum are always equal where possible and never differ by not more than a single experimental unit. All designs are fully randomised.
 
-Complete block designs are constructed directly while designs with k treatment replicates and v**2 treatments in blocks of size v where k <= 3 for any v,
-or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 are regular lattice designs and are constructed algebraically.
+Complete block designs are constructed by a direct method while designs with k treatment replicates and v**2 treatments in blocks of size v where k <= 3 for any v,
+or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 are lattice designs and are constructed by an algebraic method based on latin squares.
 Lattice designs with prime-power number of treatments require the \code{\link[crossdes]{MOLS}} package.
 
-All other block designs are constructed algorithmically by the following recursive procedure:
+All other block designs are constructed by an algorithmic procedure:
 
-i) Start with a randomly selected set of new blocks selected within the blocks of any existing strata
-ii) Make improving swaps between new blocks constrained within the blocks of any existing strata until no further improvement in D-optimality is possible \cr
-iii) If the number of searches is greater than one, escape the current local maxima by making a number of random jumps specified by the \code{jumps} parameter \cr
+i) Start with a random set of new blocks constrained within the blocks of any pre-existing strata
+ii) Make improving swaps between the new blocks within the constraints of any pre-existing blocks until no further improvement in D-optimality is possible \cr
+iii) If the number of searches is greater than one, escape the current local maxima by making a number of random swaps (jumps) within the constraints of any pre-existing blocks \cr
 iv) Commence another search and repeat for the required number of searches retaining the best overall new blocks design after each search \cr
 v) Repeat for each additional nested blocks stratum, taken in order, until the bottom stratum is reached \cr
 
-Improvements in design efficiency during optimization can be tracked by setting the track option to True. This will tabulate any improving searches
-during optimization and will show the search number and the A and D-efficencies for each improving swap. This might sometimes be useful when determining
-the required number of \code{searches} and the required number of \code{jumps}. NB the search process terminates automatically
-if an A-efficiency upper bound is atttained.
+The search process will terminate automatically if an A-efficiency upper bound is atttained at any stage.
 }
 \examples{
-# 3 treatments with 2 reps, 2 treatments with 4 reps, 4 treatments with 3 reps
-# the hcf of the replication numbers is 1 and the default design is a completely randomized design
+# 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates
+# the hcf of the replication numbers is 1 therefore the default design is completely randomized
 blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 
-# 50 treatments with 4 reps in 4 complete randomized blocks
-blocks(treatments=50,replicates=4)
-
-# as above but with 4 main blocks and 5 nested blocks within each main block
+# 50 treatments x 4 replicates with 4 main blocks and 5 nested sub-blocks per main block
 blocks(treatments=50,replicates=4,blocklevels=c(4,5))
 
-# as above but with 20 additional single replicate treatments, one to each block
+# as above but with 20 additional single replicate treatments which will distribute
+# evenly between blocks giving exactly one single replicate treatment per sub-block
 blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 
-# 64 treatments with 2 reps and 2 main blocks with five 2-level nested factors and 4 searches including tracking
- blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2),searches=4,track=TRUE,digits=10)
+# 64 treatments x 2 replicates with 2 main blocks and five succesively nested 2-level factors
+ blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2),searches=12)
 
-# concurrence matrices of 36 treatments with 3 reps and 3 main blocks with 6 nested blocks
+# concurrence matrices of 36 treatments x 3 replicates with 3 main blocks and 6 nested sub-blocks
 crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
 
-# concurrence matrix for 13 treatments with 4 reps and 13 treatments with one rep in 13 blocks
-crossprod(blocks(c(13,13),c(4,1),13,searches=100)$Incidences[[1]])
+# 36 treatments x 3 replicates with 3 main blocks, 2-sub, 3-sub-sub and 2-sub-sub-sub blocks
+blocks(treatments=36,replicates=3,blocklevels=c(3,2,3,2))
+
+# concurrence matrix for 13 treatments x 4 replicates and 13 treatments with one rep in 13 blocks
+crossprod(blocks(c(13,13),c(4,1),13)$Incidences[[1]])
 }
 \references{
 Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes
