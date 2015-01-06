@@ -12,32 +12,32 @@
 #' a nested blocks design with any feasible depth of nesting. 
 #' 
 #' Treatments are defined by a partition of the required number of treatments into sets where all the treatments in the
-#' same set have the same replication. The required sets are defined in the \code{treatments} list and the 
-#' required replication for each set is defined in the \code{replicates} list. The two lists must be of the same length 
+#' same set have the same replication. The sets are defined in the \code{treatments} list and the 
+#' replication for each set is defined in the \code{replicates} list. The two lists must be of the same length 
 #' and must be in matching order. Treatments are numbered consecutively according to the ordering of the treatment sets but 
 #' different sets with the same replication can be used if arbitrary numbering is required. Single replicate treatments sets are permitted provided 
 #' that not every treatment in the design is unreplicated.
 #' 
 #' Blocks are defined by the \code{blocklevels} list which defines both the number of strata and the number of nested blocks in each stratum. The
-#' length of the list is the number of strata and the values of the elements are the numbers of blocks for each succesive strata taken in order. 
-#' The first number is the number of main blocks, the second number, if any, is the number of sub-blocks per main block, the third number, if any, 
-#' is the number of sub-sub-blocks per sub-block and so on. The default is a main blocks design with the maximum number of orthogonal main blocks. 
+#' length of the list is the number of strata and the values of the elements are the numbers of blocks for each succesive nested strata taken in order. 
+#' The first number is the number of main blocks, the second, if any, is the number of sub-blocks per main block, the third, if any, 
+#' is the number of sub-sub-blocks per sub-block and so on. The default is a main blocks design with maximum number of orthogonal main blocks. 
 #'  
-#' Blocks in the same stratum are always equal where possible and never differ by not more than a single experimental unit. All designs are fully randomised.  
+#' Block sizes in the same stratum are always as equal as possible and never differ by not more than a single unit. All designs are fully randomised.  
 #' 
-#' Complete block designs are constructed by a direct method while designs with k treatment replicates and v**2 treatments in blocks of size v where k <= 3 for any v,
-#' or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 are lattice designs and are constructed by an algebraic method based on latin squares. 
-#' Lattice designs with prime-power number of treatments require the \code{\link[crossdes]{MOLS}} package.
+#' Complete block designs are constructed directly while designs with k treatment replicates and v**2 treatments
+#' in blocks of size v where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 (lattice designs) are constructed
+#' by an algebraic method based on latin squares. Lattice designs with prime-power v require the \code{\link[crossdes]{MOLS}} package.
 #' 
-#' All other block designs are constructed by an algorithmic procedure:
+#' All other block designs are constructed by an algorithmic method that seeks to optimize the D-efficiency of the design.
 #'  
-#' i) Start with a random set of new blocks constrained within the blocks of any pre-existing strata   
-#' ii) Make improving swaps between the new blocks within the constraints of any pre-existing blocks until no further improvement in D-optimality is possible \cr
-#' iii) If the number of searches is greater than one, escape the current local maxima by making a number of random swaps (jumps) within the constraints of any pre-existing blocks \cr
-#' iv) Commence another search and repeat for the required number of searches retaining the best overall new blocks design after each search \cr
-#' v) Repeat for each additional nested blocks stratum, taken in order, until the bottom stratum is reached \cr
+#' i) First generate a random set of blocks of the required size possibly nested within an existing set of larger blocks   
+#' ii) Next improve the new blocks by making improving treatments swaps between the new blocks within the constraints of any pre-existing blocks \cr
+#' iii) When a maxima is reached, escape the current maxima by making one or more random swaps (jumps) within the constraints of any pre-existing blocks \cr
+#' iv) Commence another search and repeat for the required number of searches and retain the best overall new blocks design after each search \cr
+#' v) Repeat for the next nested blocks stratum in the design until the bottom stratum is reached \cr
 #' 
-#' The search process will terminate automatically if an A-efficiency upper bound is atttained at any stage.
+#' The search process for any particular stratum will terminate automatically if an A-efficiency upper bound (a global maxima) is atttained during any search.
 #' 
 #' @param treatments a list giving a partition of the total number of treatments into 
 #' sets where all treatments in the same set have the same replication.   
