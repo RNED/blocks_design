@@ -60,15 +60,23 @@ Complete block designs are constructed directly while designs with k treatment r
 in blocks of size v where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 (lattice designs) are constructed
 by an algebraic method based on latin squares. Lattice designs with prime-power v require the \code{\link[crossdes]{MOLS}} package.
 
-All other block designs are constructed by an algorithmic method that seeks to optimize the D-efficiency of the design.
+All other block design sizes are constructed by an algorithm that seeks to optimize the D-efficiency of the design. The initial design is generated
+by random allocation of treatments to blocks with the constraint that any existing main blocks design is unchanged. Next the new blocks are optimized
+by making improving swaps between the new blocks within the constraints of any existing blocks until no further improvement is possible.
+To make another search, the algorithm escapes the current maxima by making one or more random swaps (jumps) within the constraints of any pre-existing
+blocks and the optimization process repeated. The best overall blocks design is retained and the algorithm then proceeds to the next nested stratum, if
+any, and repeats the whole process until eventuallly the bottom stratum is reached and the process stops.
 
-i) First generate a random set of blocks of the required size possibly nested within an existing set of larger blocks
-ii) Next improve the new blocks by making improving treatments swaps between the new blocks within the constraints of any pre-existing blocks \cr
-iii) When a maxima is reached, escape the current maxima by making one or more random swaps (jumps) within the constraints of any pre-existing blocks \cr
-iv) Commence another search and repeat for the required number of searches and retain the best overall new blocks design after each search \cr
-v) Repeat for the next nested blocks stratum in the design until the bottom stratum is reached \cr
+The search process for any particular stratum terminate automatically in that stratum if an A-efficiency upper bound (a global maxima) is atttained.
 
-The search process for any particular stratum will terminate automatically if an A-efficiency upper bound (a global maxima) is atttained during any search.
+The outputs of the optimization process are:
+
+ i) A design matrix showing the allocation of treatments to blocks with block factors arranged in standard block order from largest to smallest  \cr
+ ii) A schematic plan where the blocks of the bottom stratum of the design matrix are displayed horizontally to facilitate comparison of block sizes \cr
+ iii) A set of incidence matrices, one for each stratum, showing the number of times each treatment occurs within each block of any particular stratum \cr
+ iv) A table of efficiency factors showing the achieved D- and A-efficiency factors in each stratum together with an A-efficiency upper bound
+ for equi-replicate designs with equal block sizes. \cr
+ v) Scalars for the set design seed, the set maximum number of searches and the set number of jumps for escaping local design maxima. \cr
 }
 \examples{
 # 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates
