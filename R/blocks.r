@@ -398,8 +398,6 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     strata=ncol(Design)-2
     treps=tabulate(Design$Treatments)
     effics=matrix(1,nrow=strata,ncol=2)
-    aeff=rep(1,strata) 
-    deff=rep(1,strata)  
     bounds=rep(NA,strata) 
     blocks=rep(0,strata)  
     for (i in 1:strata) { 
@@ -449,7 +447,6 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   
  #******************************************************** Validates inputs************************************************************************************
  testInputs=function(treatments,replicates,blocklevels,searches,seed,jumps) {  
- 
    if (missing(treatments) | missing(replicates) )  
      return(" Treatments or replicates not defined ")   
    if (is.null(treatments) | is.null(replicates))  
@@ -488,7 +485,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
      if ( !all(is.finite(seed)) | !all(!is.nan(seed))) return(" Seed must be a finite integer ") 
      if (seed<1)  return(" Seed must be at least one ")   
    }  
- 
+
    if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)) ) 
      return("Design cannot be fitted :  too many blocks and treatments for the available plots")  
    return(TRUE)
@@ -519,14 +516,12 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   facMat= matrix(nrow=totblocks,ncol=strata)
   for (r in 1 : strata) 
     facMat[,r]=gl(prod(blocklevels[1:r]),totblocks/prod(blocklevels[1:r])  )  
-  Design= matrix(1,nrow=nunits,ncol=(strata+2))
+  Design= matrix(1,nrow=nunits,ncol=(strata+1))
   for (r in 1 : strata) 
     Design[,r+1]=rep(facMat[,r],blocksizes)
-  Design[,r+2]=rep(1:nunits)
-  Design=as.data.frame(Design)
+  Design=as.data.frame(cbind(Design,rep(1:nunits)))
   Design[]=lapply(Design, factor) 
-  TF=optTF(Design,treatlevs,replevs,searches,jumps) 
-  Design=cbind(Design,as.factor(TF))  
+  Design=cbind(Design,optTF(Design,treatlevs,replevs,searches,jumps))  
   # add back single replicate treatments here 
   if (!all(replicates>1) )
    Design= fullDesign(Design,treatments,replicates,blocksizes,blocklevels) 
@@ -539,13 +534,9 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       stratumnames=c(stratumnames,paste("Sub",i,"_blocks", sep=""))  
   colnames(Design)=c(stratumnames,"Sub-plots","Treatments")   
   rownames(Design) = NULL 
-  # Incidence matrix for each stratum
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
   names(Incidences)=stratumnames
-  plan=Plan(Design,facMat,stratumnames)
-  efficiencies=A_Efficiencies(Design)
- 
-  list(Design=Design,Plan=plan,Incidences=Incidences,Efficiencies=efficiencies,Seed=seed,Searches=searches,Jumps=jumps) 
+  list(Design=Design,Plan=Plan(Design,facMat,stratumnames),Incidences=Incidences,Efficiencies=A_Efficiencies(Design),Seed=seed,Searches=searches,Jumps=jumps) 
 } 

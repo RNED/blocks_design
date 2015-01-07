@@ -3,23 +3,23 @@
 \alias{blocks}
 \title{Block designs}
 \usage{
-blocks(treatments, replicates, blocklevels = HCF(replicates),
-  searches = ceiling(min(64, 4096/sum(treatments * replicates))),
-  seed = sample(1e+05, 1), jumps = 1)
+blocks(treatments, replicates, blocklevels = HCF(replicates), searches = 1 +
+  2000\%/\%(sum(treatments) + prod(blocklevels)), seed = sample(10000, 1),
+  jumps = 1)
 }
 \arguments{
 \item{treatments}{a list giving a partition of the total number of treatments into
 sets where all treatments in the same set have the same replication.}
 
-\item{replicates}{a list assigning the replication level of each set in the \code{treatments} list.}
+\item{replicates}{a list assigning the replication level of each set in the \code{treatments} list}
 
 \item{blocklevels}{an optional list of block levels where the first level is the number of main blocks and the remaining
-levels, if any, are the succesive levels in a hierarchy of nested sub-blocks. Default is an orthogonal main blocks design.}
+levels, if any, are the succesive levels in a hierarchy of nested sub-blocks. Default is an orthogonal main blocks design}
 
-\item{searches}{an optional integer for the maximum number of searches during an optimization.
-Default is the smaller of 64 or the ceiling of 4096 divided by the number of units.}
+\item{searches}{an optional integer for the maximum number of searches during an optimization
+Default is the smaller of 64 or the ceiling of 4096 divided by the number of units}
 
-\item{seed}{an optional integer for initializing the random number generator. Default is a random integer less than 100000.}
+\item{seed}{an optional integer for initializing the random number generator. Default is a random integer less than 10000}
 
 \item{jumps}{an optional integer for the number of random jumps used to escape a local maxima in each stratum.
 Default is a single jump.}
@@ -75,8 +75,8 @@ The outputs of the optimization process are:
  ii) A schematic plan where the blocks of the bottom stratum of the design matrix are displayed horizontally to facilitate comparison of block sizes \cr
  iii) A set of incidence matrices, one for each stratum, showing the number of times each treatment occurs within each block of any particular stratum \cr
  iv) A table of efficiency factors showing the achieved D- and A-efficiency factors in each stratum together with an A-efficiency upper bound
- for equi-replicate designs with equal block sizes. \cr
- v) Scalars for the set design seed, the set maximum number of searches and the set number of jumps for escaping local design maxima. \cr
+ for equi-replicate designs with equal block sizes \cr
+ v) Scalars for the set design seed, the set maximum number of searches and the set number of jumps for escaping local design maxima \cr
 }
 \examples{
 # 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates
@@ -91,10 +91,10 @@ blocks(treatments=50,replicates=4,blocklevels=c(4,5))
 blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 
 # 64 treatments x 2 replicates with 2 main blocks and five succesively nested 2-level factors
- blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2),searches=12)
+ blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2))
 
-# concurrence matrices of 36 treatments x 3 replicates with 3 main blocks and 6 nested sub-blocks
-crossprod(blocks(treatments=36,replicates=3,blocklevels=c(3,6))$Incidences[[2]])
+# concurrence matrix of balanced incomplete block design
+crossprod(blocks(13,4,13,searches=100)$Incidences[[1]])
 
 # 36 treatments x 3 replicates with 3 main blocks, 2-sub, 3-sub-sub and 2-sub-sub-sub blocks
 blocks(treatments=36,replicates=3,blocklevels=c(3,2,3,2))
