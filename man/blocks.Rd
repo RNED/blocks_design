@@ -46,28 +46,31 @@ Treatments are defined by a partition of the required number of treatments into 
 same set have the same replication. The sets are defined in the \code{treatments} list and the
 replication for each set is defined in the \code{replicates} list. The two lists must be of the same length
 and must be in matching order. Treatments are numbered consecutively according to the ordering of the treatment sets but
-different sets with the same replication can be used if arbitrary numbering is required. Single replicate treatments sets are permitted provided
-that not every treatment in the design is unreplicated.
+different sets with the same replication can be used if arbitrary numbering is required. Single replicate treatments sets
+are permitted provided that at least some treatments in the design are replicated.
 
-Blocks are defined by the \code{blocklevels} list which defines both the number of strata and the number of nested blocks in each stratum. The
-length of the list is the number of strata and the values of the elements are the numbers of blocks for each succesive nested strata taken in order.
-The first number is the number of main blocks, the second, if any, is the number of sub-blocks per main block, the third, if any,
-is the number of sub-sub-blocks per sub-block and so on. The default is a main blocks design with maximum number of orthogonal main blocks.
+Blocks are defined by the \code{blocklevels} list where the length of the list is the number of nested blocks strata and the
+values are the numbers of nested blocks for each successive nested strata taken in order.
+The first number is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any,
+is the number of sub-sub-blocks nested in each sub-block and so on. The default is a main blocks design with the maximum possible number of orthogonal main blocks.
 
-Block sizes in the same stratum are always as equal as possible and never differ by not more than a single unit. All designs are fully randomised.
+Block sizes in the same stratum are always as equal as possible and never differ by more than a single unit. All designs are fully randomised.
 
-Complete block designs are constructed directly while designs with k treatment replicates and v**2 treatments
-in blocks of size v where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 (lattice designs) are constructed
-by an algebraic method based on latin squares. Lattice designs with prime-power v require the \code{\link[crossdes]{MOLS}} package.
+Complete block designs are constructed algebraically by the direct substitution of complete sets of treatments into blocks. Complete blocks can contain multiple
+complete sets of treatments but for orthogonality the number of blocks must divide the number of treatment replicates (see example).
+
+Lattice block designs with k treatment replicates and v**2 treatments
+in blocks of size v where k <= 3 for any v, or k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 are constructed
+by an algebraic method based on Latin squares. Lattice designs with prime-power v require the \code{\link[crossdes]{MOLS}} package.
 
 All other block design sizes are constructed by an algorithm that seeks to optimize the D-efficiency of the design. The initial design is generated
 by random allocation of treatments to blocks with the constraint that any existing main blocks design is unchanged. Next the new blocks are optimized
 by making improving swaps between the new blocks within the constraints of any existing blocks until no further improvement is possible.
 To make another search, the algorithm escapes the current maxima by making one or more random swaps (jumps) within the constraints of any pre-existing
 blocks and the optimization process repeated. The best overall blocks design is retained and the algorithm then proceeds to the next nested stratum, if
-any, and repeats the whole process until eventuallly the bottom stratum is reached and the process stops.
+any, and repeats the whole process until eventually the bottom stratum is reached and the process stops.
 
-The search process for any particular stratum terminate automatically in that stratum if an A-efficiency upper bound (a global maxima) is atttained.
+The search process is terminated automatically in a stratum if the A-efficiency upper bound (global maxima) for that stratum is attained before the end of the search.
 
 The outputs of the optimization process are:
 
@@ -75,13 +78,16 @@ The outputs of the optimization process are:
  ii) A schematic plan where the blocks of the bottom stratum of the design matrix are displayed horizontally to facilitate comparison of block sizes \cr
  iii) A set of incidence matrices, one for each stratum, showing the number of times each treatment occurs within each block of any particular stratum \cr
  iv) A table of efficiency factors showing the achieved D- and A-efficiency factors in each stratum together with an A-efficiency upper bound
- for equi-replicate designs with equal block sizes \cr
+ for equally replicated designs with equal block sizes \cr
  v) Scalars for the set design seed, the set maximum number of searches and the set number of jumps for escaping local design maxima \cr
 }
 \examples{
 # 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates
 # the hcf of the replication numbers is 1 therefore the default design is completely randomized
 blocks(treatments=c(3,2,4),replicates=c(2,4,3))
+
+# 4 treatments x 4 replicates with 2 main blocks each containing two complete replicates
+blocks(treatments=4,replicates=4,blocklevel=2)
 
 # 50 treatments x 4 replicates with 4 main blocks and 5 nested sub-blocks per main block
 blocks(treatments=50,replicates=4,blocklevels=c(4,5))
