@@ -302,69 +302,67 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     strata=ncol(Design)-2    
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
-    v=sqrt(ntrts)
     ortho=0
     for (i in 1 : strata) 
-      if (all( tabulate(Design[,i+1]) %% (nunits/hcf)  == 0)) ortho=i else  break
-    reglat=(  identical(max(replevs),min(replevs))  & identical( nlevels(Design[,i+1]) , as.integer(v*replevs[1]) )  & identical(v,ntrts%/%v) )   
+      if (all( tabulate(Design[,i+1]) %% (nunits/hcf)  == 0)) ortho=i else  break 
     treps=rep(replevs,treatlevs)/hcf  
     TF=as.factor(rep(rep(1:ntrts,treps),hcf))
-    if (ortho<strata) {
-      for (i in (ortho+1) : strata) { 
-        if ( i==(ortho+1)  & reglat &  replevs[1]<4   ) {
-          TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
-          if (replevs[1]>2) {
-            set=NULL
-            for (j in 0: (v-1)) 
-              for (k in 0: (v-1)) 
-                set=c(set, (j+k)%%v )
-            TF=c(TF, rep(1:(v*v))[order(set)])
-          }	
-        } else if ( i==(ortho+1)  & reglat &  replevs[1]<(v+2)  & isPrime(v) ) { 
-          TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
-          for (z in 1: (replevs[1]-2)) {
-            set=NULL
-            for (j in 0: (v-1)) 
-              for (k in 0: (v-1)) 
-                set=c(set,(j+k*z)%%v)
-            TF=c(TF, rep(1:(v*v))[order(set)])		
-          }	
-        } else if ( i==(ortho+1) & reglat  &  replevs[1]<(v+2)  &  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
-          index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
-          mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
-          TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
-          for (i in 1: (replevs[1]-2))
-            TF=c(TF, rep(1:(v*v))[order(    as.numeric(mols[,,i]) ) ])
-          
-        } else if (i==(ortho+1) & reglat & v==10  & replevs[1]<5  ) {
-          TF=c(rep(1:(v*v)), rep(1:(v*v))[order(rep(0:(v-1),v))])
-          
-          if (replevs[1]>2)
-            TF=c(TF, rep(1:(v*v))[order(c(
-              1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
-              5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8))]) 
-          
-          if (replevs[1]==4) 
-            TF=c(TF, rep(1:(v*v))[order(c(
-              1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
-              6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]) 
-          
-        } else {
-          TF=GenOpt(TF,Design[,(i+1)],Design[,i],searches,jumps)
+    if (identical(ortho,as.integer(strata))) return (TF) 
+    v=sqrt(ntrts)
+    reglat=(  identical(max(replevs),min(replevs))  & identical( nlevels(Design[,i+1]) , as.integer(v*replevs[1]) )  & identical(v,floor(sqrt(ntrts)))  )      
+    for (i in (ortho+1) : strata) {  
+      if (identical(i,as.integer(ortho+1)) & reglat &  replevs[1]<4   ) {
+        TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
+        if (replevs[1]>2) {
+           set=NULL
+          for (j in 0: (v-1)) 
+            for (k in 0: (v-1)) 
+              set=c(set, (j+k)%%v )
+          TF=c(TF, rep(1:ntrts)[order(set)])
         }
+        TF=as.factor(TF)
+      } else if ( identical(i,as.integer(ortho+1))  & reglat &  replevs[1]<(v+2)  & isPrime(v) ) { 
+        TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
+        for (z in 1: (replevs[1]-2)) {
+          set=NULL
+          for (j in 0: (v-1)) 
+            for (k in 0: (v-1)) 
+              set=c(set,(j+k*z)%%v)
+          TF=c(TF, rep(1:ntrts)[order(set)])		
+        }
+        TF=as.factor(TF)
+      } else if ( identical(i,as.integer(ortho+1)) & reglat  &  replevs[1]<(v+2)  &  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
+        index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
+        mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
+        TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
+        for (i in 1: (replevs[1]-2))
+          TF=c(TF, rep(1:ntrts)[order(    as.numeric(mols[,,i]) ) ])
+        TF=as.factor(TF)   
+      } else if ( identical(i,as.integer(ortho+1)) & reglat & v==10  & replevs[1]<5  ) {
+        TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])  
+        if (replevs[1]>2)
+          TF=c(TF, rep(1:ntrts)[order(c(
+            1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
+            5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8))]) 
+        if (replevs[1]==4) 
+          TF=c(TF, rep(1:ntrts)[order(c(
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
+            6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]) 
+        TF=as.factor(TF) 
+      } else {
+        TF=GenOpt(TF,Design[,(i+1)],Design[,i],searches,jumps)
       }
     }
-    TF 
+  TF 
   }
   
   #******************************************************** replaces single rep treatments *************************************************************************** 
-  fullDesign=function(Design,treatments,replicates,blocksizes,blocklevels) {
+  fullDesign=function(Design,facMat,treatments,replicates,oldblocksizes,blocklevels) {
     strata=ncol(Design)-3
     TF=Design[,ncol(Design)]
     nunits=sum(treatments*replicates)
     ntrts=sum(treatments)
-    redtrts=nlevels(TF)
-    TF=as.factor(c( as.numeric(TF),((redtrts+1):ntrts)[sample(ntrts-redtrts)])) 
+    TF=as.factor(c( as.numeric(TF), ((nlevels(TF)+1):ntrts)[sample(ntrts-nlevels(TF))]  ) ) 
     trtlabs=NULL  
     extlabs=NULL
     index=0
@@ -373,24 +371,15 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
         trtlabs=c(trtlabs,  (index+1):(index+treatments[i]) )
       else extlabs=c(extlabs,  (index+1):(index+treatments[i]) )
         index=index+treatments[i] 
-    }
-    trtlabs=c(trtlabs,extlabs)
-    
-    levels(TF)=trtlabs
+    }    
+    levels(TF)=c(trtlabs,extlabs)
     TF=as.numeric(levels(TF))[TF]
-    BF=c( rep( 1:length(blocksizes),blocksizes))
     newblocksizes=Sizes(nunits,blocklevels)
-    BF=c(BF,  rep( 1:length(blocksizes),(newblocksizes-blocksizes) ) )
-    # full TF in blocks
-    TF=TF[order(BF)]
-    fullDesign = matrix(1,nrow=nunits,ncol=(strata+3))
-    for (r in 1 : strata) 
-      fullDesign[,r+1]=rep(facMat[,r],newblocksizes)
-    fullDesign[,r+2]=rep(1:nunits)
-    fullDesign[,r+3]=TF 
-    fullDesign=as.data.frame(fullDesign)
-    fullDesign[]=lapply(fullDesign, factor) 
-    fullDesign
+    BF=c( rep( 1:length(oldblocksizes),oldblocksizes),  rep( 1:length(oldblocksizes),(newblocksizes-oldblocksizes) ) )
+    Design=facMat[rep(1:length(newblocksizes),newblocksizes),]
+    Design=as.data.frame(cbind(rep(1,nunits), Design, rep(1:nunits),TF[order(BF)]))
+    Design[]=lapply(Design, factor) 
+    Design
   } 
   
   #******************************************************** A-efficiencies ************************************************************************************
@@ -504,7 +493,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     blocklevels=HCF(replevs)
   nunits=sum(treatlevs*replevs) 
   if (is.null(searches)) 
-   searches=min(64, ceiling(4096/nunits))
+    searches=1+2000%/%(sum(treatments)+prod(blocklevels))
  if (!all(blocklevels==1))
     blocklevels=blocklevels[blocklevels>1]
  else
@@ -512,19 +501,16 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   strata=length(blocklevels)
  for (i in 1:strata)
   blocksizes=Sizes(nunits,blocklevels)
-  totblocks=prod(blocklevels)
-  facMat= matrix(nrow=totblocks,ncol=strata)
+  facMat= matrix(nrow=prod(blocklevels),ncol=strata)
   for (r in 1 : strata) 
-    facMat[,r]=gl(prod(blocklevels[1:r]),totblocks/prod(blocklevels[1:r])  )  
-  Design= matrix(1,nrow=nunits,ncol=(strata+1))
-  for (r in 1 : strata) 
-    Design[,r+1]=rep(facMat[,r],blocksizes)
-  Design=as.data.frame(cbind(Design,rep(1:nunits)))
+    facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels)/prod(blocklevels[1:r])  )  
+  Design=facMat[rep(1:length(blocksizes),blocksizes),]
+  Design=as.data.frame(cbind(rep(1,nunits), Design, rep(1:nunits)))
   Design[]=lapply(Design, factor) 
   Design=cbind(Design,optTF(Design,treatlevs,replevs,searches,jumps))  
   # add back single replicate treatments here 
   if (!all(replicates>1) )
-   Design= fullDesign(Design,treatments,replicates,blocksizes,blocklevels) 
+   Design= fullDesign(Design,facMat,treatments,replicates,blocksizes,blocklevels) 
   Design=Design[,c(2:ncol(Design))] 
   # randomization
   Design=randBlocks(Design,facMat)
