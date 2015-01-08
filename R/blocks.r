@@ -412,8 +412,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       Design[,r]=as.numeric( sample(nlevels( Design[,r]) ))[Design[,r]]  
     Design=Design[ do.call(order, Design), ] 
     blocksizes=tabulate(as.numeric( order(unique(Design[,ncol(Design)-2])))[Design[,ncol(Design)-2]])
-    for (r in 1 : (ncol(Design)-2) ) 
-      Design[,r]=rep(facMat[,r],blocksizes)
+    Design[,1 : (ncol(Design)-2)] = facMat[rep(1:length(blocksizes),blocksizes),1 : (ncol(Design)-2)]
     Design[,(ncol(Design)-1)]=rep(1:nrow(Design))
     Design[]=lapply(Design, factor) 
     Design
