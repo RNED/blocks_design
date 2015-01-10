@@ -56,18 +56,17 @@ and never differ by more than a single unit.
 
 There are three classes of solution for the designs defined by the above arguments:
 
-i) Complete block designs constructed algebraically by direct substitution of complete treatment sets into complete blocks. Complete blocks can contain multiple
-complete sets of treatments but the equal block size restriction means that the number of blocks must divide the number of treatment replicates (see example).
+i) Complete block designs constructed algebraically by direct substitution of complete treatment sets. Complete blocks can contain multiple
+sets of treatments but the equal block size restriction means that the number of blocks must divide the number of treatment replicates (see example).
 
 ii) Lattice block designs with k replicates and v**2 treatments in k complete blocks where each main block contains
 v incomplete blocks of size v and k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 or k <= 3 for any other v. Lattice designs are constructed
-by algebraic methods using Latin squares. For prime-power v, the \code{\link[crossdes]{MOLS}} package is used.
+by algebraic methods using Latin squares. The \code{\link[crossdes]{MOLS}} package is used if v is prime-power.
 
-iii) D-optimal designs where blocks are optimized
-by making D-optimal improving swaps between blocks within the constraints of any pre-existing larger blocks, until no further improvement is possible (a local maxima).
-For repeated \code{searches}, the algorithm esacpes the local maxima by making one or more constrained random swaps (= \code{jumps}) and then proceeds to find
-another maxima, with the best overall design retained. The algorithm repeats the whole process for each stratum down to the bottom stratum
-when the process stops.
+iii) D-optimal designs constructed algorithmically by making improving swaps between blocks, possibly within the constraints of any pre-existing blocks,
+until a local maxima is attained. If the \code{searches} parameter is greater than one, the optimization is repeated that number of times with local maxima escaped by
+one or more random swaps (= \code{jumps}), possibly within the constraints of any pre-existing blocks, and the best overall maxima retained.
+ The algorithm proceeds from the top stratum downwards until the bottom stratum is reached and then stops.
 
  The principle design outputs comprise:
 

@@ -26,25 +26,24 @@
 #' 
 #' There are three classes of solution for the designs defined by the above arguments:   
 #'  
-#' i) Complete block designs constructed algebraically by direct substitution of complete treatment sets into complete blocks. Complete blocks can contain multiple 
-#' complete sets of treatments but the equal block size restriction means that the number of blocks must divide the number of treatment replicates (see example).  
+#' i) Complete block designs constructed algebraically by direct substitution of complete treatment sets. Complete blocks can contain multiple 
+#' sets of treatments but the equal block size restriction means that the number of blocks must divide the number of treatment replicates (see example).  
 #'    
-#' ii) Lattice block designs with k replicates and v**2 treatments in k complete blocks where each main block contains 
-#' v incomplete blocks of size v and k <= v+1 for prime or prime-power v, or k <= 4 for v = 10 or k <= 3 for any other v. Lattice designs are constructed
-#' by algebraic methods using Latin squares. For prime-power v, the \code{\link[crossdes]{MOLS}} package is used.
+#' ii) Lattice block designs with k replicates of v*v treatments in k main blocks where each main block contains 
+#' v incomplete blocks of size v and k < (v+1) for prime or prime-power v, or k <= 4 for v = 10 or k <= 3 for any other v. Lattice designs are constructed
+#' by algebraic methods using Latin squares. The \code{\link[crossdes]{MOLS}} package is used if v is prime-power.
 #' 
-#' iii) D-optimal designs where blocks are optimized
-#' by making D-optimal improving swaps between blocks within the constraints of any pre-existing larger blocks, until no further improvement is possible (a local maxima). 
-#' For repeated \code{searches}, the algorithm esacpes the local maxima by making one or more constrained random swaps (= \code{jumps}) and then proceeds to find
-#' another maxima, with the best overall design retained. The algorithm repeats the whole process for each stratum down to the bottom stratum
-#' when the process stops.     
+#' iii) D-optimal designs constructed algorithmically by making improving swaps between blocks, possibly within the constraints of any pre-existing blocks, 
+#' until a local maxima is attained. If the \code{searches} parameter is greater than one, the optimization is repeated that number of times with local maxima escaped by
+#' one or more random swaps (= \code{jumps}), possibly within the constraints of any pre-existing blocks, and the best overall maxima retained. 
+#'  The algorithm proceeds from the top stratum downwards until the bottom stratum is reached and then stops.     
 #'
 #'  The principle design outputs comprise:
 #' 
-#'  i) A design matrix showing the allocation of treatments to blocks with blocks arranged in columns in standard block order  \cr
-#'  ii) A schematic plan with the bottom stratum blocks arranged horizontally with all other blocks arranged in columns in standard block order \cr
-#'  iii) A set of incidence matrices, one for each stratum, showing the number of times each treatment occurs in each block for each stratum \cr
-#'  iv) A table showing the achieved D- and A-efficiency factors for each nested blocks stratum together with an A-efficiency upper bound, where available \cr
+#'  i) A design matrix showing the allocation of treatments to blocks with blocks arranged in columns in standard block order.  \cr
+#'  ii) A schematic plan with the bottom stratum blocks arranged horizontally with all other blocks arranged in columns in standard block order. \cr
+#'  iii) A set of incidence matrices, one for each stratum, showing the number of times each treatment occurs in each block for each stratum. \cr
+#'  iv) A table showing the achieved D- and A-efficiency factors for each nested blocks stratum together with an A-efficiency upper bound, where available. \cr
 #'  
 #' @param treatments a list partitioning the total number of treatments into 
 #' sets where all treatments in the same set have the same replication.   
@@ -165,7 +164,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   
   #********************************************************Determinants of jumps using samples of increasing size***********************************************
   D_Max=function(M11,M22,M12,TF,MF,BF) {      
-    locrelD=1
+    relD=1
     mainSizes=tabulate(MF)
     nSamp=pmin(rep(8,nlevels(MF)),mainSizes)
     mainBlocks=split(rep(1:length(TF)),MF)  
@@ -180,10 +179,9 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
         sampn=which.max(dMat)   
         i=1+(sampn-1)%%nSamp[k]
         j=1+(sampn-1)%/%nSamp[k]
-        relD=dMat[i,j]
-        if ( !isTRUE(all.equal(relD,1)) & relD>1) {
+        if ( !isTRUE(all.equal(dMat[i,j],1)) & dMat[i,j]>1) {
           improved=TRUE
-          locrelD=locrelD*relD
+          relD=relD*dMat[i,j]
           up=UpDate(M11,M22,M12,TF[S[i]],TF[S[j]], BF[S[i]], BF[S[j]], TF,BF)
           M11=up$M11
           M22=up$M22
@@ -197,7 +195,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
        else 
          break
     }  
-    list(M11=M11,M22=M22,M12=M12,TF=TF,locrelD=locrelD)
+    list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
   }
   
   #**************************** Calculates A-optimality *******************************************************
@@ -211,7 +209,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     c(deff,aeff)
   }
   
-  #**************************** General optimization using annealing with multiple searches *******************************************************
+  #**************************** General optimization using multiple searches *******************************************************
   Optimise=function(TF,BF,MF,M11,M22,M12,searches,jumps)  {
     relD=1
     globrelD=0
@@ -223,17 +221,17 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
     for (r in 1 : searches) {
       dmax=D_Max(M11,M22,M12,TF,MF,BF)  
-      relD=relD*dmax$locrelD
+      relD=relD*dmax$relD
       TF=dmax$TF
       M11=dmax$M11
       M22=dmax$M22
       M12=dmax$M12  
-        if (!isTRUE(all.equal(relD,globrelD)) &  relD>globrelD) {
+      if (!isTRUE(all.equal(relD,globrelD)) &  relD>globrelD) {
         globTF=TF
         globrelD=relD
-        if ( !is.na(bound) )
+        if ( !is.na(bound) & r<searches )
           if (isTRUE( all.equal(bound,  optEffics(globTF,BF,nlevels(TF),nlevels(BF))[2]))) break
-        }
+      }
       if (r==searches) break
       for (iswap in 1 : jumps) {
         dswap=0
@@ -296,20 +294,22 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
  
   #********************************************************  algorithm   ************************************************************************************
     optTF=function(Design,treatlevs,replevs,searches,jumps)  {
-    nunits=nrow(Design)
     strata=ncol(Design)-2    
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
-    ortho=0
-    for (i in 1 : strata) 
-      if (all( tabulate(Design[,i+1]) %% (nunits/hcf)  == 0)) ortho=i else  break 
-    treps=rep(replevs,treatlevs)/hcf  
-    TF=as.factor(rep(rep(1:ntrts,treps),hcf))
-    if (identical(ortho,as.integer(strata))) return (TF) 
-    v=sqrt(ntrts)
-    reglat=(  identical(max(replevs),min(replevs))  & identical( nlevels(Design[,i+1]) , as.integer(v*replevs[1]) )  & identical(v,floor(sqrt(ntrts)))  )      
-    for (i in (ortho+1) : strata) {  
-      if (identical(i,as.integer(ortho+1)) & reglat &  replevs[1]<4   ) {
+    treps=rep(replevs,treatlevs)/hcf     
+    TF=as.factor(rep(rep(1:ntrts,treps),hcf))  
+    regreps=(identical(max(replevs),min(replevs) ) )
+    index=0
+    for (i in 1 : strata) { 
+      bsizes=tabulate(Design[,i+1])
+      if (all( bsizes %% (nrow(Design)/hcf)  == 0)) next 
+      index=index+1
+      
+      v=sqrt(ntrts)
+      reglat=(regreps & index==1 &  identical( nrow(Design)/nlevels(Design[,i+1]), v) &  identical( v-floor(v), 0) & identical(max(bsizes),min(bsizes)))
+      
+      if (  reglat &  replevs[1]<4   ) {
         TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
         if (replevs[1]>2) {
            set=NULL
@@ -319,7 +319,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
           TF=c(TF, rep(1:ntrts)[order(set)])
         }
         TF=as.factor(TF)
-      } else if ( identical(i,as.integer(ortho+1))  & reglat &  replevs[1]<(v+2)  & isPrime(v) ) { 
+      } else if ( reglat &  replevs[1]<(v+2)  & isPrime(v) ) { 
         TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
         for (z in 1: (replevs[1]-2)) {
           set=NULL
@@ -329,14 +329,14 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
           TF=c(TF, rep(1:ntrts)[order(set)])		
         }
         TF=as.factor(TF)
-      } else if ( identical(i,as.integer(ortho+1)) & reglat  &  replevs[1]<(v+2)  &  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
+      } else if (reglat  &  replevs[1]<(v+2)  &  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
         index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
         mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
         TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
         for (i in 1: (replevs[1]-2))
           TF=c(TF, rep(1:ntrts)[order(    as.numeric(mols[,,i]) ) ])
         TF=as.factor(TF)   
-      } else if ( identical(i,as.integer(ortho+1)) & reglat & v==10  & replevs[1]<5  ) {
+      } else if (  reglat & v==10  & replevs[1]<5  ) {
         TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])  
         if (replevs[1]>2)
           TF=c(TF, rep(1:ntrts)[order(c(
