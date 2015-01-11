@@ -19,7 +19,7 @@
 #' arbitrary numbering is required. Single replicate treatments sets are permitted provided there are at least some replicated treatment sets in the design.
 #' 
 #' The \code{blocklevels} argument is a vector of numbers that defines the nested blocks structure of the design. The length of the vector is the total number of 
-#' blocks strata while the actual numbers are the block levels in the successive blocks strata. The first number is the number of main blocks, the second, if any,
+#' blocks strata while the numeric elements are the block levels in the successive blocks strata. The first number is the number of main blocks, the second, if any,
 #' is the number of sub-blocks nested in each main block, the third, if any, is the number of sub-sub-blocks nested in each sub-block and so on. 
 #' The default is a main blocks design with the maximum possible number of orthogonal main blocks. Block sizes are always as equal as possible in the same stratum
 #' and never differ by more than a single unit. 
@@ -34,25 +34,24 @@
 #' by algebraic methods using Latin squares. The \code{\link[crossdes]{MOLS}} package is used if v is a prime-power.
 #' 
 #' iii) D-optimal designs constructed algorithmically by making improving swaps between blocks nested within the constraints of any pre-existing blocks, 
-#' until a local maxima is attained. If the \code{searches} parameter is greater than one, the optimization is repeated that number of times with local maxima escaped by
+#' until a local maxima is attained. If the \code{searches} parameter is greater than one, the optimization is repeated with local maxima escaped by
 #' one or more random swaps (= \code{jumps}) made within the constraints of any pre-existing blocks. The 
-#' algorithm proceeds from the top stratum downwards until the bottom stratum is reached with the he best overall maxima retained in each stratum. Hence the optimized solution for each
-#' stratum is constrained by all higher strata but is independent of all lower strata.     
+#' algorithm proceeds from the top stratum downwards with the he best overall maxima retained for each stratum. Hence the optimized solution for each
+#' stratum is restricted by all higher stratum blocks but is independent of all lower stratum blocks.     
 #'
 #'  The principle design outputs comprise:
 #' 
-#'  i) A design matrix showing the allocation of treatments to blocks with blocks arranged in columns in standard block order.  \cr
-#'  ii) A schematic plan with the bottom stratum blocks arranged horizontally with all other blocks arranged in columns in standard block order. \cr
+#'  i) A design matrix showing the allocation of treatments to blocks with the successive stratum blocks arranged in successive columns in standard block order.  \cr
+#'  ii) A design matrix as above but with the bottom stratum blocks arranged in a plan view. \cr
 #'  iii) A set of incidence matrices, one for each stratum, showing the number of times each treatment occurs in each block for each stratum. \cr
 #'  iv) A table showing the achieved D- and A-efficiency factors for each nested blocks stratum together with an A-efficiency upper bound, where available. \cr
 #'  
-#' @param treatments a list partitioning the total number of treatments into 
-#' sets where all treatments in the same set have the same replication.   
+#' @param treatments a vector partitioning the total number of treatments into sets where all treatments in the same set have the same replication.   
 #' 
-#' @param replicates a list assigning a replication level to each set in the \code{treatments} list.
+#' @param replicates a vector assigning a replication level to each set in the \code{treatments} vector.
 #' 
-#' @param blocklevels an optional list of block levels where the first level is the number of main blocks and the remaining
-#' levels, if any, are the succesive levels in a hierarchy of nested sub-blocks - default is the highest common factor of the replication numbers
+#' @param blocklevels an optional vector of block levels where the first level is the number of main blocks and the remaining
+#' levels, if any, are the successive levels in a hierarchy of nested sub-blocks - default is the highest common factor of the replication numbers.
 #' 
 #' @param seed an optional integer for initializing the random number generator - default is a random integer less than 10000.
 #' 
@@ -63,7 +62,7 @@
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the optimized block and treatment factors in plot order}
-#' \item{Plan}{Data frame showing the treatment allocation to blocks in the bottom stratum of the design}
+#' \item{Plan}{Data frame showing a plan view of the treatments in the bottom stratum of the design}
 #' \item{Incidences}{Blocks-by-treatments incidence matrices in each stratum of the design}
 #' \item{Efficiencies}{The achieved A- and D-efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
 #' \item{seed}{Numerical seed for random number generator}
@@ -83,11 +82,11 @@
 #' # 4 treatments x 4 replicates with 2 main blocks each containing two complete replicates  
 #' blocks(treatments=4,replicates=4,blocklevel=2)
 #' 
-#' # 50 treatments x 4 replicates with 4 main blocks and 5 nested sub-blocks per main block 
+#' # 50 treatments x 4 replicates with 4 main blocks and 5 nested sub-blocks in each main block 
 #' blocks(treatments=50,replicates=4,blocklevels=c(4,5))
 #' 
-#' # as above but with 20 additional single replicate treatments which will distribute
-#' # evenly between blocks giving exactly one single replicate treatment per sub-block
+#' # as above but with 20 additional single replicate treatments 
+#' # giving exactly one single replicate treatment per sub-block
 #' blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 #' 
 #' # 64 treatments x 2 replicates with 2 main blocks and five succesively nested 2-level factors
@@ -436,7 +435,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       cumSizes[i+1]=cumSizes[i]+cumSizes[i+1]    
     for (i in 1:nblocks)
       Design[i,]=Design[1+sum(bSizes[1:i]) ,]
-    Design=Design[1:nblocks,1:strata]
+    Design=Design[1:nblocks,1:strata, drop = FALSE]
     fullsize=max(bSizes)
     fulltrts=rep(NA, fullsize*nblocks)
     for (i in 1:nblocks) 
@@ -444,7 +443,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     plan=matrix(fulltrts,nrow=nblocks,ncol=max(bSizes),byrow=TRUE)
     stratumnames=colnames(Design)
     Design=cbind(Design,rep(" ",nblocks),plan)
-    Design[is.na(Design)]  = " "
+    Design[is.na(Design)]  = " "   
     colnames(Design)=c(stratumnames , "Sub_plots", 1:ncol(plan) )
     Design
   }
