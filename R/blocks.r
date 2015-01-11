@@ -11,14 +11,14 @@
 #' can have any arbitrary level of replication, not necessarily all equal, and blocks can be either a simple main blocks design or
 #' a nested blocks design with any feasible depth of nesting. 
 #' 
-#' The \code{treatments} and \code{replications} arguments are lists of numbers that together define the treatment structure of the design. 
-#' The \code{treatments} list partitions the total number of treatments into sets of of equally replicated
-#' treatments and the \code{replications} list provides the actual replication for each treatment set. 
-#' The two list must be of equal length and the sum of the cross-products of the two lists is the total number of
+#' The \code{treatments} and \code{replications} arguments are vectors of numbers that together define the treatment structure of the design. 
+#' The \code{treatments} vector partitions the total number of treatments into sets of of equally replicated
+#' treatments and the \code{replications} vector provides the actual replication for each treatment set. 
+#' The two vectors must be of equal length and the sum of the cross-products of the vectors is the total number of
 #' units. Treatments are numbered consecutively according to the ordering of the treatment sets but different sets with the same replication can be used if 
 #' arbitrary numbering is required. Single replicate treatments sets are permitted provided there are at least some replicated treatment sets in the design.
 #' 
-#' The \code{blocklevels} argument is a list of numbers that defines the nested blocks structure of the design. The length of the list is the total number of 
+#' The \code{blocklevels} argument is a vector of numbers that defines the nested blocks structure of the design. The length of the vector is the total number of 
 #' blocks strata while the actual numbers are the block levels in the successive blocks strata. The first number is the number of main blocks, the second, if any,
 #' is the number of sub-blocks nested in each main block, the third, if any, is the number of sub-sub-blocks nested in each sub-block and so on. 
 #' The default is a main blocks design with the maximum possible number of orthogonal main blocks. Block sizes are always as equal as possible in the same stratum
@@ -31,12 +31,13 @@
 #'    
 #' ii) Lattice block designs with k replicates of v**2 treatments in k main blocks where each main block contains 
 #' v incomplete blocks of size v and k < (v+2) for prime or prime-power v, or k < 5 for v = 10 or k < 4 for any other v. Lattice designs are constructed
-#' by algebraic methods using Latin squares. The \code{\link[crossdes]{MOLS}} package is used if v is prime-power.
+#' by algebraic methods using Latin squares. The \code{\link[crossdes]{MOLS}} package is used if v is a prime-power.
 #' 
-#' iii) D-optimal designs constructed algorithmically by making improving swaps between blocks, possibly within the constraints of any pre-existing blocks, 
+#' iii) D-optimal designs constructed algorithmically by making improving swaps between blocks nested within the constraints of any pre-existing blocks, 
 #' until a local maxima is attained. If the \code{searches} parameter is greater than one, the optimization is repeated that number of times with local maxima escaped by
-#' one or more random swaps (= \code{jumps}), possibly within the constraints of any pre-existing blocks, and the best overall maxima retained. 
-#'  The algorithm proceeds from the top stratum downwards until the bottom stratum is reached and then stops.     
+#' one or more random swaps (= \code{jumps}) made within the constraints of any pre-existing blocks. The 
+#' algorithm proceeds from the top stratum downwards until the bottom stratum is reached with the he best overall maxima retained in each stratum. Hence the optimized solution for each
+#' stratum is constrained by all higher strata but is independent of all lower strata.     
 #'
 #'  The principle design outputs comprise:
 #' 
@@ -426,21 +427,20 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
  
   #******************************************************** Plan output************************************************************************************
   Plan=function(Design)  {
+    nblocks=nlevels(Design[,strata])
     trts=as.numeric(levels(Design[,ncol(Design)]))[Design[,ncol(Design)]]
     strata=ncol(Design)-2
     bSizes=c(0,tabulate(Design[,strata]))
-    nblocks=nlevels(Design[,strata])
+    cumSizes=bSizes
     for (i in 1:nblocks)
-    Design[i,]=Design[1+sum(bSizes[1:i]) ,]
+      cumSizes[i+1]=cumSizes[i]+cumSizes[i+1]    
+    for (i in 1:nblocks)
+      Design[i,]=Design[1+sum(bSizes[1:i]) ,]
     Design=Design[1:nblocks,1:strata]
     fullsize=max(bSizes)
     fulltrts=rep(NA, fullsize*nblocks)
-    for (i in 1:nblocks) {
-      sum1=(i-1)*fullsize
-      sum2= sum(bSizes[1:i])
-      for (j in 1:bSizes[i+1]) 
-        fulltrts[  sum1+j  ]=trts[ sum2+j ]   
-    }
+    for (i in 1:nblocks) 
+      fulltrts[ ((i-1)*fullsize+1) : ((i-1)*fullsize+bSizes[i+1]) ] = trts[  (cumSizes[i]+1 ) : cumSizes[i+1]   ]   
     plan=matrix(fulltrts,nrow=nblocks,ncol=max(bSizes),byrow=TRUE)
     stratumnames=colnames(Design)
     Design=cbind(Design,rep(" ",nblocks),plan)
