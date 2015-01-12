@@ -8,16 +8,17 @@ blocks(treatments, replicates, blocklevels = HCF(replicates),
   seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
-\item{treatments}{cardinals where the sum of the cardinals is the required number of treatments and the individual cardinals
-partition the treatments into equally replicated treatment sets}
+\item{treatments}{cardinal numbers where the sum of the cardinals is the required number of treatments and the set of cardinals
+partitions the treatments into sets of equally replicated treatments}
 
-\item{replicates}{replication numbers for the treatment sets defined above where the cardinals and the replication numbers are assumed in matching order.}
+\item{replicates}{replication numbers for the treatment sets defined above where the cardinal numbers and the replication numbers
+are assumed to be in matching order.}
 
 \item{blocklevels}{an optional vector of integers where the first integer is the number of main blocks and the remaining integers, if any,
-are the succesive levels of nested sub-blocks in a hierarchy of nested sub-blocks. The default is the highest common factor of the replication numbers.}
+are the successive levels of the nested sub-blocks in a hierarchy of nested sub-blocks. The default is the highest common factor of the replication numbers.}
 
 \item{searches}{an optional integer for the maximum number of searches during optimization. The default is the maximum of 1 or (100 - sum of model terms)
-but, if time is not limiting, an increased number of searches may give improved efficiency.}
+but an increased number of searches may give improved efficiency.}
 
 \item{seed}{an optional integer for initializing the random number generator. The default is a random integer less than 10000.}
 
@@ -41,12 +42,12 @@ The \code{blocks} function optimizes nested blocks designs where treatments
 can have any arbitrary level of replication, not necessarily all equal, and blocks can be either a simple main blocks design or
 a nested blocks design with any feasible depth of nesting.
 
-The \code{treatments} and \code{replications} arguments define the treatment structure of the design where \code{treatments} is a
-set of cardinals that sum to the required number of treatments for the design and also provide a partition of that number into equally replicated
-treatment sets while \code{replications} provides the actual replication number for each equally replicated treatment set.
-The cardinals and the replication numbers are paired together in matching order and the sum of the cross-products of the two sets of numbers is the total number of
-units. Treatments are numbered consecutively according to the ordering of the treatment sets but different sets with the same replication can be used if
-arbitrary numbering is required. Single replicate treatments sets are permitted provided there are at least some replicated treatment sets in the design.
+The \code{treatments} and \code{replicates} arguments define the treatment structure of the design. \code{treatments} is a
+set of cardinal numbers that define sets of equally replicated treatments and \code{replicates} is a matching set of replication numbers for those sets.
+The sum of the cardinal numbers is the total number of treatments and the sum of the cross-products of the cardinal numbers and the replication
+numbers is the total number of units. Treatments are numbered consecutively according to the ordering of the treatment sets but
+ different sets with the same replication can be used if arbitrary numbering is required.
+ Single replicate treatments sets are permitted provided there are at least some replicated treatment sets in the design.
 
 The \code{blocklevels} argument is a vector of numbers that defines the nested blocks structure of the design where the length of the vector is the total number of
 blocks strata while the numeric elements are the block levels in the successive blocks strata. The first number is the number of main blocks, the second, if any,
@@ -56,16 +57,21 @@ and never differ by more than a single unit.
 
 There are three classes of solution for the designs defined by the above arguments:
 \itemize{
+
 \item Complete block designs constructed algebraically by direct substitution of complete treatment sets. Complete blocks can contain multiple
 sets of treatments but the equal block size restriction means that the number of blocks must divide the number of treatment replicates (see example).
+
 \item Lattice block designs with k replicates of v**2 treatments in k main blocks where each main block contains
 v incomplete blocks of size v and k < (v+2) for prime or prime-power v, or k < 5 for v = 10 or k < 4 for any other v. Lattice designs are constructed
 by algebraic methods using Latin squares. The \code{\link[crossdes]{MOLS}} package is used if v is a prime-power.
-\item  D-optimal designs constructed algorithmically by making improving swaps between blocks nested within the constraints of any pre-existing blocks,
-until a local maxima is attained. If the \code{searches} parameter is greater than one, the optimization is repeated with local maxima escaped by
-one or more random swaps (= \code{jumps}) made within the constraints of any pre-existing blocks. The
-algorithm proceeds from the top stratum downwards with the he best overall maxima retained for each stratum. Hence the optimized solution for each
-stratum is restricted by all higher stratum blocks but is independent of all lower stratum blocks.
+
+\item  General block designs with arbitrary depth of nesting. These designs are optimized by making D-efficiency improving swaps between
+blocks nested within the constraints of higher level blocks until a local maxima is attained.
+For repeated \code{searches}, the local maxima is escaped by one or more random swaps (= \code{jumps}) within the constraints of higher level blocks.
+The algorithm works from the top stratum downwards with the best maxima in each stratum retained hence the efficiency of each nested stratum is conditional on
+the higher level strata and may be slightly reduced relative to the efficiency of a comparable non-nested design. For most practical designs, the reduction,
+if any, is very slight and of no consequence.
+
 }
 
  The principle design outputs comprise:
