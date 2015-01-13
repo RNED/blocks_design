@@ -75,7 +75,7 @@ blocks nested within the constraints of higher level blocks, if any, until a loc
 For repeated \code{searches}, a local maxima is escaped by one or more random swaps (= \code{jumps}) between blocks, again nested within
  the constraints of higher level blocks, if any.
 The algorithm works from the top stratum downwards and the design of each nested stratum is conditional on
-the design of each higher level stratum. The efficiency of nested designs may be slightly reduced relative to the efficiency of comparable non-nested designs
+the design of all higher level strata. The efficiency of nested designs may be slightly reduced relative to the efficiency of comparable non-nested designs
 but, for all practical purposes, this reduction is of no practical consequence.
 
 }
