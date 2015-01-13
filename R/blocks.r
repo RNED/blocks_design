@@ -7,9 +7,8 @@
 #' 
 #' @details
 #' 
-#' The \code{blocks} function optimizes nested blocks designs where treatments
-#' can have any arbitrary level of replication, not necessarily all equal, and blocks can be either a simple main blocks design or
-#' a nested blocks design with any feasible depth of nesting. 
+#' The \code{blocks} function optimizes nested blocks designs where treatments can have any arbitrary level of replication, not necessarily all equal,
+#' and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting. 
 #' 
 #' The \code{treatments} and \code{replicates} arguments define the treatment structure of the design. \code{treatments} is a
 #' set of cardinal numbers that define sets of equally replicated treatments and \code{replicates} is a matching set of replication numbers for those sets.
@@ -18,11 +17,12 @@
 #'  different sets with the same replication can be used if arbitrary numbering is required. 
 #'  Single replicate treatments sets are permitted provided there are at least some replicated treatment sets in the design.
 #' 
-#' The \code{blocklevels} argument is a vector of numbers that defines the nested blocks structure of the design where the length of the vector is the total number of 
-#' blocks strata while the numeric elements are the block levels in the successive blocks strata. The first number is the number of main blocks, the second, if any,
-#' is the number of sub-blocks nested in each main block, the third, if any, is the number of sub-sub-blocks nested in each sub-block and so on. 
-#' The default is a main blocks design with the maximum possible number of orthogonal main blocks. Block sizes are always as equal as possible in the same stratum
-#' and never differ by more than a single unit. 
+#' The \code{blocklevels} argument is a vector of integers that defines the blocks structure of the design. The length of the vector is the total number of 
+#' blocks strata while the numeric elements are the actual block levels of the successive blocks strata. 
+#' The first number is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any,
+#' is the number of sub-sub-blocks nested in each sub-block and so on. The default is a main blocks design with the maximum possible number of
+#' orthogonal main blocks. Block sizes are always as equal as possible and will never differ by more than a single unit 
+#' in any one stratum. 
 #' 
 #' There are three classes of solution for the designs defined by the above arguments:   
 #' \itemize{
@@ -35,11 +35,11 @@
 #' by algebraic methods using Latin squares. The \code{\link[crossdes]{MOLS}} package is used if v is a prime-power.
 #' 
 #' \item  General block designs with arbitrary depth of nesting. These designs are optimized by making D-efficiency improving swaps between 
-#' blocks nested within the constraints of higher level blocks until a local maxima is attained.
-#' For repeated \code{searches}, the local maxima is escaped by one or more random swaps (= \code{jumps}) within the constraints of higher level blocks.
-#' The algorithm works from the top stratum downwards with the best maxima in each stratum retained hence the efficiency of each nested stratum is conditional on 
-#' the higher level strata and may be slightly reduced relative to the efficiency of a comparable non-nested design. For most practical designs, the reduction, 
-#' if any, is very slight and of no consequence.
+#' blocks nested within the constraints of any higher level blocks until a local maxima is attained.
+#' For repeated \code{searches}, a local maxima is escaped by one or more random swaps (= \code{jumps}) within the constraints of any higher level blocks.
+#' The algorithm works from the top stratum downwards with the best maxima in each stratum retained hence the design of each nested stratum is conditional on 
+#' the design of any higher level strata. The efficiency of nested designs may be slightly reduced relative to the efficiency of comparable non-nested designs
+#' but, for most purposes, the reduction, if any, is slight and is of no practical consequence.
 #'    
 #' }
 #' 
@@ -51,19 +51,19 @@
 #'  \item  A table showing the achieved D- and A-efficiency factors for each nested blocks stratum together with an A-efficiency upper bound, where available. \cr
 #' } 
 #' 
-#' @param treatments cardinal numbers where the sum of the cardinals is the required number of treatments and the set of cardinals 
-#' partitions the treatments into sets of equally replicated treatments
+#' @param treatments cardinal numbers where the sum of the cardinals is the required number of treatments and the individual cardinals 
+#' represent individual sets of equally replicated treatments
 #' 
-#' @param replicates replication numbers for the treatment sets defined above where the cardinal numbers and the replication numbers 
-#' are assumed to be in matching order.   
+#' @param replicates replication numbers for the sets of equally replicated treatments defined above where the \code{treatments} numbers and
+#'  the \code{replicates} numbers are assumed to be in matching order.   
 #' 
 #' @param blocklevels an optional vector of integers where the first integer is the number of main blocks and the remaining integers, if any,
-#' are the successive levels of the nested sub-blocks in a hierarchy of nested sub-blocks. The default is the highest common factor of the replication numbers.
+#' are the numbers of nested sub-blocks in a hierarchy of nested sub-blocks. The default is the highest common factor of the replication numbers.
 #' 
 #' @param seed an optional integer for initializing the random number generator. The default is a random integer less than 10000.
 #' 
-#' @param searches an optional integer for the maximum number of searches during optimization. The default is the maximum of 1 or (100 - sum of model terms)
-#' but an increased number of searches may give improved efficiency. 
+#' @param searches an optional integer for the maximum number of searches during optimization where, for best results,
+#'  the number of searches should be as large as possible. The default is the maximum of 1 or (100 - sum of model terms).
 #' 
 #' @param jumps an optional integer for the number of pairwise random treatment swaps used to escape a local maxima in a stratum. The default is a single swap.
 #' 
