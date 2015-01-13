@@ -8,17 +8,16 @@ blocks(treatments, replicates, blocklevels = HCF(replicates),
   seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
-\item{treatments}{cardinal numbers where the sum of the cardinals is the required number of treatments and the individual cardinals
+\item{treatments}{a set of cardinal numbers where the sum of the cardinals is the required number of treatments and the individual cardinals
 represent individual sets of equally replicated treatments}
 
-\item{replicates}{replication numbers for the sets of equally replicated treatments defined above where the \code{treatments} numbers and
- the \code{replicates} numbers are assumed to be in matching order.}
+\item{replicates}{a vector of replication numbers, one for each of the individual treatment sets defined above,
+where the replication numbers and the treatment sets are assumed to be in matching order.}
 
 \item{blocklevels}{an optional vector of integers where the first integer is the number of main blocks and the remaining integers, if any,
-are the numbers of nested sub-blocks in a hierarchy of nested sub-blocks. The default is the highest common factor of the replication numbers.}
+are the numbers of nested sub-blocks in a hierarchy of nested sub-blocks. The default is the HCF of the replication numbers.}
 
-\item{searches}{an optional integer for the maximum number of searches during optimization where, for best results,
- the number of searches should be as large as possible. The default is the maximum of 1 or (100 - sum of model terms).}
+\item{searches}{an optional integer for the maximum number of searches during optimization. The default is the maximum of 1 or (100 - sum of model terms).}
 
 \item{seed}{an optional integer for initializing the random number generator. The default is a random integer less than 10000.}
 
@@ -49,11 +48,17 @@ numbers is the total number of units. Treatments are numbered consecutively acco
  Single replicate treatments sets are permitted provided there are at least some replicated treatment sets in the design.
 
 The \code{blocklevels} argument is a vector of integers that defines the blocks structure of the design. The length of the vector is the total number of
-blocks strata while the numeric elements are the actual block levels of the successive blocks strata.
+strata while the numeric elements are the block levels of the successive strata.
 The first number is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any,
 is the number of sub-sub-blocks nested in each sub-block and so on. The default is a main blocks design with the maximum possible number of
 orthogonal main blocks. Block sizes are always as equal as possible and will never differ by more than a single unit
 in any one stratum.
+
+The \code{searches} argument is the integer number of searches for an optimization. Ideally, the number of searches should be as large
+ as the computational resources permit.
+
+The \code{jumps} argument is the number of random swaps needed to escape a local maxima. A single swap appears to work well and
+is the most efficient choice for the updating algorithm but the setting can be increased to any integer value, if required.
 
 There are three classes of solution for the designs defined by the above arguments:
 \itemize{
@@ -66,11 +71,12 @@ v incomplete blocks of size v and k < (v+2) for prime or prime-power v, or k < 5
 by algebraic methods using Latin squares. The \code{\link[crossdes]{MOLS}} package is used if v is a prime-power.
 
 \item  General block designs with arbitrary depth of nesting. These designs are optimized by making D-efficiency improving swaps between
-blocks nested within the constraints of any higher level blocks until a local maxima is attained.
-For repeated \code{searches}, a local maxima is escaped by one or more random swaps (= \code{jumps}) within the constraints of any higher level blocks.
-The algorithm works from the top stratum downwards with the best maxima in each stratum retained hence the design of each nested stratum is conditional on
-the design of any higher level strata. The efficiency of nested designs may be slightly reduced relative to the efficiency of comparable non-nested designs
-but, for most purposes, the reduction, if any, is slight and is of no practical consequence.
+blocks nested within the constraints of higher level blocks, if any, until a local maxima is attained.
+For repeated \code{searches}, a local maxima is escaped by one or more random swaps (= \code{jumps}) between blocks, again nested within
+ the constraints of higher level blocks, if any.
+The algorithm works from the top stratum downwards and the design of each nested stratum is conditional on
+the design of each higher level stratum. The efficiency of nested designs may be slightly reduced relative to the efficiency of comparable non-nested designs
+but, for all practical purposes, this reduction is of no practical consequence.
 
 }
 
