@@ -276,7 +276,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   count=0 
   DD=crossprod(cbind(TM,BM))
   rank=as.integer(attr(    suppressWarnings(chol(DD, pivot = TRUE))   , "rank"))  
-  while (!identical(rank,fullrank)  &  count<200) {
+  while (!identical(rank,fullrank)  &  count<5000) {
     repeat {
     s=sample(rep(1:length(TF))[MF==sample(nlevels(MF),1)],2)
     if ( !identical(TF[s[1]],TF[s[2]]) & !identical(BF[s[1]],BF[s[2]])  ) break
@@ -292,7 +292,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       DD[ 1:ncol(TM) , (1+ncol(TM)):ncol(DD)] = DD[ 1:ncol(TM) , (1+ncol(TM)):ncol(DD)] + tcrossprod( (TM[s[1],]-TM[s[2],]) , (BM[s[1],]-BM[s[2],]) )
     }
   }
-  if (count>199 )  stop("Unable to find a suitable starting design - perhaps the design is near singular?")
+  if (count>4999)  stop("Unable to find a suitable starting design - perhaps the design is near singular?")
   TF
   }
   
