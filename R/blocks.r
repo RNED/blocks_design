@@ -264,53 +264,44 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     }
    globTF
   } 
-   
-  #******************************************************** Initializes design***************************************************************************************
-  GenOpt=function(TF,BF,MF,searches,jumps) {  
     
-    TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-    TM[cbind(1:length(TF),as.numeric(TF))]=1 # factor indicator matrix  
-    BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
-    BM[cbind(1:length(BF),as.numeric(BF))]=1 # factor indicator matrix
-    count=0
-    rank=as.integer(qr(cbind(BM,TM))$rank)
-    fullrank=as.integer(nlevels(TF)+nlevels(BF)-1)
-    print(rank)
-          print(fullrank)
-          print("strat")
-
-    while (!identical(rank,fullrank)  &  count<200) {
-      s=sample(rep(1:length(TF))[MF==sample(nlevels(MF),1)],2)
-      if ( identical(TF[s[1]],TF[s[2]]) | identical(BF[s[1]],BF[s[2]])  ) next
-      count=count+1
-      TM[c(s[1],s[2]),]=TM[c(s[2],s[1]),]
-      newrank=as.integer(qr(cbind(BM,TM))$rank)
-      
-      if (newrank>rank) {
-        rank=as.integer(newrank)
-        TF[c(s[1],s[2])]=TF[c(s[2],s[1])]
-      } else {
-        TM[c(s[1],s[2]),]=TM[c(s[2],s[1]),]
-      }
-      
-      print(rank)
+  #************searches for full rank initial starting design *******************************************************
+  
+  cholFullRank=function(TF,BF,MF) {      
+  TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+  TM[cbind(1:length(TF),as.numeric(TF))]=1 # factor indicator matrix  
+  BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
+  BM[cbind(1:length(BF),as.numeric(BF))]=1 # factor indicator matrix
+  fullrank=as.integer(nlevels(TF)+nlevels(BF)-1)
+  count=0 
+  DD=crossprod(cbind(TM,BM))
+  rank=as.integer(attr(    suppressWarnings(chol(DD, pivot = TRUE))   , "rank"))  
+  while (!identical(rank,fullrank)  &  count<200) {
+    repeat {
+    s=sample(rep(1:length(TF))[MF==sample(nlevels(MF),1)],2)
+    if ( !identical(TF[s[1]],TF[s[2]]) & !identical(BF[s[1]],BF[s[2]])  ) break
     }
-       
+    count=count+1    
+    DD[ 1:ncol(TM) , (1+ncol(TM)):ncol(DD)] =   DD[ 1:ncol(TM) , (1+ncol(TM)):ncol(DD)] - tcrossprod( (TM[s[1],]-TM[s[2],]) , (BM[s[1],]-BM[s[2],]) )
+    newrank=as.integer(attr(  suppressWarnings(chol(DD, pivot = TRUE))   , "rank")) 
+    if (newrank>rank) {
+      rank=as.integer(newrank)
+      TF[c(s[1],s[2])]=TF[c(s[2],s[1])]
+      TM[c(s[1],s[2]),]=TM[c(s[2],s[1]),]
+    } else {
+      DD[ 1:ncol(TM) , (1+ncol(TM)):ncol(DD)] = DD[ 1:ncol(TM) , (1+ncol(TM)):ncol(DD)] + tcrossprod( (TM[s[1],]-TM[s[2],]) , (BM[s[1],]-BM[s[2],]) )
+    }
+  }
+  if (count>199 )  stop("Unable to find a suitable starting design - perhaps the design is near singular?")
+  TF
+  }
+  
+  #******************************************************** Initializes design***************************************************************************************
+  GenOpt=function(TF,BF,MF,searches,jumps) { 
+    TF=cholFullRank(TF,BF,MF)
     TB=TreatContrasts(MF,TF)
     NB=BlockContrasts(MF,BF) 
     DD=crossprod(cbind(TB,NB))
-    count=0
-    
-      while ( !identical(qr(DD)$rank,ncol(DD)) & count<200) 
-      {
-        rand=sample(1:length(TF))
-        TF=TF[rand][order(MF[rand])] 
-        TB=TB[rand,][order(MF[rand]),]
-        DD=crossprod(cbind(TB,NB))
-        count=count+1
-      }
-
-    if (count>199) stop("Unable to find a suitable starting design - perhaps the design is near singular?")
     V=chol2inv(chol(DD))
     M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))	
     M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
