@@ -299,10 +299,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   #******************************************************** Initializes design***************************************************************************************
   GenOpt=function(TF,BF,MF,searches,jumps) { 
     TF=cholFullRank(TF,BF,MF)
-    TB=TreatContrasts(MF,TF)
-    NB=BlockContrasts(MF,BF) 
-    DD=crossprod(cbind(TB,NB))
-    V=chol2inv(chol(DD))
+    V=chol2inv(chol(crossprod(cbind(TreatContrasts(MF,TF),BlockContrasts(MF,BF)))))
     M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))	
     M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
     M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
