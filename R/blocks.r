@@ -275,13 +275,14 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
         TT=2*M11[TF[MF==k],TF[MF==k],drop=FALSE]-tcrossprod(M11[cbind(TF[MF==k],TF[MF==k])]+rep(1,ksize[k])) + tcrossprod(M11[cbind(TF[MF==k],TF[MF==k])]) + 1
         BB=2*M22[BF[MF==k],BF[MF==k],drop=FALSE]-tcrossprod(M22[cbind(BF[MF==k],BF[MF==k])]+rep(1,ksize[k])) + tcrossprod(M22[cbind(BF[MF==k],BF[MF==k])]) + 1
         TB=M12[TF[MF==k],BF[MF==k],drop=FALSE]+t(M12[TF[MF==k],BF[MF==k],drop=FALSE])-tcrossprod(M12[cbind(TF[MF==k],BF[MF==k])]+rep(1,ksize[k]))+tcrossprod(M12[cbind(TF[MF==k],BF[MF==k])]) + 2
-        dMat=TB**2-TT*BB
-        maxdMat=max(dMat)
-        if (maxswap < maxdMat) { 
-        sampn=which.max(dMat)-1   
-        i=1+sampn%%ksize[k]+length(MF[as.numeric(MF)<k])
-        j=1+sampn%/%ksize[k]+ length(MF[as.numeric(MF)<k])
-        maxswap=maxdMat          
+        dMat=TB**2-TT*BB 
+        N=which.max(dMat)-1  
+        si=1+N%%ksize[k]
+        sj=1+N%/%ksize[k]
+        if (dMat[si,sj]>maxswap) {
+          maxswap=dMat[si,sj]  
+          i=si+length(MF[as.numeric(MF)<k])
+          j=sj+length(MF[as.numeric(MF)<k])
         } 
       }
       if (maxswap>0) TF[c(i,j)]=TF[c(j,i)]    
@@ -291,14 +292,13 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   #******************************************************** Initializes design***************************************************************************************
   GenOpt=function(TF,BF,MF,searches,jumps) { 
     BC=BlockContrasts(MF,BF)
+    fullrank=as.integer(nlevels(BF)+nlevels(TF)-2)
+    print(fullrank)
       repeat{  
-      TC=TreatContrasts(MF,TF)
-      DD=crossprod(cbind(TC,BC))
-      fullrank=as.integer(ncol(DD))
+      DD=crossprod(cbind(TreatContrasts(MF,TF),BC))
       rank=as.integer(attr(    suppressWarnings(chol(DD, pivot = TRUE))   , "rank")) 
-      print(fullrank)
       print(rank)
-      DD=DD+diag(diag(DD))*(rank<fullrank)/ncol(DD)/10 # regularization
+      DD=DD+diag(diag(DD))*(rank<fullrank)/fullrank/10 # regularization
       V=chol2inv(chol(DD))
       M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))	
       M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
@@ -311,7 +311,6 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       M22=M22[perm,perm]   
       if (identical(rank,fullrank)) break
       TF=addRank(M11,M22,M12,TF,MF,BF)  
-      
       }
     TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
   }
