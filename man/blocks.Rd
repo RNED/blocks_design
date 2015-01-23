@@ -112,6 +112,9 @@ crossprod(blocks(13,4,13,searches=100)$Incidences[[1]])
 
 # concurrence matrix for 13 treatments x 4 replicates and 13 treatments with one rep in 13 blocks
 crossprod(blocks(c(13,13),c(4,1),13)$Incidences[[1]])
+
+# 1000 treatments x 2 replicates in 1000 blocks giving a saturated blocks design
+\dontrun{blocks(1000,2,1000)}
 }
 \references{
 Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes

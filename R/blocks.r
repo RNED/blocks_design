@@ -111,6 +111,8 @@
 #' # concurrence matrix for 13 treatments x 4 replicates and 13 treatments with one rep in 13 blocks 
 #' crossprod(blocks(c(13,13),c(4,1),13)$Incidences[[1]])
 #' 
+#' # 1000 treatments x 2 replicates in 1000 blocks giving a saturated blocks design 
+#' \dontrun{blocks(1000,2,1000)}
 #'          
 #' @export
 #' 
@@ -292,10 +294,10 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   #******************************************************** Initializes design***************************************************************************************
   GenOpt=function(TF,BF,MF,searches,jumps) { 
     BC=BlockContrasts(MF,BF)
-    fullrank=as.integer(nlevels(BF)+nlevels(TF)-2)
-    print(fullrank)
       repeat{  
       DD=crossprod(cbind(TreatContrasts(MF,TF),BC))
+      fullrank=as.integer(ncol(DD))
+      print(fullrank)
       rank=as.integer(attr(    suppressWarnings(chol(DD, pivot = TRUE))   , "rank")) 
       print(rank)
       DD=DD+diag(diag(DD))*(rank<fullrank)/fullrank/10 # regularization
