@@ -267,23 +267,19 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     }
    globTF
   } 
- 
-  
- 
-    
+     
   #******************************************************** Initializes design***************************************************************************************
-  GenOpt=function(TF,BF,MF,searches,jumps) { 
-    
+  GenOpt=function(TF,BF,MF,searches,jumps) {    
     BC=BlockContrasts(MF,BF)
     M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
     M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
     M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
     DD=crossprod(cbind(TreatContrasts(MF,TF),BC))
-    fullrank=as.integer(ncol(DD))
     rank=as.integer(attr(    suppressWarnings(chol(DD, pivot = TRUE))   , "rank")) 
-    
-    if (!identical(rank,fullrank)) {
-      DD=DD+diag(diag(DD))/fullrank/100 # regularization      
+    print(rank)
+    if (!identical(rank,as.integer(ncol(DD)))) {
+      ksize=tabulate(MF)
+      DD=DD+diag(diag(DD))/ncol(DD)/100 # regularization      
       V=chol2inv(chol(DD))    
       M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
       M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
@@ -292,9 +288,8 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       M12=M12[,perm]
       M22=M22[perm,perm]   
         repeat{ 
-        if (identical(rank,fullrank)) break  
+        if (identical(rank,as.integer(ncol(DD)))) break  
         maxswap=0
-        ksize=tabulate(MF)
         for (k in 1:nlevels(MF)) {
           TT=2*M11[TF[MF==k],TF[MF==k],drop=FALSE]-tcrossprod(M11[cbind(TF[MF==k],TF[MF==k])]+rep(1,ksize[k])) + tcrossprod(M11[cbind(TF[MF==k],TF[MF==k])]) + 1
           BB=2*M22[BF[MF==k],BF[MF==k],drop=FALSE]-tcrossprod(M22[cbind(BF[MF==k],BF[MF==k])]+rep(1,ksize[k])) + tcrossprod(M22[cbind(BF[MF==k],BF[MF==k])]) + 1
@@ -328,7 +323,6 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
       M12=M12[,perm]
       M22=M22[perm,perm]   
-
     TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
   }
   
