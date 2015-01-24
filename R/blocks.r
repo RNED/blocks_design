@@ -269,51 +269,66 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   } 
  
   
-  #********************************************************Determinants of jumps using samples of increasing size***********************************************
-  addRank=function(M11,M22,M12,TF,MF,BF) {  
-    maxswap=0
-    ksize=tabulate(MF)
-      for (k in 1:nlevels(MF)) {
-        TT=2*M11[TF[MF==k],TF[MF==k],drop=FALSE]-tcrossprod(M11[cbind(TF[MF==k],TF[MF==k])]+rep(1,ksize[k])) + tcrossprod(M11[cbind(TF[MF==k],TF[MF==k])]) + 1
-        BB=2*M22[BF[MF==k],BF[MF==k],drop=FALSE]-tcrossprod(M22[cbind(BF[MF==k],BF[MF==k])]+rep(1,ksize[k])) + tcrossprod(M22[cbind(BF[MF==k],BF[MF==k])]) + 1
-        TB=M12[TF[MF==k],BF[MF==k],drop=FALSE]+t(M12[TF[MF==k],BF[MF==k],drop=FALSE])-tcrossprod(M12[cbind(TF[MF==k],BF[MF==k])]+rep(1,ksize[k]))+tcrossprod(M12[cbind(TF[MF==k],BF[MF==k])]) + 2
-        dMat=TB**2-TT*BB 
-        N=which.max(dMat)-1  
-        si=1+N%%ksize[k]
-        sj=1+N%/%ksize[k]
-        if (dMat[si,sj]>maxswap) {
-          maxswap=dMat[si,sj]  
-          i=si+length(MF[as.numeric(MF)<k])
-          j=sj+length(MF[as.numeric(MF)<k])
-        } 
-      }
-      if (maxswap>0) TF[c(i,j)]=TF[c(j,i)]    
-    TF
-  }
+ 
     
   #******************************************************** Initializes design***************************************************************************************
   GenOpt=function(TF,BF,MF,searches,jumps) { 
+    
     BC=BlockContrasts(MF,BF)
-      repeat{  
-      DD=crossprod(cbind(TreatContrasts(MF,TF),BC))
-      fullrank=as.integer(ncol(DD))
-      print(fullrank)
-      rank=as.integer(attr(    suppressWarnings(chol(DD, pivot = TRUE))   , "rank")) 
-      print(rank)
-      DD=DD+diag(diag(DD))*(rank<fullrank)/fullrank/10 # regularization
-      V=chol2inv(chol(DD))
-      M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))	
-      M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
-      M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
+    M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
+    M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+    M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
+    DD=crossprod(cbind(TreatContrasts(MF,TF),BC))
+    fullrank=as.integer(ncol(DD))
+    rank=as.integer(attr(    suppressWarnings(chol(DD, pivot = TRUE))   , "rank")) 
+    
+    if (!identical(rank,fullrank)) {
+      DD=DD+diag(diag(DD))/fullrank/100 # regularization      
+      V=chol2inv(chol(DD))    
       M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
       M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
       M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
       perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
       M12=M12[,perm]
       M22=M22[perm,perm]   
-      if (identical(rank,fullrank)) break
-      TF=addRank(M11,M22,M12,TF,MF,BF)  
+        repeat{ 
+        if (identical(rank,fullrank)) break  
+        maxswap=0
+        ksize=tabulate(MF)
+        for (k in 1:nlevels(MF)) {
+          TT=2*M11[TF[MF==k],TF[MF==k],drop=FALSE]-tcrossprod(M11[cbind(TF[MF==k],TF[MF==k])]+rep(1,ksize[k])) + tcrossprod(M11[cbind(TF[MF==k],TF[MF==k])]) + 1
+          BB=2*M22[BF[MF==k],BF[MF==k],drop=FALSE]-tcrossprod(M22[cbind(BF[MF==k],BF[MF==k])]+rep(1,ksize[k])) + tcrossprod(M22[cbind(BF[MF==k],BF[MF==k])]) + 1
+          TB=M12[TF[MF==k],BF[MF==k],drop=FALSE]+t(M12[TF[MF==k],BF[MF==k],drop=FALSE])-tcrossprod(M12[cbind(TF[MF==k],BF[MF==k])]+rep(1,ksize[k]))+tcrossprod(M12[cbind(TF[MF==k],BF[MF==k])]) + 2
+          dMat=TB**2-TT*BB 
+          N=which.max(dMat)-1  
+          si=1+N%%ksize[k]
+          sj=1+N%/%ksize[k]
+          if (dMat[si,sj]>maxswap) {
+            maxswap=dMat[si,sj]  
+            i=si+length(MF[as.numeric(MF)<k])
+            j=sj+length(MF[as.numeric(MF)<k])
+          } 
+        }
+        if (maxswap>0) {       
+          up=UpDate(M11,M22,M12,TF[i],TF[j], BF[i], BF[j],TF,BF)
+          M11=up$M11
+          M22=up$M22
+          M12=up$M12
+          TF[c(i,j)]=TF[c(j,i)]  
+        }
+        DD=crossprod(cbind(TreatContrasts(MF,TF),BC))
+        rank=as.integer(attr(    suppressWarnings(chol(DD, pivot = TRUE))   , "rank")) 
+        print(rank)
       }
+    }
+      V=chol2inv(chol(DD))    
+      M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
+      M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
+      M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
+      perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
+      M12=M12[,perm]
+      M22=M22[perm,perm]   
+
     TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
   }
   
