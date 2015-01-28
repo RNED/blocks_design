@@ -279,7 +279,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     print(rank)
     if (!identical(rank,as.integer(ncol(DD)))) {
       ksize=tabulate(MF)
-      DD=DD+diag(diag(DD))/ncol(DD)/100 # regularization      
+      DD=DD+diag(diag(DD))/ncol(DD)/1000 # regularization      
       V=chol2inv(chol(DD))    
       M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
       M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
