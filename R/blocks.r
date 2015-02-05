@@ -268,64 +268,50 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
    globTF
   } 
      
-  #******************************************************** Initializes design***************************************************************************************
-  GenOpt=function(TF,BF,MF,searches,jumps) {    
-    BC=BlockContrasts(MF,BF)
-    M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
-    M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
-    M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
-    DD=crossprod(cbind(TreatContrasts(MF,TF),BC))
-    rank=as.integer(attr(    suppressWarnings(chol(DD, pivot = TRUE))   , "rank")) 
-    print(rank)
-    if (!identical(rank,as.integer(ncol(DD)))) {
-      ksize=tabulate(MF)
-      DD=DD+diag(diag(DD))/ncol(DD)/1000 # regularization      
-      V=chol2inv(chol(DD))    
-      M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
-      M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
-      M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
-      perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
-      M12=M12[,perm]
-      M22=M22[perm,perm]   
-        repeat{ 
-        if (identical(rank,as.integer(ncol(DD)))) break  
-        maxswap=0
-        for (k in 1:nlevels(MF)) {
-          TT=2*M11[TF[MF==k],TF[MF==k],drop=FALSE]-tcrossprod(M11[cbind(TF[MF==k],TF[MF==k])]+rep(1,ksize[k])) + tcrossprod(M11[cbind(TF[MF==k],TF[MF==k])]) + 1
-          BB=2*M22[BF[MF==k],BF[MF==k],drop=FALSE]-tcrossprod(M22[cbind(BF[MF==k],BF[MF==k])]+rep(1,ksize[k])) + tcrossprod(M22[cbind(BF[MF==k],BF[MF==k])]) + 1
-          TB=M12[TF[MF==k],BF[MF==k],drop=FALSE]+t(M12[TF[MF==k],BF[MF==k],drop=FALSE])-tcrossprod(M12[cbind(TF[MF==k],BF[MF==k])]+rep(1,ksize[k]))+tcrossprod(M12[cbind(TF[MF==k],BF[MF==k])]) + 2
-          dMat=TB**2-TT*BB 
-          N=which.max(dMat)-1  
-          si=1+N%%ksize[k]
-          sj=1+N%/%ksize[k]
-          if (dMat[si,sj]>maxswap) {
-            maxswap=dMat[si,sj]  
-            i=si+length(MF[as.numeric(MF)<k])
-            j=sj+length(MF[as.numeric(MF)<k])
-          } 
-        }
-        if (maxswap>0) {       
-          up=UpDate(M11,M22,M12,TF[i],TF[j], BF[i], BF[j],TF,BF)
-          M11=up$M11
-          M22=up$M22
-          M12=up$M12
-          TF[c(i,j)]=TF[c(j,i)]  
-        }
-        DD=crossprod(cbind(TreatContrasts(MF,TF),BC))
-        rank=as.integer(attr(    suppressWarnings(chol(DD, pivot = TRUE))   , "rank")) 
-        print(rank)
-      }
-    }
-      V=chol2inv(chol(DD))    
-      M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
-      M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
-      M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
-      perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
-      M12=M12[,perm]
-      M22=M22[perm,perm]   
-    TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
-  }
   
+  
+  #******************************************************** Initializes design*************************************************************************************** 
+    
+GenOpt=function(TF,BF,MF,searches,jumps,stratum) {   
+  fullrank=nlevels(BF)+nlevels(TF)-1
+  BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
+  BM[cbind(1:length(BF),as.numeric(BF))]=1 # factor indicator matrix
+  TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+  TM[cbind(1:length(TF),as.numeric(TF))]=1 # factor indicator matrix  
+  D=cbind(BM,TM[,1:(nlevels(TF)-1)],TF)
+  QD=qr(t(D[,(1:fullrank)]))
+  rank=QD$rank
+  count=0
+  while(rank<fullrank) {
+      count=count+1
+      if (count>100) stop( paste("cannot find a non-singular starting design in stratum " , stratum) )
+
+      samp=sample(QD$pivot[(rank+1):length(TF)],1)
+      swap=sample(QD$pivot[ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
+      D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
+      QD=qr(t(D[,(1:fullrank)]))
+      if (QD$rank<=rank) 
+        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
+      else 
+        rank=QD$rank
+      print(rank)
+    }
+  if (count>0) TF=as.factor(D[,ncol(D)]) 
+  DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
+  V=chol2inv(chol(DD))
+  M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
+  M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+  M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
+  M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
+  M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
+  M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
+  perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
+  M12=M12[,perm]
+  M22=M22[perm,perm] 
+TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
+}
+
+    
   #******************************************************** HCF of replicates************************************************************************************
   HCF=function(replevs)  {
     replevs=sort(replevs)
@@ -402,7 +388,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
         TF=as.factor(TF)
         levels(TF)=sample(1:ntrts)
       } else {
-        TF=GenOpt(as.factor(TF),Design[,(i+1)],Design[,i],searches,jumps)
+        TF=GenOpt(as.factor(TF),Design[,(i+1)],Design[,i],searches,jumps,i)
       }
     }
    TF 
