@@ -285,7 +285,6 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
   while(rank<fullrank) {
       count=count+1
       if (count>10000) stop( paste("cannot find a non-singular starting design in stratum " , stratum) )
-
       samp=sample(QD$pivot[(rank+1):length(TF)],1)
       swap=sample(QD$pivot[ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
       D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
@@ -294,7 +293,6 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
         D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
       else 
         rank=QD$rank
-      print(rank)
     }
   if (count>0) TF=as.factor(D[,ncol(D)]) 
   DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
