@@ -284,7 +284,7 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
   count=0
   while(rank<fullrank) {
       count=count+1
-      if (count>100) stop( paste("cannot find a non-singular starting design in stratum " , stratum) )
+      if (count>10000) stop( paste("cannot find a non-singular starting design in stratum " , stratum) )
 
       samp=sample(QD$pivot[(rank+1):length(TF)],1)
       swap=sample(QD$pivot[ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
