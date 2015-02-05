@@ -272,19 +272,24 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   
   #******************************************************** Initializes design*************************************************************************************** 
     
-GenOpt=function(TF,BF,MF,searches,jumps,stratum) {   
-  fullrank=nlevels(BF)+nlevels(TF)-1
+GenOpt=function(TF,BF,MF,searches,jumps,stratum) { 
+
   BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
   BM[cbind(1:length(BF),as.numeric(BF))]=1 # factor indicator matrix
-  TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-  TM[cbind(1:length(TF),as.numeric(TF))]=1 # factor indicator matrix  
-  D=cbind(BM,TM[,1:(nlevels(TF)-1)],TF)
-  QD=qr(t(D[,(1:fullrank)]))
-  rank=QD$rank
-  count=0
-  while(rank<fullrank) {
+  
+  for (init in 1:10) {
+    rand=sample(1:length(TF))
+    TF=TF[rand][order(MF[rand])]
+    TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+    TM[cbind(1:length(TF),as.numeric(TF))]=1 # factor indicator matrix     
+    D=cbind(BM,TM[,1:(nlevels(TF)-1)],TF)
+    fullrank=nlevels(BF)+nlevels(TF)-1
+    QD=qr(t(D[,(1:fullrank)]))
+    rank=QD$rank
+    print(fullrank)
+    count=0
+    while(rank<fullrank & count<1000) {
       count=count+1
-      if (count>10000) stop( paste("cannot find a non-singular starting design in stratum " , stratum) )
       samp=sample(QD$pivot[(rank+1):length(TF)],1)
       swap=sample(QD$pivot[ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
       D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
@@ -293,8 +298,14 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
         D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
       else 
         rank=QD$rank
+      print(rank)
     }
-  if (count>0) TF=as.factor(D[,ncol(D)]) 
+    TF=as.factor(D[,ncol(D)]) 
+    if (rank==fullrank) break
+  }
+  
+  if (rank<fullrank) stop( paste("cannot find a non-singular starting design in stratum " , stratum) )
+
   DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
   V=chol2inv(chol(DD))
   M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
@@ -386,7 +397,8 @@ TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
         TF=as.factor(TF)
         levels(TF)=sample(1:ntrts)
       } else {
-        TF=GenOpt(as.factor(TF),Design[,(i+1)],Design[,i],searches,jumps,i)
+
+        TF=GenOpt(TF,Design[,(i+1)],Design[,i],searches,jumps,i)
       }
     }
    TF 
