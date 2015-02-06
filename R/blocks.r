@@ -283,7 +283,8 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
     rank=QD$rank
     pivot=QD$pivot
     count=0
-    while(rank<fullrank & count<100) {
+    while(rank<fullrank & count<1000) {
+      print(rank)
       count=count+1
       samp=sample(pivot[(rank+1):length(TF)],1)
       swap=sample(rep(1:length(TF)) [ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
