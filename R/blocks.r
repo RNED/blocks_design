@@ -267,45 +267,37 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     }
    globTF
   } 
-     
-  
-  
+
   #******************************************************** Initializes design*************************************************************************************** 
     
 GenOpt=function(TF,BF,MF,searches,jumps,stratum) { 
-
   BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
-  BM[cbind(1:length(BF),as.numeric(BF))]=1 # factor indicator matrix
-  
+  BM[cbind(1:length(BF),as.numeric(BF))]=1 # factor indicator matrix  
+  fullrank=nlevels(BF)+nlevels(TF)-1
   for (init in 1:10) {
     rand=sample(1:length(TF))
     TF=TF[rand][order(MF[rand])]
     TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
     TM[cbind(1:length(TF),as.numeric(TF))]=1 # factor indicator matrix     
     D=cbind(BM,TM[,1:(nlevels(TF)-1)],TF)
-    fullrank=nlevels(BF)+nlevels(TF)-1
     QD=qr(t(D[,(1:fullrank)]))
     rank=QD$rank
-    print(fullrank)
     count=0
     while(rank<fullrank & count<1000) {
       count=count+1
       samp=sample(QD$pivot[(rank+1):length(TF)],1)
-      swap=sample(QD$pivot[ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
+      swap=sample(rep(1:length(TF)) [ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
       D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
       QD=qr(t(D[,(1:fullrank)]))
       if (QD$rank<=rank) 
         D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
       else 
         rank=QD$rank
-      print(rank)
     }
     TF=as.factor(D[,ncol(D)]) 
     if (rank==fullrank) break
-  }
-  
+  }  
   if (rank<fullrank) stop( paste("cannot find a non-singular starting design in stratum " , stratum) )
-
   DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
   V=chol2inv(chol(DD))
   M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
@@ -318,9 +310,8 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
   M12=M12[,perm]
   M22=M22[perm,perm] 
 TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
-}
-
-    
+TF
+}   
   #******************************************************** HCF of replicates************************************************************************************
   HCF=function(replevs)  {
     replevs=sort(replevs)
@@ -339,14 +330,12 @@ TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
     strata=ncol(Design)-2    
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
-    TF=NULL
-    for (i in 1: hcf) {
-      s=sample(1:ntrts)
-      TF=c(TF, rep(s , rep(replevs/hcf,treatlevs)[s]) )
-    }
-    TF=as.factor(TF)
     regreps=(identical(max(replevs),min(replevs) ) )
     index=0
+    TF=NULL
+    for (i in 1: hcf) 
+      TF=c(TF, sample(rep(1:ntrts , rep(replevs,treatlevs)/hcf)) )
+    TF=as.factor(TF)
     for (i in 1 : strata) { 
       bsizes=tabulate(Design[,i+1])
       if (all( bsizes %% (nunits/hcf)  == 0)) next 
@@ -396,10 +385,8 @@ TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
             6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]) 
         TF=as.factor(TF)
         levels(TF)=sample(1:ntrts)
-      } else {
-
+      } else 
         TF=GenOpt(TF,Design[,(i+1)],Design[,i],searches,jumps,i)
-      }
     }
    TF 
   }
