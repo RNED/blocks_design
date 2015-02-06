@@ -268,36 +268,38 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
    globTF
   } 
 
-  #******************************************************** Initializes design*************************************************************************************** 
-    
+  #******************************************************** Initializes design***************************************************************************************     
 GenOpt=function(TF,BF,MF,searches,jumps,stratum) { 
   BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
-  BM[cbind(1:length(BF),as.numeric(BF))]=1 # factor indicator matrix  
+  BM[cbind(1:length(BF),as.numeric(BF))]=1
   fullrank=nlevels(BF)+nlevels(TF)-1
   for (init in 1:10) {
     rand=sample(1:length(TF))
     TF=TF[rand][order(MF[rand])]
     TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-    TM[cbind(1:length(TF),as.numeric(TF))]=1 # factor indicator matrix     
+    TM[cbind(1:length(TF),as.numeric(TF))]=1    
     D=cbind(BM,TM[,1:(nlevels(TF)-1)],TF)
     QD=qr(t(D[,(1:fullrank)]))
     rank=QD$rank
+    pivot=QD$pivot
     count=0
-    while(rank<fullrank & count<1000) {
+    while(rank<fullrank & count<100) {
       count=count+1
-      samp=sample(QD$pivot[(rank+1):length(TF)],1)
+      samp=sample(pivot[(rank+1):length(TF)],1)
       swap=sample(rep(1:length(TF)) [ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
       D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
       QD=qr(t(D[,(1:fullrank)]))
-      if (QD$rank<=rank) 
-        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
-      else 
+      if (QD$rank>rank) {
         rank=QD$rank
-    }
-    TF=as.factor(D[,ncol(D)]) 
+        pivot=QD$pivot
+        count=0
+        } else 
+        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ]         
+      }     
     if (rank==fullrank) break
   }  
   if (rank<fullrank) stop( paste("cannot find a non-singular starting design in stratum " , stratum) )
+  TF=as.factor(D[,ncol(D)]) 
   DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
   V=chol2inv(chol(DD))
   M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
