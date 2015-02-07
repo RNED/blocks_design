@@ -10,12 +10,12 @@
 #' The \code{blocks} function optimizes nested blocks designs where treatments can have any arbitrary level of replication, not necessarily all equal,
 #' and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting. 
 #' 
-#' The \code{treatments} and \code{replicates} arguments define the treatment structure of the design. \code{treatments} is a
-#' set of cardinal numbers that define sets of equally replicated treatments and \code{replicates} is a matching set of replication numbers for those sets.
-#' The sum of the cardinal numbers is the total number of treatments and the sum of the cross-products of the cardinal numbers and the replication 
-#' numbers is the total number of units. Treatments are numbered consecutively according to the ordering of the treatment sets but
-#'  different sets with the same replication can be used if arbitrary numbering is required. 
-#'  Single replicate treatments sets are permitted provided there are at least some replicated treatment sets in the design.
+#' The \code{treatments} and \code{replicates} arguments define sets of equally replicated treatments where \code{treatments} is a 
+#' collection of set sizes and \code{replicates} is a collection of replication numbers. The set sizes and the replication numbers are paired 
+#' by order and define treatment sets where all treatments in the same set have the same replication. 
+#' The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication 
+#' numbers is the total number of units. Treatments are numbered consecutively according to the ordering and the cardinality of the treatment sets but
+#'  different sets with the same replication number can be defined if arbitrary numbering is required. Single replicate treatments sets are permitted.
 #' 
 #' The \code{blocklevels} argument is a vector of integers that defines the blocks structure of the design. The length of the vector is the total number of 
 #' strata while the numeric elements are the block levels of the successive strata. 
@@ -25,7 +25,9 @@
 #' in any one stratum. 
 #' 
 #' The \code{searches} argument is the integer number of searches for an optimization. Ideally, the number of searches should be as large 
-#'  as the computational resources permit.  
+#'  as the computational resources permit. The algorithm may occasionally fail due to a large near-saturated design 
+#'  (failure to find a suitable starting design)
+#'  or due to a very large design with more than a few thousand plots (failure due to lack of computer memory).     
 #'  
 #' The \code{jumps} argument is the number of random swaps needed to escape a local maxima. A single swap appears to work well and
 #' is the most efficient choice for the updating algorithm but the setting can be increased to any integer value, if required.
@@ -58,10 +60,10 @@
 #'  \item  A table showing the achieved D- and A-efficiency factors for each nested blocks stratum together with an A-efficiency upper bound, where available. \cr
 #' } 
 #' 
-#' @param treatments a set of cardinal numbers where the sum of the cardinals is the required number of treatments and the individual cardinals 
-#' represent individual sets of equally replicated treatments
+#' @param treatments a collection of integer numbers where the sum of the integers is the required number of treatments and the individual integers 
+#' represent sets of equally replicated treatments
 #' 
-#' @param replicates a vector of replication numbers, one for each of the individual treatment sets defined above,  
+#' @param replicates a collection of replication numbers, one for each of the treatment sets defined above,  
 #' where the replication numbers and the treatment sets are assumed to be in matching order.   
 #' 
 #' @param blocklevels an optional vector of integers where the first integer is the number of main blocks and the remaining integers, if any,
@@ -273,20 +275,19 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
   BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
   BM[cbind(1:length(BF),as.numeric(BF))]=1
   fullrank=nlevels(BF)+nlevels(TF)-1
-  for (init in 1:10) {
-    rand=sample(1:length(TF))
-    TF=TF[rand][order(MF[rand])]
-    TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-    TM[cbind(1:length(TF),as.numeric(TF))]=1    
-    D=cbind(BM,TM[,1:(nlevels(TF)-1)],TF)
-    QD=qr(t(D[,(1:fullrank)]))
-    rank=QD$rank
-    pivot=QD$pivot
-    count=0
-    while(rank<fullrank & count<1000) {
+  rand=sample(1:length(TF))
+  TF=TF[rand][order(MF[rand])]
+  TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+  TM[cbind(1:length(TF),as.numeric(TF))]=1    
+  D=cbind(BM,TM[,1:(nlevels(TF)-1)],TF)
+  QD=qr(t(D[,(1:fullrank)]))
+  rank=QD$rank
+  pivot=QD$pivot
+  count=0
+    while(rank<fullrank & count<10000) {
       count=count+1
       samp=sample(pivot[(rank+1):length(TF)],1)
-      swap=sample(rep(1:length(TF)) [ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
+      swap=sample(rep(1:length(TF))[ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
       D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
       QD=qr(t(D[,(1:fullrank)]))
       if (QD$rank>rank) {
@@ -294,11 +295,9 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
         pivot=QD$pivot
         count=0
         } else 
-        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ]         
+        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ]    
       }     
-    if (rank==fullrank) break
-  }  
-  if (rank<fullrank) stop( paste("cannot find a non-singular starting design in stratum " , stratum) )
+  if (rank<fullrank) stop( paste("Cannot find a non-singular starting design in stratum " , stratum, " : the design may be near singular") )
   TF=as.factor(D[,ncol(D)]) 
   DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
   V=chol2inv(chol(DD))

@@ -9,10 +9,10 @@ blocks(treatments, replicates, blocklevels = HCF(replicates),
   seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
-\item{treatments}{a set of cardinal numbers where the sum of the cardinals is the required number of treatments and the individual cardinals
-represent individual sets of equally replicated treatments}
+\item{treatments}{a collection of integer numbers where the sum of the integers is the required number of treatments and the individual integers
+represent sets of equally replicated treatments}
 
-\item{replicates}{a vector of replication numbers, one for each of the individual treatment sets defined above,
+\item{replicates}{a collection of replication numbers, one for each of the treatment sets defined above,
 where the replication numbers and the treatment sets are assumed to be in matching order.}
 
 \item{blocklevels}{an optional vector of integers where the first integer is the number of main blocks and the remaining integers, if any,
@@ -41,12 +41,12 @@ not necessarily all equal, and arbitrary depth of nesting.
 The \code{blocks} function optimizes nested blocks designs where treatments can have any arbitrary level of replication, not necessarily all equal,
 and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting.
 
-The \code{treatments} and \code{replicates} arguments define the treatment structure of the design. \code{treatments} is a
-set of cardinal numbers that define sets of equally replicated treatments and \code{replicates} is a matching set of replication numbers for those sets.
-The sum of the cardinal numbers is the total number of treatments and the sum of the cross-products of the cardinal numbers and the replication
-numbers is the total number of units. Treatments are numbered consecutively according to the ordering of the treatment sets but
- different sets with the same replication can be used if arbitrary numbering is required.
- Single replicate treatments sets are permitted provided there are at least some replicated treatment sets in the design.
+The \code{treatments} and \code{replicates} arguments define sets of equally replicated treatments where \code{treatments} is a
+collection of set sizes and \code{replicates} is a collection of replication numbers. The set sizes and the replication numbers are paired
+by order and define treatment sets where all treatments in the same set have the same replication.
+The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication
+numbers is the total number of units. Treatments are numbered consecutively according to the ordering and the cardinality of the treatment sets but
+ different sets with the same replication number can be defined if arbitrary numbering is required. Single replicate treatments sets are permitted.
 
 The \code{blocklevels} argument is a vector of integers that defines the blocks structure of the design. The length of the vector is the total number of
 strata while the numeric elements are the block levels of the successive strata.
@@ -56,7 +56,9 @@ orthogonal main blocks. Block sizes are always as equal as possible and will nev
 in any one stratum.
 
 The \code{searches} argument is the integer number of searches for an optimization. Ideally, the number of searches should be as large
- as the computational resources permit.
+ as the computational resources permit. The algorithm may occasionally fail due to a large near-saturated design
+ (failure to find a suitable starting design)
+ or due to a very large design with more than a few thousand plots (failure due to lack of computer memory).
 
 The \code{jumps} argument is the number of random swaps needed to escape a local maxima. A single swap appears to work well and
 is the most efficient choice for the updating algorithm but the setting can be increased to any integer value, if required.
