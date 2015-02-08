@@ -11,10 +11,10 @@
 #' and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting. 
 #' 
 #' The \code{treatments} and \code{replicates} arguments define sets of equally replicated treatments where \code{treatments} is a 
-#' collection of set sizes and \code{replicates} is a collection of replication numbers. The ordered pairs of set sizes and replication numbers 
-#' define a collection of treatment sets where all treatments in the same set have the same replication. 
-#' The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication 
-#' numbers is the total number of units. Treatments are numbered consecutively according to the ordering and the cardinality of the treatment sets but
+#' collection of set sizes and \code{replicates} is a collection of replication numbers. The set sizes and the replication numbers, taken in order, 
+#' define treatment sets where all treatments in the same set have the same replication.
+#' The sum of the set sizes is the total number of treatments and the sum of the cross-products
+#' is the total number of units. Treatments are numbered consecutively according to the ordering and the cardinality of the treatment sets but
 #'  different sets with the same replication number can be defined if arbitrary numbering is required. Single replicate treatments sets are permitted.
 #' 
 #' The \code{blocklevels} argument is a vector of integers that defines the blocks structure of the design. The length of the vector is the total number of 
@@ -25,9 +25,9 @@
 #' in any one stratum. 
 #' 
 #' The \code{searches} argument is the integer number of searches for an optimization. Ideally, the number of searches should be as large 
-#'  as the computational resources permit. The algorithm may occasionally fail due to a large near-saturated design 
+#'  as the computational resources permit. The algorithm may fail if the design is very large and near-saturated 
 #'  (failure to find a suitable starting design)
-#'  or due to a very large design with more than a few thousand plots (failure due to lack of computer memory).     
+#'  or if the design is very large and has more than a few thousand plots (failure due to lack of computer memory).     
 #'  
 #' The \code{jumps} argument is the number of random swaps needed to escape a local maxima. A single swap appears to work well and
 #' is the most efficient choice for the updating algorithm but the setting can be increased to any integer value, if required.
@@ -133,12 +133,16 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
      
   #******************************************************** Primality test ************************************************************************************
   isPrime=function(v) {
-    if (v <= 3)  return(TRUE)
-    else if (v %% 2 == 0 | v %% 3 == 0) return(FALSE)
-    else if (v<25) return(TRUE)
-    else 
+    if (v <= 3)  { 
+      return(TRUE)
+    } else if (v %% 2 == 0 | v %% 3 == 0) {
+      return(FALSE) 
+    } else if (v<25) {
+      return(TRUE)
+    } else {
       for(i in  6*rep(1:floor((sqrt(v)+1)/6)) )
         if( v %% (i-1) == 0 | v %% (i+1) == 0) return(FALSE) 
+    }
     return(TRUE)
   }      
   
@@ -208,20 +212,24 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
         }
       } 
       if (improved) next
-      if (sum(nSamp) < min(length(TF),512))
+      if (sum(nSamp) < min(length(TF),512)) {
           nSamp=pmin(mainSizes,2*nSamp)
-       else 
+      } else {
          break
+      }
     }  
     list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
   }
   
   #**************************** Calculates A-optimality *******************************************************
-  optEffics=function(TF,BF,ntrts,nblks)   { 
-    if (ntrts<=nblks) 
+  optEffics=function(TF,BF)   { 
+    ntrts=nlevels(TF)
+    nblks=nlevels(BF)
+    if (ntrts<=nblks) {
       e=eigen( (diag(ntrts)-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
-    else       
-      e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])    
+   } else {     
+      e=c(rep(1,(ntrts-nblks)),eigen((diag(nblks)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])  
+   }
     aeff =1/mean(1/e) 
     deff = exp(sum(log(e))/(ntrts-1))
     c(deff,aeff)
@@ -248,7 +256,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
         globTF=TF
         globrelD=relD
         if ( !is.na(bound) & r<searches )
-          if (isTRUE( all.equal(bound,  optEffics(globTF,BF,nlevels(TF),nlevels(BF))[2]))) break
+          if (isTRUE( all.equal(bound,  optEffics(globTF,BF)[2]))) break
       }
       if (r==searches) break
       for (iswap in 1 : jumps) {
@@ -294,8 +302,9 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
         rank=QD$rank
         pivot=QD$pivot
         count=0
-        } else 
-        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ]    
+        } else {
+        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ]   
+        }
       }     
   if (rank<fullrank) stop( paste("Cannot find a non-singular starting design in stratum " , stratum, " : the design may be near singular") )
   TF=as.factor(D[,ncol(D)]) 
@@ -386,8 +395,9 @@ TF
             6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]) 
         TF=as.factor(TF)
         levels(TF)=sample(1:ntrts)
-      } else 
+      } else {
         TF=GenOpt(TF,Design[,(i+1)],Design[,i],searches,jumps,i)
+      }
     }
    TF 
   }
@@ -403,9 +413,11 @@ TF
     extlabs=NULL
     index=0
     for (i in 1 : length(treatments)) {
-      if (replicates[i]>1) 
+      if (replicates[i]>1) {
         trtlabs=c(trtlabs,  (index+1):(index+treatments[i]) )
-      else extlabs=c(extlabs,  (index+1):(index+treatments[i]) )
+     } else {
+       extlabs=c(extlabs,  (index+1):(index+treatments[i]) )
+     }
         index=index+treatments[i] 
     }    
     levels(TF)=c(trtlabs,extlabs)
@@ -431,7 +443,7 @@ TF
       if ( all(treps==treps[1]) & all(breps==breps[1]))
         bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Treatments),blocks[i])    
       if (nlevels(Design$Treatments)>1 & nlevels(Design[,i])>1)
-        effics[i,]=optEffics(Design$Treatments,Design[,i],nlevels(Design$Treatments),blocks[i])  
+        effics[i,]=optEffics(Design$Treatments,Design[,i])  
     }
     efficiencies=as.data.frame(cbind(blocks, effics, bounds))    
     colnames(efficiencies)=c("Blocks","D-Efficiencies","A-Efficiencies", "A-Upper Bounds")
@@ -494,8 +506,7 @@ TF
      return("Treatments must be integers greater than zero")
   if (!all(replicates>=1)) 
     return("Replicates must be integers greater than zero")  
-  if (all(replicates==1)) 
-    return("Not all treatments can have only a single replication" )  
+  
    if (!is.null(blocklevels)) {
      if (anyNA(blocklevels) ) return(" NA blocklevels values not allowed") 
      if (!all(is.finite(blocklevels)) | !all(!is.nan(blocklevels)) ) return(" Blocklevels can contain only finite integers ")
@@ -516,7 +527,7 @@ TF
      if ( !all(is.finite(seed)) | !all(!is.nan(seed))) return(" Seed must be a finite integer ") 
      if (seed<1)  return(" Seed must be at least one ")   
    }  
-   if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)) ) 
+   if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
      return("Design cannot be fitted :  too many blocks and treatments for the available plots")  
    return(TRUE)
  }
@@ -527,6 +538,15 @@ TF
   if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed) 
  if (is.null(jumps)) jumps=1
+stratumnames=c("Main_blocks")
+
+if (max(replicates)==1) {
+  nunits=sum(treatments) 
+  strata=1
+  Design=as.data.frame(cbind(rep(1,each=nunits), rep(1:nunits), sample(1:nunits)    ))
+  colnames(Design)=c(stratumnames,"Sub-plots","Treatments") 
+  Design[]=lapply(Design, factor) 
+} else {  
   # omit any single replicate treatments here 
    treatlevs=treatments[replicates>1]
    replevs = replicates[replicates>1]
@@ -535,10 +555,11 @@ TF
   nunits=sum(treatlevs*replevs) 
   if (is.null(searches)) 
     searches=1+2000%/%(sum(treatments)+prod(blocklevels))
- if (!all(blocklevels==1))
+ if (!all(blocklevels==1)) {
     blocklevels=blocklevels[blocklevels>1]
- else
+ } else {
    blocklevels=1
+ }
   strata=length(blocklevels)
  for (i in 1:strata)
   blocksizes=Sizes(nunits,blocklevels)
@@ -553,14 +574,17 @@ TF
   if (!all(replicates>1) )
    Design= fullDesign(Design,facMat,treatments,replicates,blocksizes,blocklevels) 
   Design=Design[,c(2:ncol(Design))] 
+
   # randomization
   Design=randBlocks(Design,facMat)
-  stratumnames=c("Main_blocks")
+
   if (strata>1)
     for (i in 1:(strata-1))
       stratumnames=c(stratumnames,paste("Sub",i,"_blocks", sep=""))  
   colnames(Design)=c(stratumnames,"Sub-plots","Treatments")   
   rownames(Design) = NULL 
+}
+
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  

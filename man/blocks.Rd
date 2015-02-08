@@ -42,10 +42,10 @@ The \code{blocks} function optimizes nested blocks designs where treatments can 
 and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting.
 
 The \code{treatments} and \code{replicates} arguments define sets of equally replicated treatments where \code{treatments} is a
-collection of set sizes and \code{replicates} is a collection of replication numbers. The ordered pairs of set sizes and replication numbers
-define a collection of treatment sets where all treatments in the same set have the same replication.
-The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication
-numbers is the total number of units. Treatments are numbered consecutively according to the ordering and the cardinality of the treatment sets but
+collection of set sizes and \code{replicates} is a collection of replication numbers. The set sizes and the replication numbers taken in order
+define treatment sets where all treatments in the same set have the same replication.
+The sum of the set sizes is the total number of treatments and the sum of the cross-products
+is the total number of units. Treatments are numbered consecutively according to the ordering and the cardinality of the treatment sets but
  different sets with the same replication number can be defined if arbitrary numbering is required. Single replicate treatments sets are permitted.
 
 The \code{blocklevels} argument is a vector of integers that defines the blocks structure of the design. The length of the vector is the total number of
