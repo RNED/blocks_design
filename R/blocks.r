@@ -184,43 +184,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     list(M11=M11,M22=M22,M12=M12)
   }   
   
-  #********************************************************Determinants of jumps using samples of increasing size***********************************************
-  D_Max=function(M11,M22,M12,TF,MF,BF) {   
-    relD=1
-    mainSizes=tabulate(MF)
-    nSamp=pmin(rep(8,nlevels(MF)),mainSizes)
-    mainBlocks=split(rep(1:length(TF)),MF)  
-    repeat {
-      improved=FALSE
-      for (k in 1:nlevels(MF)) {
-        S=sort(sample(mainBlocks[[k]],nSamp[k]))  
-        TT=2*M11[TF[S],TF[S],drop=FALSE]-tcrossprod(M11[cbind(TF[S],TF[S])]+rep(1,nSamp[k])) + tcrossprod(M11[cbind(TF[S],TF[S])]) + 1
-        BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,nSamp[k])) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
-        TB=M12[TF[S],BF[S],drop=FALSE]+t(M12[TF[S],BF[S],drop=FALSE])-tcrossprod(M12[cbind(TF[S],BF[S])]+rep(1,nSamp[k]))+tcrossprod(M12[cbind(TF[S],BF[S])]) + 2
-        dMat=TB**2-TT*BB
-        sampn=which.max(dMat)   
-        i=1+(sampn-1)%%nSamp[k]
-        j=1+(sampn-1)%/%nSamp[k]
-        if ( !isTRUE(all.equal(dMat[i,j],1)) & dMat[i,j]>1) {
-          improved=TRUE
-          relD=relD*dMat[i,j]
-          up=UpDate(M11,M22,M12,as.numeric(TF[S[i]]),as.numeric(TF[S[j]]), as.numeric(BF[S[i]]), as.numeric(BF[S[j]]), TF,BF)
-          M11=up$M11
-          M22=up$M22
-          M12=up$M12
-          TF[c(S[i],S[j])]=TF[c(S[j],S[i])]
-        }
-      } 
-      if (improved) next
-      if (sum(nSamp) < min(length(TF),512)) {
-          nSamp=pmin(mainSizes,2*nSamp)
-      } else {
-         break
-      }
-    }  
-    list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
-  }
-  
+
   #**************************** Calculates A-optimality *******************************************************
   optEffics=function(TF,BF)   { 
     ntrts=nlevels(TF)
@@ -277,22 +241,61 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     }
    globTF
   } 
+  
+  #********************************************************Determinants of jumps using samples of increasing size***********************************************
+  D_Max=function(M11,M22,M12,TF,MF,BF) {   
+    relD=1
+    mainSizes=tabulate(MF)
+    nSamp=pmin(rep(8,nlevels(MF)),mainSizes)
+    mainBlocks=split(rep(1:length(TF)),MF)  
+    repeat {
+      improved=FALSE
+      for (k in 1:nlevels(MF)) {
+        S=sort(sample(mainBlocks[[k]],nSamp[k]))  
+        TT=2*M11[TF[S],TF[S],drop=FALSE]-tcrossprod(M11[cbind(TF[S],TF[S])]+rep(1,nSamp[k])) + tcrossprod(M11[cbind(TF[S],TF[S])]) + 1
+        BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,nSamp[k])) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
+        TB=M12[TF[S],BF[S],drop=FALSE]+t(M12[TF[S],BF[S],drop=FALSE])-tcrossprod(M12[cbind(TF[S],BF[S])]+rep(1,nSamp[k]))+tcrossprod(M12[cbind(TF[S],BF[S])]) + 2
+        dMat=TB**2-TT*BB
+        sampn=which.max(dMat)   
+        i=1+(sampn-1)%%nSamp[k]
+        j=1+(sampn-1)%/%nSamp[k]
+        if ( !isTRUE(all.equal(dMat[i,j],1)) & dMat[i,j]>1) {
+          improved=TRUE
+          relD=relD*dMat[i,j]
+          up=UpDate(M11,M22,M12,as.numeric(TF[S[i]]),as.numeric(TF[S[j]]), as.numeric(BF[S[i]]), as.numeric(BF[S[j]]), TF,BF)
+          M11=up$M11
+          M22=up$M22
+          M12=up$M12
+          TF[c(S[i],S[j])]=TF[c(S[j],S[i])]
+        }
+      } 
+      if (improved) next
+      if (sum(nSamp) < min(length(TF),512)) {
+        nSamp=pmin(mainSizes,2*nSamp)
+      } else {
+        break
+      }
+    }  
+    list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
+  }
 
-  #******************************************************** Initializes design***************************************************************************************     
+
+#******************************************************** Initializes design***************************************************************************************     
 GenOpt=function(TF,BF,MF,searches,jumps,stratum) { 
   BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
   BM[cbind(1:length(BF),as.numeric(BF))]=1
   fullrank=nlevels(BF)+nlevels(TF)-1
-  rand=sample(1:length(TF))
-  TF=TF[rand][order(MF[rand])]
-  TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-  TM[cbind(1:length(TF),as.numeric(TF))]=1    
-  D=cbind(BM,TM[,1:(nlevels(TF)-1)],TF)
-  QD=qr(t(D[,(1:fullrank)]))
-  rank=QD$rank
-  pivot=QD$pivot
-  count=0
-    while(rank<fullrank & count<10000) {
+  for (t in 1 :10) {    
+    rand=sample(1:length(TF))
+    TF=TF[rand][order(MF[rand])]
+    TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+    TM[cbind(1:length(TF),as.numeric(TF))]=1    
+    D=cbind(BM,TM[,-nlevels(TF),drop=FALSE],TF)
+    QD=qr(t(D[,(1:fullrank)]))
+    rank=QD$rank
+    pivot=QD$pivot
+    count=0
+    while(rank<fullrank & count<(t*100)) {
       count=count+1
       samp=sample(pivot[(rank+1):length(TF)],1)
       swap=sample(rep(1:length(TF))[ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
@@ -302,10 +305,11 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
         rank=QD$rank
         pivot=QD$pivot
         count=0
-        } else {
-        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ]   
-        }
-      }     
+      } else 
+        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ]       
+    }
+    if (rank==fullrank) break
+  }   
   if (rank<fullrank) stop( paste("Cannot find a non-singular starting design in stratum " , stratum, " : the design may be near singular") )
   TF=as.factor(D[,ncol(D)]) 
   DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
@@ -319,8 +323,8 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
   perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
   M12=M12[,perm]
   M22=M22[perm,perm] 
-TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
-TF
+  TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
+  TF
 }   
   #******************************************************** HCF of replicates************************************************************************************
   HCF=function(replevs)  {
