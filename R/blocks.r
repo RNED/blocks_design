@@ -278,38 +278,111 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     }  
     list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
   }
+  
 
-
-#******************************************************** Initializes design***************************************************************************************     
-GenOpt=function(TF,BF,MF,searches,jumps,stratum) { 
-  BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
-  BM[cbind(1:length(BF),as.numeric(BF))]=1
-  fullrank=nlevels(BF)+nlevels(TF)-1
-  for (t in 1 :10) {    
+  #******************************************************** Initializes design***************************************************************************************     
+  oldGenOpt=function(TF,Design,searches,jumps,stratum) { 
+    MF=Design[,stratum]
+    BF=Design[,stratum+1]
+    BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
+    BM[cbind(1:length(BF),as.numeric(BF))]=1
     rand=sample(1:length(TF))
     TF=TF[rand][order(MF[rand])]
     TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
     TM[cbind(1:length(TF),as.numeric(TF))]=1    
-    D=cbind(BM,TM[,-nlevels(TF),drop=FALSE],TF)
-    QD=qr(t(D[,(1:fullrank)]))
-    rank=QD$rank
-    pivot=QD$pivot
-    count=0
-    while(rank<fullrank & count<(t*100)) {
-      count=count+1
+    #if (rank<nlevels(BF)+nlevels(TF)-1) stop( paste("Cannot find a non-singular starting design in stratum " , stratum, " : the design may be near singular") )
+ print(nlevels(BF)+nlevels(TF)-1)  
+ print(qr(cbind(BM,TM))$rank)
+    while (qr(cbind(BM,TM))$rank<nlevels(BF)+nlevels(TF)-1) {
+      DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
+      diag(DD)=diag(DD)*1.01
+      V=chol2inv(chol(DD))
+      M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
+      M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+      M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
+      M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
+      M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
+      M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
+      perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
+      M12=M12[,perm]
+      M22=M22[perm,perm]    
+      mainSizes=tabulate(MF)
+      mainBlocks=split(rep(1:length(TF)),MF)  
+        dmat=1
+        for (k in 1:nlevels(MF)) {
+          S=sort(sample(mainBlocks[[k]],mainSizes[k]))  
+          TT=2*M11[TF[S],TF[S],drop=FALSE]-tcrossprod(M11[cbind(TF[S],TF[S])]+rep(1,mainSizes[k])) + tcrossprod(M11[cbind(TF[S],TF[S])]) + 1
+          BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,mainSizes[k])) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
+          TB=M12[TF[S],BF[S],drop=FALSE]+t(M12[TF[S],BF[S],drop=FALSE])-tcrossprod(M12[cbind(TF[S],BF[S])]+rep(1,mainSizes[k]))+tcrossprod(M12[cbind(TF[S],BF[S])]) + 2
+          dMat=TB**2-TT*BB
+          sampn=which.max(dMat)   
+          i=1+(sampn-1)%%mainSizes[k]
+          j=1+(sampn-1)%/%mainSizes[k]
+          if (dMat[i,j]>dmat) {
+            dmat=dMat[i,j]
+            si=S[i]
+            sj=S[j]
+          }
+        }
+      if (dmat>1.000001) {
+      TF[c(si,sj)]=TF[c(sj,si)] 
+      TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+      TM[cbind(1:length(TF),as.numeric(TF))]=1 
+      print(qr(cbind(BM,TM))$rank)
+      print(dmat)
+      } else {
+        print("noswap")
+        print(qr(cbind(BM,TM))$rank)
+        print(dmat)
+        si=sample(rep(1:length(TF)),1)
+        sj=sample(rep(1:length(TF))[ MF==MF[si] & BF!=BF[si] & TF!=TF[si] ],1)
+        TF[c(si,sj)]=TF[c(sj,si)] 
+      }
+    }
+    
+    DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
+    V=chol2inv(chol(DD))
+    M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
+    M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+    M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
+    M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
+    M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
+    M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
+    perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
+    M12=M12[,perm]
+    M22=M22[perm,perm] 
+    TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
+  } 
+    
+#******************************************************** Initializes design***************************************************************************************     
+GenOpt=function(TF,Design,searches,jumps,stratum) { 
+  MF=Design[,stratum]
+  BF=Design[,stratum+1]
+  BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
+  BM[cbind(1:length(BF),as.numeric(BF))]=1
+  fullrank=nlevels(BF)+nlevels(TF)-1
+  rand=sample(1:length(TF))
+  TF=TF[rand][order(MF[rand])]
+  TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+  TM[cbind(1:length(TF),as.numeric(TF))]=1    
+  D=cbind(BM,TM[,-nlevels(TF),drop=FALSE],TF)
+  QD=qr(t(D[,(1:fullrank)]))
+  rank=QD$rank
+  pivot=QD$pivot
+  swap=NULL
+    while(rank<fullrank) {
       samp=sample(pivot[(rank+1):length(TF)],1)
       swap=sample(rep(1:length(TF))[ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
       D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
       QD=qr(t(D[,(1:fullrank)]))
-      if (QD$rank>rank) {
+      if (QD$rank>=rank) {
         rank=QD$rank
         pivot=QD$pivot
         count=0
       } else 
-        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ]       
+        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ]    
+      print(rank)
     }
-    if (rank==fullrank) break
-  }   
   if (rank<fullrank) stop( paste("Cannot find a non-singular starting design in stratum " , stratum, " : the design may be near singular") )
   TF=as.factor(D[,ncol(D)]) 
   DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
@@ -400,7 +473,7 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
         TF=as.factor(TF)
         levels(TF)=sample(1:ntrts)
       } else {
-        TF=GenOpt(TF,Design[,(i+1)],Design[,i],searches,jumps,i)
+        TF=GenOpt(TF,Design,searches,jumps,i)
       }
     }
    TF 
@@ -541,6 +614,7 @@ GenOpt=function(TF,BF,MF,searches,jumps,stratum) {
   if (!isTRUE(testout)) stop(testout)
   if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed) 
+print(seed)
  if (is.null(jumps)) jumps=1
 stratumnames=c("Main_blocks")
 
