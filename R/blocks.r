@@ -308,7 +308,6 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
         D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] else
           TF[c(i,j)]= TF[c(j,i)]  
       rank=max(rank,QD$rank)
-      print(rank)
     }
     }
     
