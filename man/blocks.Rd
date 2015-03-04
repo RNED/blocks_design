@@ -9,20 +9,18 @@ blocks(treatments, replicates, blocklevels = HCF(replicates),
   seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
-\item{treatments}{a collection of integer numbers where the sum of the integers is the required number of treatments and the individual integers
-represent sets of equally replicated treatments}
+\item{treatments}{a partition of the total number of treatments into integers where each integer represents a set containing that number of equally replicated treatments}
 
-\item{replicates}{a collection of replication numbers, one for each of the treatment sets defined above,
-where the replication numbers and the treatment sets are assumed to be in matching order.}
+\item{replicates}{an ordered set of replication numbers corresponding to the treatment sets defined by the \code{treatments} argument.}
 
-\item{blocklevels}{an optional vector of integers where the first integer is the number of main blocks and the remaining integers, if any,
-are the numbers of nested sub-blocks in a hierarchy of nested sub-blocks. The default is the HCF of the replication numbers.}
+\item{blocklevels}{a hierarchical set of block levels where the first level is the number of main blocks and the remaining levels, if any,
+are the numbers of hierarchically nested sub-blocks. The default is a single integer equal to the HCF of the replication numbers.}
 
-\item{searches}{an optional integer for the maximum number of searches during optimization. The default is the maximum of 1 or (100 - sum of model terms).}
+\item{searches}{an integer for the maximum number of searches during optimization. The default is the maximum of 1 or (100 - sum of model terms).}
 
-\item{seed}{an optional integer for initializing the random number generator. The default is a random integer less than 10000.}
+\item{seed}{an integer for initializing the random number generator. The default is a random integer less than 10000.}
 
-\item{jumps}{an optional integer for the number of pairwise random treatment swaps used to escape a local maxima in a stratum. The default is a single swap.}
+\item{jumps}{an integer for the number of pairwise random treatment swaps used to escape a local maxima in a stratum. The default is a single swap.}
 }
 \value{
 \item{Design}{Data frame showing the optimized block and treatment factors in plot order}
@@ -41,8 +39,10 @@ not necessarily all equal, and arbitrary depth of nesting.
 The \code{blocks} function optimizes nested blocks designs where treatments can have any arbitrary level of replication, not necessarily all equal,
 and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting.
 
-The \code{treatments} and \code{replicates} arguments define sets of equally replicated treatments where \code{treatments} is a
-collection of set sizes and \code{replicates} is a collection of replication numbers. The set sizes and the replication numbers taken in order
+The \code{treatments} and \code{replicates} arguments taken together define the treatment structure of the design.
+The \code{treatments} collection defines sets of equally replicated treatment where all treatments in the same set have the same replication and the
+\code{replicates} is a collection of corresponding replication numbers.
+The set sizes and the replication numbers taken together define the treatment structure of the design. with treatments grouped into
 define treatment sets where all treatments in the same set have the same replication.
 The sum of the set sizes is the total number of treatments and the sum of the cross-products
 is the total number of units. Treatments are numbered consecutively according to the ordering and the cardinality of the treatment sets but
@@ -56,9 +56,9 @@ orthogonal main blocks. Block sizes are always as equal as possible and will nev
 in any one stratum.
 
 The \code{searches} argument is the integer number of searches for an optimization. Ideally, the number of searches should be as large
- as the computational resources permit. The algorithm may occasionally fail due to a large near-saturated design
+ as the computational resources permit. The algorithm may fail if the design is very large and near-saturated
  (failure to find a suitable starting design)
- or due to a very large design with more than a few thousand plots (failure due to lack of computer memory).
+ or if the design is very large and has more than a few thousand plots (failure due to lack of computer memory).
 
 The \code{jumps} argument is the number of random swaps needed to escape a local maxima. A single swap appears to work well and
 is the most efficient choice for the updating algorithm but the setting can be increased to any integer value, if required.

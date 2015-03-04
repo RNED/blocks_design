@@ -10,8 +10,10 @@
 #' The \code{blocks} function optimizes nested blocks designs where treatments can have any arbitrary level of replication, not necessarily all equal,
 #' and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting. 
 #' 
-#' The \code{treatments} and \code{replicates} arguments define sets of equally replicated treatments where \code{treatments} is a 
-#' collection of set sizes and \code{replicates} is a collection of replication numbers. The set sizes and the replication numbers, taken in order, 
+#' The \code{treatments} and \code{replicates} arguments taken together define the treatment structure of the design.
+#' The \code{treatments} collection defines sets of equally replicated treatment where all treatments in the same set have the same replication and the 
+#' \code{replicates} is a collection of corresponding replication numbers. 
+#' The set sizes and the replication numbers taken together define the treatment structure of the design. with treatments grouped into  
 #' define treatment sets where all treatments in the same set have the same replication.
 #' The sum of the set sizes is the total number of treatments and the sum of the cross-products
 #' is the total number of units. Treatments are numbered consecutively according to the ordering and the cardinality of the treatment sets but
@@ -60,20 +62,18 @@
 #'  \item  A table showing the achieved D- and A-efficiency factors for each nested blocks stratum together with an A-efficiency upper bound, where available. \cr
 #' } 
 #' 
-#' @param treatments a collection of integer numbers where the sum of the integers is the required number of treatments and the individual integers 
-#' represent sets of equally replicated treatments
+#' @param treatments a partition of the total number of treatments into integers where each integer represents a set containing that number of equally replicated treatments
 #' 
-#' @param replicates a collection of replication numbers, one for each of the treatment sets defined above,  
-#' where the replication numbers and the treatment sets are assumed to be in matching order.   
+#' @param replicates an ordered set of replication numbers corresponding to the treatment sets defined by the \code{treatments} argument. 
 #' 
-#' @param blocklevels an optional vector of integers where the first integer is the number of main blocks and the remaining integers, if any,
-#' are the numbers of nested sub-blocks in a hierarchy of nested sub-blocks. The default is the HCF of the replication numbers.
+#' @param blocklevels a hierarchical set of block levels where the first level is the number of main blocks and the remaining levels, if any,
+#' are the numbers of hierarchically nested sub-blocks. The default is a single integer equal to the HCF of the replication numbers.
 #' 
-#' @param seed an optional integer for initializing the random number generator. The default is a random integer less than 10000.
+#' @param seed an integer for initializing the random number generator. The default is a random integer less than 10000.
 #' 
-#' @param searches an optional integer for the maximum number of searches during optimization. The default is the maximum of 1 or (100 - sum of model terms). 
+#' @param searches an integer for the maximum number of searches during optimization. The default is the maximum of 1 or (100 - sum of model terms). 
 #' 
-#' @param jumps an optional integer for the number of pairwise random treatment swaps used to escape a local maxima in a stratum. The default is a single swap.
+#' @param jumps an integer for the number of pairwise random treatment swaps used to escape a local maxima in a stratum. The default is a single swap.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the optimized block and treatment factors in plot order}
@@ -277,69 +277,36 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       }
     }  
     list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
-  }
+  }  
   
-
+ 
   #******************************************************** Initializes design***************************************************************************************     
-  oldGenOpt=function(TF,Design,searches,jumps,stratum) { 
+  GenOpt=function(TF,Design,searches,jumps,stratum) { 
     MF=Design[,stratum]
     BF=Design[,stratum+1]
     BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
     BM[cbind(1:length(BF),as.numeric(BF))]=1
+    fullrank=nlevels(BF)+nlevels(TF)-1
     rand=sample(1:length(TF))
     TF=TF[rand][order(MF[rand])]
     TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
     TM[cbind(1:length(TF),as.numeric(TF))]=1    
-    #if (rank<nlevels(BF)+nlevels(TF)-1) stop( paste("Cannot find a non-singular starting design in stratum " , stratum, " : the design may be near singular") )
- print(nlevels(BF)+nlevels(TF)-1)  
- print(qr(cbind(BM,TM))$rank)
-    while (qr(cbind(BM,TM))$rank<nlevels(BF)+nlevels(TF)-1) {
-      DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
-      diag(DD)=diag(DD)*1.01
-      V=chol2inv(chol(DD))
-      M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
-      M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
-      M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
-      M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
-      M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
-      M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
-      perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
-      M12=M12[,perm]
-      M22=M22[perm,perm]    
-      mainSizes=tabulate(MF)
-      mainBlocks=split(rep(1:length(TF)),MF)  
-        dmat=1
-        for (k in 1:nlevels(MF)) {
-          S=sort(sample(mainBlocks[[k]],mainSizes[k]))  
-          TT=2*M11[TF[S],TF[S],drop=FALSE]-tcrossprod(M11[cbind(TF[S],TF[S])]+rep(1,mainSizes[k])) + tcrossprod(M11[cbind(TF[S],TF[S])]) + 1
-          BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,mainSizes[k])) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
-          TB=M12[TF[S],BF[S],drop=FALSE]+t(M12[TF[S],BF[S],drop=FALSE])-tcrossprod(M12[cbind(TF[S],BF[S])]+rep(1,mainSizes[k]))+tcrossprod(M12[cbind(TF[S],BF[S])]) + 2
-          dMat=TB**2-TT*BB
-          sampn=which.max(dMat)   
-          i=1+(sampn-1)%%mainSizes[k]
-          j=1+(sampn-1)%/%mainSizes[k]
-          if (dMat[i,j]>dmat) {
-            dmat=dMat[i,j]
-            si=S[i]
-            sj=S[j]
-          }
-        }
-      if (dmat>1.000001) {
-      TF[c(si,sj)]=TF[c(sj,si)] 
-      TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-      TM[cbind(1:length(TF),as.numeric(TF))]=1 
-      print(qr(cbind(BM,TM))$rank)
-      print(dmat)
-      } else {
-        print("noswap")
-        print(qr(cbind(BM,TM))$rank)
-        print(dmat)
-        si=sample(rep(1:length(TF)),1)
-        sj=sample(rep(1:length(TF))[ MF==MF[si] & BF!=BF[si] & TF!=TF[si] ],1)
-        TF[c(si,sj)]=TF[c(sj,si)] 
-      }
+    D=cbind(BM,TM[,-nlevels(TF),drop=FALSE])
+    QD=qr(t(D))
+    rank=QD$rank 
+    counter=0
+    while (rank<fullrank & counter<1000) {
+      counter=counter+1
+      i=sample(QD$pivot[(rank+1):nrow(D)],1)
+      j=sample(rep(1:length(TF))[ MF==MF[i] & BF!=BF[i] & TF!=TF[i] ],1)
+      D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] 
+      QD=qr(t(D))
+      if (QD$rank<rank) 
+        D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] else
+          TF[c(i,j)]= TF[c(j,i)]  
+      rank=max(rank,QD$rank)
     }
-    
+    if (rank<fullrank) stop( paste("Cannot find a starting design in stratum " , stratum, " : the design may be too complex or may be near singular") )
     DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
     V=chol2inv(chol(DD))
     M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
@@ -352,53 +319,10 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     M12=M12[,perm]
     M22=M22[perm,perm] 
     TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
-  } 
-    
-#******************************************************** Initializes design***************************************************************************************     
-GenOpt=function(TF,Design,searches,jumps,stratum) { 
-  MF=Design[,stratum]
-  BF=Design[,stratum+1]
-  BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
-  BM[cbind(1:length(BF),as.numeric(BF))]=1
-  fullrank=nlevels(BF)+nlevels(TF)-1
-  rand=sample(1:length(TF))
-  TF=TF[rand][order(MF[rand])]
-  TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-  TM[cbind(1:length(TF),as.numeric(TF))]=1    
-  D=cbind(BM,TM[,-nlevels(TF),drop=FALSE],TF)
-  QD=qr(t(D[,(1:fullrank)]))
-  rank=QD$rank
-  pivot=QD$pivot
-  swap=NULL
-    while(rank<fullrank) {
-      samp=sample(pivot[(rank+1):length(TF)],1)
-      swap=sample(rep(1:length(TF))[ MF==MF[samp] & BF!=BF[samp] & TF!=TF[samp] ],1)
-      D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ] 
-      QD=qr(t(D[,(1:fullrank)]))
-      if (QD$rank>=rank) {
-        rank=QD$rank
-        pivot=QD$pivot
-        count=0
-      } else 
-        D[c(samp,swap) , (ncol(BM)+1):ncol(D) ] = D[ c(swap,samp) , (ncol(BM)+1):ncol(D) ]    
-      print(rank)
-    }
-  if (rank<fullrank) stop( paste("Cannot find a non-singular starting design in stratum " , stratum, " : the design may be near singular") )
-  TF=as.factor(D[,ncol(D)]) 
-  DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
-  V=chol2inv(chol(DD))
-  M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
-  M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
-  M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
-  M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
-  M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
-  M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
-  perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
-  M12=M12[,perm]
-  M22=M22[perm,perm] 
-  TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
-  TF
-}   
+    TF
+  }    
+ 
+
   #******************************************************** HCF of replicates************************************************************************************
   HCF=function(replevs)  {
     replevs=sort(replevs)
@@ -614,7 +538,6 @@ GenOpt=function(TF,Design,searches,jumps,stratum) {
   if (!isTRUE(testout)) stop(testout)
   if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed) 
-print(seed)
  if (is.null(jumps)) jumps=1
 stratumnames=c("Main_blocks")
 
