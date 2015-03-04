@@ -11,28 +11,22 @@
 #' and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting. 
 #' 
 #' The \code{treatments} and \code{replicates} arguments taken together define the treatment structure of the design.
-#' The \code{treatments} collection defines sets of equally replicated treatment where all treatments in the same set have the same replication and the 
-#' \code{replicates} is a collection of corresponding replication numbers. 
-#' The set sizes and the replication numbers taken together define the treatment structure of the design. with treatments grouped into  
-#' define treatment sets where all treatments in the same set have the same replication.
-#' The sum of the set sizes is the total number of treatments and the sum of the cross-products
+#' \code{treatments} partitions the total number of treatments into sets of equally replicated treatments and 
+#' \code{replicates} gives the actual replication of each individual treatment set. The \code{treatments} and the \code{replicates} arguments must be of equal
+#'  length and must be in matching order.  
+#' The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
 #' is the total number of units. Treatments are numbered consecutively according to the ordering and the cardinality of the treatment sets but
 #'  different sets with the same replication number can be defined if arbitrary numbering is required. Single replicate treatments sets are permitted.
 #' 
-#' The \code{blocklevels} argument is a vector of integers that defines the blocks structure of the design. The length of the vector is the total number of 
-#' strata while the numeric elements are the block levels of the successive strata. 
-#' The first number is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any,
+#' \code{blocklevels} comprises the levels of the blocks strata of the design taken from the highest to the lowest blocks strata.
+#' The first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any,
 #' is the number of sub-sub-blocks nested in each sub-block and so on. The default is a main blocks design with the maximum possible number of
-#' orthogonal main blocks. Block sizes are always as equal as possible and will never differ by more than a single unit 
-#' in any one stratum. 
+#' orthogonal main blocks (the highest common factor of the replication numbers). 
+#' Block sizes are always as equal as possible in the same stratum of the design and will never differ by more than a single unit in any one stratum. 
 #' 
-#' The \code{searches} argument is the integer number of searches for an optimization. Ideally, the number of searches should be as large 
-#'  as the computational resources permit. The algorithm may fail if the design is very large and near-saturated 
-#'  (failure to find a suitable starting design)
-#'  or if the design is very large and has more than a few thousand plots (failure due to lack of computer memory).     
+#' The \code{searches} argument is the maximum number of searches for an optimization. The default is the maximum of 1 or (100 - sum of model terms).
 #'  
-#' The \code{jumps} argument is the number of random swaps needed to escape a local maxima. A single swap appears to work well and
-#' is the most efficient choice for the updating algorithm but the setting can be increased to any integer value, if required.
+#' The \code{jumps} argument is the number of random swaps needed to escape a local maxima. The default is one.
 #' 
 #' There are three classes of solution for the designs defined by the above arguments:   
 #' \itemize{
@@ -42,15 +36,13 @@
 #'   
 #' \item Lattice block designs with k replicates of v**2 treatments in k main blocks where each main block contains 
 #' v incomplete blocks of size v and k < (v+2) for prime or prime-power v, or k < 5 for v = 10 or k < 4 for any other v. Lattice designs are constructed
-#' by algebraic methods using Latin squares. The \code{\link[crossdes]{MOLS}} package is used if v is a prime-power.
+#' by using Latin squares and the \code{\link[crossdes]{MOLS}} package is used if v is a prime-power.
 #' 
 #' \item  General block designs with arbitrary depth of nesting. These designs are optimized by making D-efficiency improving swaps between 
 #' blocks nested within the constraints of higher level blocks, if any, until a local maxima is attained.
 #' For repeated \code{searches}, a local maxima is escaped by one or more random swaps (= \code{jumps}) between blocks, again nested within
 #'  the constraints of higher level blocks, if any.
-#' The algorithm works from the top stratum downwards and the design of each nested stratum is conditional on 
-#' the design of all higher level strata. The efficiency of nested designs may be slightly reduced relative to the efficiency of comparable non-nested designs
-#' but, for all practical purposes, this reduction is of no practical consequence.
+#' The algorithm works from the top stratum downwards and all nested strata are conditional on all higher level strata. 
 #'    
 #' }
 #' 
@@ -62,18 +54,18 @@
 #'  \item  A table showing the achieved D- and A-efficiency factors for each nested blocks stratum together with an A-efficiency upper bound, where available. \cr
 #' } 
 #' 
-#' @param treatments a partition of the total number of treatments into integers where each integer represents a set containing that number of equally replicated treatments
+#' @param treatments a partition of the total number of treatments into integers where each integer represents a set of that number of equally replicated treatments
 #' 
-#' @param replicates an ordered set of replication numbers corresponding to the treatment sets defined by the \code{treatments} argument. 
+#' @param replicates a set of integers comprising the replication numbers for the treatment sets defined by the \code{treatments} argument partition given above. 
 #' 
-#' @param blocklevels a hierarchical set of block levels where the first level is the number of main blocks and the remaining levels, if any,
-#' are the numbers of hierarchically nested sub-blocks. The default is a single integer equal to the HCF of the replication numbers.
+#' @param blocklevels a set of block levels where the first level is the number of main blocks and the remaining levels, if any,
+#' are the numbers of hierarchically nested sub-blocks nested within main blocks. The default is a single level equal to the HCF of the replication numbers.
 #' 
-#' @param seed an integer for initializing the random number generator. The default is a random integer less than 10000.
+#' @param seed an integer initializing the random number generator. The default is a random integer less than 10000.
 #' 
-#' @param searches an integer for the maximum number of searches during optimization. The default is the maximum of 1 or (100 - sum of model terms). 
+#' @param searches an integer setting the maximum number of searches during an optimization. The default is the maximum of 1 or (100 - sum of model terms). 
 #' 
-#' @param jumps an integer for the number of pairwise random treatment swaps used to escape a local maxima in a stratum. The default is a single swap.
+#' @param jumps an integer setting the number of pairwise random treatment swaps used to escape a local maxima in a stratum. The default is a single swap.
 #' 
 #' @return  
 #' \item{Design}{Data frame showing the optimized block and treatment factors in plot order}
@@ -119,8 +111,8 @@
 #' @export
 #' 
 blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
-
-  #******************************************************** sizes ************************************************************************************ 
+  
+# *** Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit ***  
   Sizes=function(sizes,blocklevels) { 
     for  (i in 1:length(blocklevels)) {    
       newsizes=NULL
@@ -131,7 +123,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     sizes 
   } 
      
-  #******************************************************** Primality test ************************************************************************************
+# *** Tests a give number for primality TRUE or FALSE ***
   isPrime=function(v) {
     if (v <= 3)  { 
       return(TRUE)
@@ -146,7 +138,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     return(TRUE)
   }      
   
-  #******************************************************** Block contrasts ************************************************************************************
+  # *** Block contrasts for factor BF nested within the levels of factor MF with DIFFERENT nested blocks in different main blocks ***  
   BlockContrasts=function(MF,BF) {
     BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
     BM[cbind(1:length(BF),as.numeric(BF))]=1 # factor indicator matrix
@@ -156,7 +148,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     BM
   } 
   
-  #******************************************************** Treatment contrasts**********************************************************************************
+  # *** Treatment contrasts for factor TF nested within the levels of factor MF with SAME nested treatments in different main blocks ***
   TreatContrasts=function(MF,TF) {
     TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
     TM[cbind(1:length(TF),as.numeric(TF))]=1 # factor indicator matrix	
@@ -166,7 +158,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     TM
   }
   
-  #******************************************************** Updates variance matrix ************************************************************************************
+  # *** Updates variance matrix for pairs of swapped treatments using standard matrix updating formula *** 
   UpDate=function(M11,M22,M12,ti,tj,bi,bj,TF,BF) {  
    
     m11=M11[ti,ti]+M11[tj,tj]-M11[tj,ti]-M11[ti,tj]
@@ -184,8 +176,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     list(M11=M11,M22=M22,M12=M12)
   }   
   
-
-  #**************************** Calculates A-optimality *******************************************************
+  # *** Calculates A-optimality efficiency factor assuming treatment factor TF and block factor BF ***
   optEffics=function(TF,BF)   { 
     ntrts=nlevels(TF)
     nblks=nlevels(BF)
@@ -198,8 +189,46 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     deff = exp(sum(log(e))/(ntrts-1))
     c(deff,aeff)
   }
+
+#*** Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare all possible swaps for steepest ascent optimization (uses sampling for early stages when many swaps available) *** 
+D_Max=function(M11,M22,M12,TF,MF,BF) {   
+  relD=1
+  mainSizes=tabulate(MF)
+  nSamp=pmin(rep(8,nlevels(MF)),mainSizes)
+  mainBlocks=split(rep(1:length(TF)),MF)  
+  repeat {
+    improved=FALSE
+    for (k in 1:nlevels(MF)) {
+      S=sort(sample(mainBlocks[[k]],nSamp[k]))  
+      TT=2*M11[TF[S],TF[S],drop=FALSE]-tcrossprod(M11[cbind(TF[S],TF[S])]+rep(1,nSamp[k])) + tcrossprod(M11[cbind(TF[S],TF[S])]) + 1
+      BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,nSamp[k])) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
+      TB=M12[TF[S],BF[S],drop=FALSE]+t(M12[TF[S],BF[S],drop=FALSE])-tcrossprod(M12[cbind(TF[S],BF[S])]+rep(1,nSamp[k]))+tcrossprod(M12[cbind(TF[S],BF[S])]) + 2
+      dMat=TB**2-TT*BB
+      sampn=which.max(dMat)   
+      i=1+(sampn-1)%%nSamp[k]
+      j=1+(sampn-1)%/%nSamp[k]
+      if ( !isTRUE(all.equal(dMat[i,j],1)) & dMat[i,j]>1) {
+        improved=TRUE
+        relD=relD*dMat[i,j]
+        up=UpDate(M11,M22,M12,as.numeric(TF[S[i]]),as.numeric(TF[S[j]]), as.numeric(BF[S[i]]), as.numeric(BF[S[j]]), TF,BF)
+        M11=up$M11
+        M22=up$M22
+        M12=up$M12
+        TF[c(S[i],S[j])]=TF[c(S[j],S[i])]
+      }
+    } 
+    if (improved) next
+    if (sum(nSamp) < min(length(TF),512)) {
+      nSamp=pmin(mainSizes,2*nSamp)
+    } else {
+      break
+    }
+  }  
+  list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
+}  
+
   
-  #**************************** General optimization using multiple searches *******************************************************
+  # *** Multiple searches for optimization with selected number of searches and selected number of junps to escape a local optima ****
   Optimise=function(TF,BF,MF,M11,M22,M12,searches,jumps)  {
     relD=1
     globrelD=0
@@ -242,45 +271,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
    globTF
   } 
   
-  #********************************************************Determinants of jumps using samples of increasing size***********************************************
-  D_Max=function(M11,M22,M12,TF,MF,BF) {   
-    relD=1
-    mainSizes=tabulate(MF)
-    nSamp=pmin(rep(8,nlevels(MF)),mainSizes)
-    mainBlocks=split(rep(1:length(TF)),MF)  
-    repeat {
-      improved=FALSE
-      for (k in 1:nlevels(MF)) {
-        S=sort(sample(mainBlocks[[k]],nSamp[k]))  
-        TT=2*M11[TF[S],TF[S],drop=FALSE]-tcrossprod(M11[cbind(TF[S],TF[S])]+rep(1,nSamp[k])) + tcrossprod(M11[cbind(TF[S],TF[S])]) + 1
-        BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,nSamp[k])) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
-        TB=M12[TF[S],BF[S],drop=FALSE]+t(M12[TF[S],BF[S],drop=FALSE])-tcrossprod(M12[cbind(TF[S],BF[S])]+rep(1,nSamp[k]))+tcrossprod(M12[cbind(TF[S],BF[S])]) + 2
-        dMat=TB**2-TT*BB
-        sampn=which.max(dMat)   
-        i=1+(sampn-1)%%nSamp[k]
-        j=1+(sampn-1)%/%nSamp[k]
-        if ( !isTRUE(all.equal(dMat[i,j],1)) & dMat[i,j]>1) {
-          improved=TRUE
-          relD=relD*dMat[i,j]
-          up=UpDate(M11,M22,M12,as.numeric(TF[S[i]]),as.numeric(TF[S[j]]), as.numeric(BF[S[i]]), as.numeric(BF[S[j]]), TF,BF)
-          M11=up$M11
-          M22=up$M22
-          M12=up$M12
-          TF[c(S[i],S[j])]=TF[c(S[j],S[i])]
-        }
-      } 
-      if (improved) next
-      if (sum(nSamp) < min(length(TF),512)) {
-        nSamp=pmin(mainSizes,2*nSamp)
-      } else {
-        break
-      }
-    }  
-    list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
-  }  
-  
- 
-  #******************************************************** Initializes design***************************************************************************************     
+  #*** Finds an initial starting design using a random choice and then uses selected swaps to increase the rank of the initial starting design if singular ***     
   GenOpt=function(TF,Design,searches,jumps,stratum) { 
     MF=Design[,stratum]
     BF=Design[,stratum+1]
@@ -288,31 +279,31 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     BM[cbind(1:length(BF),as.numeric(BF))]=1
     fullrank=nlevels(BF)+nlevels(TF)-1
     rank=0
-    searches=0
-    while (rank<fullrank & searches<10) {
-    rand=sample(1:length(TF))
-    TF=TF[rand][order(MF[rand])]
-    TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-    TM[cbind(1:length(TF),as.numeric(TF))]=1    
-    D=cbind(BM,TM[,-nlevels(TF),drop=FALSE])
-    QD=qr(t(D))
-    rank=QD$rank 
-    counter=0
-    while (rank<fullrank & counter<1000) {
-      counter=counter+1
-      i=sample(QD$pivot[(rank+1):nrow(D)],1)
-      j=sample(rep(1:length(TF))[ MF==MF[i] & BF!=BF[i] & TF!=TF[i] ],1)
-      D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] 
+    runs=0
+    while (rank<fullrank & runs<10) {
+      runs=runs+1
+      rand=sample(1:length(TF))
+      TF=TF[rand][order(MF[rand])]
+      TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+      TM[cbind(1:length(TF),as.numeric(TF))]=1    
+      D=cbind(BM,TM[,-nlevels(TF),drop=FALSE])
       QD=qr(t(D))
-      if (QD$rank<rank) 
-        D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] else
+      rank=QD$rank 
+      counter=0
+      while (rank<fullrank & counter<1000) {
+        counter=counter+1
+        i=sample(QD$pivot[(rank+1):nrow(D)],1)
+        j=sample(rep(1:length(TF))[ MF==MF[i] & BF!=BF[i] & TF!=TF[i] ],1)
+        D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] 
+        QD=qr(t(D))
+        if (QD$rank<rank) 
+          D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] else
           TF[c(i,j)]= TF[c(j,i)]  
-      rank=max(rank,QD$rank)
-    }
-    }
-    
+        rank=max(rank,QD$rank)      
+        }
+      }
     if (rank<fullrank) stop( paste("Cannot find a starting design in stratum " , stratum, " : the design may be too complex or may be near singular") )
-    DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
+    DD=crossprod(cbind(TreatContrasts(MF,TF),BlockContrasts(MF,BF)))
     V=chol2inv(chol(DD))
     M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
     M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
@@ -327,8 +318,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     TF
   }    
  
-
-  #******************************************************** HCF of replicates************************************************************************************
+  #***Finds the highest common factor of two numbers ***
   HCF=function(replevs)  {
     replevs=sort(replevs)
     v=(c(replevs[1],NULL))

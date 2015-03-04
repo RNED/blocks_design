@@ -9,18 +9,18 @@ blocks(treatments, replicates, blocklevels = HCF(replicates),
   seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
-\item{treatments}{a partition of the total number of treatments into integers where each integer represents a set containing that number of equally replicated treatments}
+\item{treatments}{a partition of the total number of treatments into integers where each integer represents a set of that number of equally replicated treatments}
 
-\item{replicates}{an ordered set of replication numbers corresponding to the treatment sets defined by the \code{treatments} argument.}
+\item{replicates}{a set of integers comprising the replication numbers for the treatment sets defined by the \code{treatments} argument partition given above.}
 
-\item{blocklevels}{a hierarchical set of block levels where the first level is the number of main blocks and the remaining levels, if any,
-are the numbers of hierarchically nested sub-blocks. The default is a single integer equal to the HCF of the replication numbers.}
+\item{blocklevels}{a set of block levels where the first level is the number of main blocks and the remaining levels, if any,
+are the numbers of hierarchically nested sub-blocks nested within main blocks. The default is a single level equal to the HCF of the replication numbers.}
 
-\item{searches}{an integer for the maximum number of searches during optimization. The default is the maximum of 1 or (100 - sum of model terms).}
+\item{searches}{an integer setting the maximum number of searches during an optimization. The default is the maximum of 1 or (100 - sum of model terms).}
 
-\item{seed}{an integer for initializing the random number generator. The default is a random integer less than 10000.}
+\item{seed}{an integer initializing the random number generator. The default is a random integer less than 10000.}
 
-\item{jumps}{an integer for the number of pairwise random treatment swaps used to escape a local maxima in a stratum. The default is a single swap.}
+\item{jumps}{an integer setting the number of pairwise random treatment swaps used to escape a local maxima in a stratum. The default is a single swap.}
 }
 \value{
 \item{Design}{Data frame showing the optimized block and treatment factors in plot order}
@@ -40,28 +40,22 @@ The \code{blocks} function optimizes nested blocks designs where treatments can 
 and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting.
 
 The \code{treatments} and \code{replicates} arguments taken together define the treatment structure of the design.
-The \code{treatments} collection defines sets of equally replicated treatment where all treatments in the same set have the same replication and the
-\code{replicates} is a collection of corresponding replication numbers.
-The set sizes and the replication numbers taken together define the treatment structure of the design. with treatments grouped into
-define treatment sets where all treatments in the same set have the same replication.
-The sum of the set sizes is the total number of treatments and the sum of the cross-products
+\code{treatments} partitions the total number of treatments into sets of equally replicated treatments and
+\code{replicates} gives the actual replication of each individual treatment set. The \code{treatments} and the \code{replicates} arguments must be of equal
+ length and must be in matching order.
+The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
 is the total number of units. Treatments are numbered consecutively according to the ordering and the cardinality of the treatment sets but
  different sets with the same replication number can be defined if arbitrary numbering is required. Single replicate treatments sets are permitted.
 
-The \code{blocklevels} argument is a vector of integers that defines the blocks structure of the design. The length of the vector is the total number of
-strata while the numeric elements are the block levels of the successive strata.
-The first number is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any,
+\code{blocklevels} comprises the levels of the blocks strata of the design taken from the highest to the lowest blocks strata.
+The first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any,
 is the number of sub-sub-blocks nested in each sub-block and so on. The default is a main blocks design with the maximum possible number of
-orthogonal main blocks. Block sizes are always as equal as possible and will never differ by more than a single unit
-in any one stratum.
+orthogonal main blocks (the highest common factor of the replication numbers).
+Block sizes are always as equal as possible in the same stratum of the design and will never differ by more than a single unit in any one stratum.
 
-The \code{searches} argument is the integer number of searches for an optimization. Ideally, the number of searches should be as large
- as the computational resources permit. The algorithm may fail if the design is very large and near-saturated
- (failure to find a suitable starting design)
- or if the design is very large and has more than a few thousand plots (failure due to lack of computer memory).
+The \code{searches} argument is the maximum number of searches for an optimization. The default is the maximum of 1 or (100 - sum of model terms).
 
-The \code{jumps} argument is the number of random swaps needed to escape a local maxima. A single swap appears to work well and
-is the most efficient choice for the updating algorithm but the setting can be increased to any integer value, if required.
+The \code{jumps} argument is the number of random swaps needed to escape a local maxima. The default is one.
 
 There are three classes of solution for the designs defined by the above arguments:
 \itemize{
@@ -71,15 +65,13 @@ sets of treatments but the equal block size restriction means that the number of
 
 \item Lattice block designs with k replicates of v**2 treatments in k main blocks where each main block contains
 v incomplete blocks of size v and k < (v+2) for prime or prime-power v, or k < 5 for v = 10 or k < 4 for any other v. Lattice designs are constructed
-by algebraic methods using Latin squares. The \code{\link[crossdes]{MOLS}} package is used if v is a prime-power.
+by using Latin squares and the \code{\link[crossdes]{MOLS}} package is used if v is a prime-power.
 
 \item  General block designs with arbitrary depth of nesting. These designs are optimized by making D-efficiency improving swaps between
 blocks nested within the constraints of higher level blocks, if any, until a local maxima is attained.
 For repeated \code{searches}, a local maxima is escaped by one or more random swaps (= \code{jumps}) between blocks, again nested within
  the constraints of higher level blocks, if any.
-The algorithm works from the top stratum downwards and the design of each nested stratum is conditional on
-the design of all higher level strata. The efficiency of nested designs may be slightly reduced relative to the efficiency of comparable non-nested designs
-but, for all practical purposes, this reduction is of no practical consequence.
+The algorithm works from the top stratum downwards and all nested strata are conditional on all higher level strata.
 
 }
 
