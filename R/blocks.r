@@ -287,6 +287,9 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
     BM[cbind(1:length(BF),as.numeric(BF))]=1
     fullrank=nlevels(BF)+nlevels(TF)-1
+    rank=0
+    searches=0
+    while (rank<fullrank & searches<10) {
     rand=sample(1:length(TF))
     TF=TF[rand][order(MF[rand])]
     TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
@@ -305,7 +308,10 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
         D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] else
           TF[c(i,j)]= TF[c(j,i)]  
       rank=max(rank,QD$rank)
+      print(rank)
     }
+    }
+    
     if (rank<fullrank) stop( paste("Cannot find a starting design in stratum " , stratum, " : the design may be too complex or may be near singular") )
     DD=crossprod(cbind(TreatContrasts(MF,TF),BC=BlockContrasts(MF,BF)))
     V=chol2inv(chol(DD))
