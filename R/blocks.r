@@ -12,13 +12,15 @@
 #' 
 #' The \code{treatments} and \code{replicates} arguments, taken together, define the treatment structure of the design.
 #' \code{treatments} partitions the total required number of treatments into sets of equally replicated treatments and 
-#' \code{replicates} gives the actual replication level for each individual treatment set. The \code{treatments} and the \code{replicates} arguments must be of equal
+#' \code{replicates} give the actual replication level for each individual treatment set. The \code{treatments} and
+#'  the \code{replicates} arguments must be of equal
 #'  length and must be in matching order.  
-#' The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
-#' is the total number of units. Treatments are numbered consecutively according to the number of treatments in each set and the set ordering.
-#' Single replicate treatments sets are permitted and different treatment sets with the same replication number are permitted.
+#' The sum of the \code{treatments} sets is the total number of treatments and the sum of the cross-products of the \code{treatments} sets
+#'  and the \code{replicates} numbers is the total number of units. 
+#'  Treatments are numbered consecutively according to the number of treatments in each set and different treatment sets with the same
+#'  replication number are permitted, if required. Single replicate treatments sets are permitted.
 #' 
-#' \code{blocklevels} are the levels of the blocks factors of the design taken in order from the highest to the lowest strata.
+#' \code{blocklevels} are the levels of the blocks factors taken in order from the highest to the lowest strata.
 #' The first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any,
 #' is the number of sub-sub-blocks nested in each sub-block and so on. The default is a main blocks design with the maximum possible number of
 #' orthogonal main blocks (the highest common factor of the replication numbers). 
@@ -33,20 +35,22 @@
 #' \itemize{
 #' 
 #' \item Complete randomized blocks where each block contains one or more complete sets of treatments in randomized order. Complete blocks can contain multiple 
-#' complete sets of treatments but the equal block size restriction means that the number of blocks must divide the hcf of the replication numbers.  
+#' complete randomized sets of treatments but the number of blocks must always divide the hcf of the replication numbers.  
 #'   
-#' \item Lattice designs for k replicates of v**2 treatments with k complete main blocks of size v**2 and nested incomplete blocks of size v.
+#' \item Lattice designs for k replicates of v**2 treatments with k complete main blocks of size v**2 and v incomplete blocks of size v in each main block.
 #'  Lattice block designs are constructed algebraically from sets of k mutually orthogonal Latin squares of size v x v and \code{blocks}
-#'  constructs lattice designs for any k < (v+2) if v is prime or prime-power, any k < 5 if v = 10 or any k < 4. 
+#'  constructs designs for any k < (v+2) where v is prime or prime-power, any k < 5 where v = 10 or any k < 4 generally. 
 #'  If v is a prime-power, the \code{\link[crossdes]{MOLS}} package is required.
 #' 
-#' \item  General block designs with arbitrary numbers of block levels and arbitrary depth of nesting. General block designs are
-#'  constructed algoritmically by making D-efficiency improving swaps between 
-#' the blocks of an initial (random) design until no further improvement is possible. The algorithm works from the top stratum downwards and
-#' improving swaps are always constrained within the levels of any existing higher level blocks.
-#' For repeated \code{searches}, a local maxima is escaped by one or more random swaps (\code{jumps}) between blocks, again constrained
-#'  within the levels of any existing higher level blocks As blocks are optimized from the top downwards, 
-#'  all nested blocks are conditional on all higher level blocks. 
+#' \item  General block designs with arbitrary block levels and arbitrary depth of nesting. Non-lattice block designs are
+#'  constructed by a D-optimality swapping algorithm that makes improving swaps between 
+#'  blocks until a local optima is atttained and no further improvement is possible. The algorithm works from the top stratum downwards and
+#'  always constrains improving swaps within the levels of any existing higher level blocks.
+#'  For repeated \code{searches}, a local maxima is escaped by one or more random swaps (\code{jumps}) between blocks, again constrained
+#'  within the levels of any existing higher level blocks. Blocks are optimized from the top down therefore 
+#'  all nested blocks are conditional on all higher level blocks. Single replicate treatments are excluded 
+#'  from the design during optimization and are then added back after optimization by using a heuristic that requires the number of added single replicate treatments 
+#'  per block to be as equal as possible.   
 #'    
 #' }
 #' 
@@ -60,13 +64,13 @@
 #' 
 #' @param treatments the total required number of treatments partitioned into sets of equally replicated treatments.
 #' 
-#' @param replicates replication numbers for the equally replicated treatment sets in the order defined above. 
+#' @param replicates the replication numbers for the individual treatment sets defined above. 
 #' 
-#' @param blocklevels block factor levels taken in nested block order from highest to lowest. The default is an orthogonal blocks design.
+#' @param blocklevels the block factor levels taken in nested block order from highest to lowest. The default is the hcf of the replication numbers.
 #' 
 #' @param seed an integer initializing the random number generator. The default is a random seed.
 #' 
-#' @param searches the maximum number of searches during an optimization. The default is the maximum of 1 or (100 - total model terms). 
+#' @param searches the maximum number of local optima searched for a design optimization. The default is the maximum of 1 or (100 - total model terms). 
 #' 
 #' @param jumps the number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.
 #' 
@@ -109,7 +113,6 @@
 #' crossprod(blocks(c(13,13),c(4,1),13)$Incidences[[1]])
 #' 
 #' # 2**10 treatments x 2 replicates in 2**10 blocks giving a fully saturated blocks design 
-#' (may require a long search time)
 #' \dontrun{ blocks(1024,2,rep(2,10)) }
 #'          
 #' @export
