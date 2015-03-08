@@ -17,7 +17,7 @@
 #'  length and must be in matching order.  
 #' The sum of the \code{treatments} sets is the total number of treatments and the sum of the cross-products of the \code{treatments} sets
 #'  and the \code{replicates} numbers is the total number of units. 
-#'  Treatments are numbered consecutively according to the number of treatments in each set: different treatment sets with the same
+#'  Treatments are numbered consecutively according to the number of treatments in each set and different treatment sets with the same
 #'  replication number are permitted, if required. Single replicate treatments sets are permitted.
 #' 
 #' \code{blocklevels} are the levels of the blocks factors taken in order from the highest to the lowest strata.
@@ -113,7 +113,7 @@
 #' crossprod(blocks(c(13,13),c(4,1),13)$Incidences[[1]])
 #' 
 #' # 2**10 treatments x 2 replicates in 2**10 blocks giving a fully saturated blocks design 
-#' # takes a longish time to run!
+#' # (takes a longish time to run!)
 #' \dontrun{ blocks(1024,2,rep(2,10)) }
 #'          
 #' @export
