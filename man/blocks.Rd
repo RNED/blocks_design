@@ -40,21 +40,21 @@ and blocks can be either a simple main blocks design or a nested blocks design w
 
 The \code{treatments} and \code{replicates} arguments, taken together, define the treatment structure of the design.
 \code{treatments} partitions the total required number of treatments into sets of equally replicated treatments and
-\code{replicates} give the actual replication level for each individual treatment set. The \code{treatments} and
+\code{replicates} gives the actual replication level for each individual treatment set. The \code{treatments} and
  the \code{replicates} arguments must be of equal
  length and must be in matching order.
 The sum of the \code{treatments} sets is the total number of treatments and the sum of the cross-products of the \code{treatments} sets
  and the \code{replicates} numbers is the total number of units.
- Treatments are numbered consecutively according to the number of treatments in each set and different treatment sets with the same
+ Treatments are numbered consecutively according to the number of treatments in each set: different treatment sets with the same
  replication number are permitted, if required. Single replicate treatments sets are permitted.
 
 \code{blocklevels} are the levels of the blocks factors taken in order from the highest to the lowest strata.
 The first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any,
 is the number of sub-sub-blocks nested in each sub-block and so on. The default is a main blocks design with the maximum possible number of
 orthogonal main blocks (the highest common factor of the replication numbers).
-Block sizes are equal wherever possible and will never differ by more than a single unit in any one stratum of the design.
+Block sizes are equal wherever possible and will never differ by more than a single unit in any particular stratum of the design.
 
-The \code{searches} argument is the maximum number of searches for an optimization. The default is the maximum of 1 or (100 - sum of model terms).
+The \code{searches} argument is the maximum number of searches during an optimization. The default is the maximum of 1 or (100 - sum of model terms).
 
 The \code{jumps} argument is the number of random swaps needed to escape a local maxima. The default is one.
 
@@ -70,15 +70,15 @@ complete randomized sets of treatments but the number of blocks must always divi
  constructs designs for any k < (v+2) where v is prime or prime-power, any k < 5 where v = 10 or any k < 4 generally.
  If v is a prime-power, the \code{\link[crossdes]{MOLS}} package is required.
 
-\item  General block designs with arbitrary block levels and arbitrary depth of nesting. Non-lattice block designs are
+\item  General block designs with arbitrary block levels and arbitrary depth of nesting. General block designs are
  constructed by a D-optimality swapping algorithm that makes improving swaps between
  blocks until a local optima is atttained and no further improvement is possible. The algorithm works from the top stratum downwards and
  always constrains improving swaps within the levels of any existing higher level blocks.
  For repeated \code{searches}, a local maxima is escaped by one or more random swaps (\code{jumps}) between blocks, again constrained
- within the levels of any existing higher level blocks. Blocks are optimized from the top down therefore
+ within the levels of any existing higher level blocks. Blocks are optimized from the top down and
  all nested blocks are conditional on all higher level blocks. Single replicate treatments are excluded
- from the design during optimization and are then added back after optimization by using a heuristic that requires the number of added single replicate treatments
- per block to be as equal as possible.
+ from the design during optimization and are then added back after optimization using a simple heuristic that requires
+ single replicate treatments to be distributed as evenly as possible between blocks.
 
 }
 
@@ -115,6 +115,7 @@ crossprod(blocks(13,4,13,searches=100)$Incidences[[1]])
 crossprod(blocks(c(13,13),c(4,1),13)$Incidences[[1]])
 
 # 2**10 treatments x 2 replicates in 2**10 blocks giving a fully saturated blocks design
+# takes a longish time to run!
 \dontrun{ blocks(1024,2,rep(2,10)) }
 }
 \references{
