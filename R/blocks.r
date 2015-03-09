@@ -312,7 +312,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
       QD=qr(t(D))
       rank=QD$rank 
       counter2=0
-      while (rank<fullrank & counter2<100) {
+      while (rank<fullrank & counter2<(counter1*100)) {
         counter2=counter2+1
         i=sample(QD$pivot[(rank+1):nrow(D)],1)
         j=sample(rep(1:length(TF))[ MF==MF[i] & BF!=BF[i] & TF!=TF[i] ],1)
@@ -322,6 +322,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
           D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] else
           TF[c(i,j)]= TF[c(j,i)]  
         rank=max(rank,QD$rank) 
+        print(rank)
         }
       }
     if (rank<fullrank) return(NULL)
