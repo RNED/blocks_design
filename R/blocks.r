@@ -136,9 +136,11 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     sizes 
   } 
   # ******************************************************************************************************************************************************** 
-  # Finds the highest common factor (hcf) of two numbers
+  # Finds the highest common factor (hcf) of a set of numbers omitting any zero values
   # ********************************************************************************************************************************************************
   HCF=function(replevs)  {
+    replevs=replevs[replevs>0]
+    if (length(replevs)==0) return(1)
     replevs=sort(replevs)
     v=(c(replevs[1],NULL))
     if (length(replevs)>1) 
@@ -519,10 +521,12 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
      return(" Treatments and replicates can contain only finite integers ")
    if ( length(treatments)!=length(replicates) ) 
      return(paste("The number of treatments sets = " , length(treatments) , " does not equal the number of replication sets = " , length(replicates)))
-  if (!all(treatments>=1)) 
-     return("Treatments must be integers greater than zero")
-  if (!all(replicates>=1)) 
-    return("Replicates must be integers greater than zero")  
+  if (!all(treatments>=0)) 
+     return("Treatments must be non-negative integers")
+  if (!all(replicates>=0)) 
+    return("Replicates must be non-negative integers")  
+  if (  sum(treatments*replicates) <=0 ) 
+    return("Design cannot be fitted : number of plots must be greater than zero")  
   
    if (!is.null(blocklevels)) {
      if (anyNA(blocklevels) ) return(" NA blocklevels values not allowed") 
@@ -558,6 +562,10 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
   set.seed(seed) 
  if (is.null(jumps)) jumps=1
 stratumnames=c("Main_blocks")
+
+sets=treatments*replicates
+treatments=treatments[sets>0]
+replicates=replicates[sets>0]
 
 if (max(replicates)==1) {
   nunits=sum(treatments) 
