@@ -613,7 +613,7 @@ if (max(replicates)==1) {
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
   names(Incidences)=stratumnames
- Total=as.factor(rep(1,nrow(b$Design)))
+ Total=as.factor(rep(1,strata))
  Design=cbind(Total,Design)
  BlockSizes=vector(mode = "list",length=strata )
  for (i in 1:strata)
