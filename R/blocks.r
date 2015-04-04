@@ -620,5 +620,5 @@ if (max(replicates)==1) {
    BlockSizes[[i]]=table(Design[c(1,(i+1))])
  Design=Design[,-1]
   
-  list(Design=Design,Plan=Plan(Design),Incidences=Incidences,Efficiencies=A_Efficiencies(Design),BlockSizes=BlockSizes,Seed=seed,Searches=searches,Jumps=jumps) 
+  list(BlockSizes=BlockSizes,Efficiencies=A_Efficiencies(Design),Design=Design,Plan=Plan(Design),Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
