@@ -448,7 +448,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
 # ********************************************************************************************************************************************************     
   A_Efficiencies=function(Design)  {
     strata=ncol(Design)-2
-    treps=tabulate(Design$Treatments)
+    treps=tabulate(Design$Trts)
     effics=matrix(1,nrow=strata,ncol=2)
     bounds=rep(NA,strata) 
     blocks=rep(0,strata)  
@@ -456,9 +456,9 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
       blocks[i]=nlevels(Design[,i])
       breps=tabulate(Design[,i])
       if ( all(treps==treps[1]) & all(breps==breps[1]))
-        bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Treatments),blocks[i])    
-      if (nlevels(Design$Treatments)>1 & nlevels(Design[,i])>1)
-        effics[i,]=optEffics(Design$Treatments,Design[,i])  
+        bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Trts),blocks[i])    
+      if (nlevels(Design$Trts)>1 & nlevels(Design[,i])>1)
+        effics[i,]=optEffics(Design$Trts,Design[,i])  
     }
     efficiencies=as.data.frame(cbind(blocks, effics, bounds))    
     colnames(efficiencies)=c("Blocks","D-Efficiencies","A-Efficiencies", "A-Upper Bounds")
@@ -561,7 +561,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
   if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed) 
  if (is.null(jumps)) jumps=1
-stratumnames=c("Main_blocks")
+stratumnames=c(" Main ")
 
 sets=treatments*replicates
 treatments=treatments[sets>0]
@@ -571,7 +571,7 @@ if (max(replicates)==1) {
   nunits=sum(treatments) 
   strata=1
   Design=as.data.frame(cbind(rep(1,each=nunits), rep(1:nunits), sample(1:nunits)    ))
-  colnames(Design)=c(stratumnames,"Sub-plots","Treatments") 
+  colnames(Design)=c(stratumnames,"Plots","Trts") 
   Design[]=lapply(Design, factor) 
 } else {  
   # omit any single replicate treatments here 
@@ -605,20 +605,17 @@ if (max(replicates)==1) {
   Design=randBlocks(Design,facMat)
   if (strata>1)
     for (i in 1:(strata-1))
-      stratumnames=c(stratumnames,paste("Sub",i,"_blocks", sep=""))  
-  colnames(Design)=c(stratumnames,"Sub-plots","Treatments")   
+      stratumnames=c(stratumnames,paste(" Sub",i," ", sep=""))  
+  colnames(Design)=c(stratumnames,"Plots","Trts")   
   rownames(Design) = NULL 
 }
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
   names(Incidences)=stratumnames
- Total=as.factor(rep(1,nrow(Design)))
- Design=cbind(Total,Design)
- BlockSizes=vector(mode = "list",length=strata )
- for (i in 1:strata)
-   BlockSizes[[i]]=table(Design[c(1,(i+1))])
- Design=Design[,-1]
-  
+
+  BlockSizes=as.data.frame(cbind(facMat,tabulate(Design[,strata])))
+  BlockSizes[]=lapply(BlockSizes, factor) 
+  colnames(BlockSizes)=c(stratumnames," Sizes ")  
   list(BlockSizes=BlockSizes,Efficiencies=A_Efficiencies(Design),Design=Design,Plan=Plan(Design),Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
