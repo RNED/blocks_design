@@ -600,8 +600,7 @@ if (max(replicates)==1) {
   # add back single replicate treatments here 
   if (!all(replicates>1) )
    Design= fullDesign(Design,facMat,treatments,replicates,blocksizes,blocklevels) 
-  Design=Design[,c(2:ncol(Design))] 
-
+  Design=Design[,-1] 
   # randomization
   Design=randBlocks(Design,facMat)
   if (strata>1)
@@ -614,5 +613,12 @@ if (max(replicates)==1) {
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
   names(Incidences)=stratumnames
-  list(Design=Design,Plan=Plan(Design),Incidences=Incidences,Efficiencies=A_Efficiencies(Design),Seed=seed,Searches=searches,Jumps=jumps) 
+ Total=as.factor(rep(1,nrow(b$Design)))
+ Design=cbind(Total,Design)
+ BlockSizes=vector(mode = "list",length=strata )
+ for (i in 1:strata)
+   BlockSizes[[i]]=table(Design[c(1,(i+1))])
+ Design=Design[,-1]
+  
+  list(Design=Design,Plan=Plan(Design),Incidences=Incidences,Efficiencies=A_Efficiencies(Design),BlockSizes=BlockSizes,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
