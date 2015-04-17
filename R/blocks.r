@@ -466,6 +466,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
     if (strata>1)
       for (i in 1 : (strata-1)) rnames=c(rnames,paste("Sub",i))
     rownames(efficiencies)=rnames 
+    efficiencies[, 'Blocks'] = as.factor(efficiencies[, 'Blocks'])
     efficiencies
   }
 # ******************************************************************************************************************************************************** 
@@ -573,6 +574,9 @@ if (max(replicates)==1) {
   Design=as.data.frame(cbind(rep(1,each=nunits), rep(1:nunits), sample(1:nunits)    ))
   colnames(Design)=c(stratumnames,"Plots","Trts") 
   Design[]=lapply(Design, factor) 
+  facMat= matrix(nrow=prod(blocklevels),ncol=strata)
+  for (r in 1 : strata) 
+    facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels)/prod(blocklevels[1:r])  )  
 } else {  
   # omit any single replicate treatments here 
    treatlevs=treatments[replicates>1]
@@ -590,13 +594,16 @@ if (max(replicates)==1) {
   strata=length(blocklevels)
  for (i in 1:strata)
   blocksizes=Sizes(nunits,blocklevels)
+ 
   facMat= matrix(nrow=prod(blocklevels),ncol=strata)
   for (r in 1 : strata) 
     facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels)/prod(blocklevels[1:r])  )  
+
   Design=facMat[rep(1:length(blocksizes),blocksizes),]
   Design=as.data.frame(cbind(rep(1,nunits), Design, rep(1:nunits)))
   Design[]=lapply(Design, factor) 
   Design=cbind(Design,optTF(Design,treatlevs,replevs,searches,jumps))  
+ 
   # add back single replicate treatments here 
   if (!all(replicates>1) )
    Design= fullDesign(Design,facMat,treatments,replicates,blocksizes,blocklevels) 
@@ -613,9 +620,12 @@ if (max(replicates)==1) {
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
   names(Incidences)=stratumnames
-
   BlockSizes=as.data.frame(cbind(facMat,tabulate(Design[,strata])))
   BlockSizes[]=lapply(BlockSizes, factor) 
   colnames(BlockSizes)=c(stratumnames," Sizes ")  
-  list(BlockSizes=BlockSizes,Efficiencies=A_Efficiencies(Design),Design=Design,Plan=Plan(Design),Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
+
+  Treatments=as.data.frame(table(Design[,"Trts"]))
+  Treatments[]=lapply(Treatments, factor) 
+  colnames(Treatments)=c("Trts","Reps")
+  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=A_Efficiencies(Design),Design=Design,Plan=Plan(Design),Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
