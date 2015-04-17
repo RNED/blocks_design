@@ -550,7 +550,9 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
      if (seed<1)  return(" Seed must be at least one ")   
    }  
    if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
-     return("Design cannot be fitted :  too many blocks and treatments for the available plots")  
+     return(paste("The total number of plots is",  sum(treatments*replicates) , 
+                  "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments),
+                  " Either reduce the blocks or treatments or increase the replication until the number of plots is at least equal to the required number of model parameters. "))  
    return(TRUE)
  }
 # ******************************************************************************************************************************************************** 
