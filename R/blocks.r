@@ -206,8 +206,8 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       e=c(rep(1,(ntrts-nblks)),
           eigen((diag(nblks)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])  
    }
-    aeff =1/mean(1/e) 
-    deff = exp(sum(log(e))/(ntrts-1))
+    aeff =round(1/mean(1/e),6) 
+    deff = round(exp(sum(log(e))/(ntrts-1)),6)
     c(deff,aeff)
   }
 # ******************************************************************************************************************************************************** 
@@ -451,21 +451,28 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
     treps=tabulate(Design$Trts)
     effics=matrix(1,nrow=strata,ncol=2)
     bounds=rep(NA,strata) 
+    
+  
     blocks=rep(0,strata)  
+    levels=rep(0,strata) 
+    
     for (i in 1:strata) { 
       blocks[i]=nlevels(Design[,i])
+        
       breps=tabulate(Design[,i])
-      if ( all(treps==treps[1]) & all(breps==breps[1]))
-        bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Trts),blocks[i])    
+      
+      if ( all(treps==treps[1]) & all(breps==breps[1]) )
+        bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Trts),blocks[i])  
+      
       if (nlevels(Design$Trts)>1 & nlevels(Design[,i])>1)
         effics[i,]=optEffics(Design$Trts,Design[,i])  
     }
-    efficiencies=as.data.frame(cbind(blocks, effics, bounds))    
-    colnames(efficiencies)=c("Blocks","D-Efficiencies","A-Efficiencies", "A-Upper Bounds")
-    rnames=c("Main")
+    stratum=c("Main")
     if (strata>1)
-      for (i in 1 : (strata-1)) rnames=c(rnames,paste("Sub",i))
-    rownames(efficiencies)=rnames 
+      for (i in 1 : (strata-1)) stratum=c(stratum,paste("Sub",i))
+    
+    efficiencies=as.data.frame(cbind(stratum,blocks, effics, bounds))  
+    colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Upper Bounds")
     efficiencies[, 'Blocks'] = as.factor(efficiencies[, 'Blocks'])
     efficiencies
   }
@@ -574,7 +581,7 @@ if (max(replicates)==1) {
   nunits=sum(treatments) 
   strata=1
   Design=as.data.frame(cbind(rep(1,each=nunits), rep(1:nunits), sample(1:nunits)    ))
-  colnames(Design)=c(stratumnames,"Plots","Trts") 
+  colnames(Design)=c(stratumnames,"Plots","Treatments") 
   Design[]=lapply(Design, factor) 
   facMat= matrix(nrow=prod(blocklevels),ncol=strata)
   for (r in 1 : strata) 
@@ -614,8 +621,8 @@ if (max(replicates)==1) {
   Design=randBlocks(Design,facMat)
   if (strata>1)
     for (i in 1:(strata-1))
-      stratumnames=c(stratumnames,paste(" Sub",i," ", sep=""))  
-  colnames(Design)=c(stratumnames,"Plots","Trts")   
+      stratumnames=c(stratumnames,paste(" Sub ",i," ", sep=""))  
+  colnames(Design)=c(stratumnames,"Plots","Treatments")   
   rownames(Design) = NULL 
 }
   Incidences=vector(mode = "list", length =strata )
@@ -628,6 +635,7 @@ if (max(replicates)==1) {
 
   Treatments=as.data.frame(table(Design[,"Trts"]))
   Treatments[]=lapply(Treatments, factor) 
-  colnames(Treatments)=c("Trts","Reps")
+  colnames(Treatments)=c("Treatments","Replicates")
+
   list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=A_Efficiencies(Design),Design=Design,Plan=Plan(Design),Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
