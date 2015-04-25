@@ -448,7 +448,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
 # ********************************************************************************************************************************************************     
   A_Efficiencies=function(Design)  {
     strata=ncol(Design)-2
-    treps=tabulate(Design$Trts)
+    treps=tabulate(Design$Treatments)
     effics=matrix(1,nrow=strata,ncol=2)
     bounds=rep(NA,strata) 
     
@@ -462,10 +462,10 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
       breps=tabulate(Design[,i])
       
       if ( all(treps==treps[1]) & all(breps==breps[1]) )
-        bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Trts),blocks[i])  
+        bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Treatments),blocks[i])  
       
-      if (nlevels(Design$Trts)>1 & nlevels(Design[,i])>1)
-        effics[i,]=optEffics(Design$Trts,Design[,i])  
+      if (nlevels(Design$Treatments)>1 & nlevels(Design[,i])>1)
+        effics[i,]=optEffics(Design$Treatments,Design[,i])  
     }
     stratum=c("Main")
     if (strata>1)
@@ -633,7 +633,7 @@ if (max(replicates)==1) {
   BlockSizes[]=lapply(BlockSizes, factor) 
   colnames(BlockSizes)=c(stratumnames," Sizes ")  
 
-  Treatments=as.data.frame(table(Design[,"Trts"]))
+  Treatments=as.data.frame(table(Design[,"Treatments"]))
   Treatments[]=lapply(Treatments, factor) 
   colnames(Treatments)=c("Treatments","Replicates")
 
