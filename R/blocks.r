@@ -324,7 +324,6 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
           D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] else
           TF[c(i,j)]= TF[c(j,i)]  
         rank=max(rank,QD$rank) 
-        print(rank)
         }
       }
     if (rank<fullrank) return(NULL)
@@ -451,27 +450,18 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
     treps=tabulate(Design$Treatments)
     effics=matrix(1,nrow=strata,ncol=2)
     bounds=rep(NA,strata) 
-    
-  
     blocks=rep(0,strata)  
-    levels=rep(0,strata) 
-    
     for (i in 1:strata) { 
-      blocks[i]=nlevels(Design[,i])
-        
-      breps=tabulate(Design[,i])
+      blocks[i]=nlevels(Design[,i])   
+    breps=tabulate(Design[,i])
       
-      if ( all(treps==treps[1]) & all(breps==breps[1]) )
-        bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Treatments),blocks[i])  
+    if ( all(treps==treps[1]) & all(breps==breps[1]) )
+     bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Treatments),blocks[i])  
       
-      if (nlevels(Design$Treatments)>1 & nlevels(Design[,i])>1)
-        effics[i,]=optEffics(Design$Treatments,Design[,i])  
+    if (nlevels(Design$Treatments)>1 & nlevels(Design[,i])>1)
+      effics[i,]=optEffics(Design$Treatments,Design[,i])  
     }
-    stratum=c("Main")
-    if (strata>1)
-      for (i in 1 : (strata-1)) stratum=c(stratum,paste("Sub",i))
-    
-    efficiencies=as.data.frame(cbind(stratum,blocks, effics, bounds))  
+    efficiencies=as.data.frame(cbind(names(Design)[1:strata]    ,blocks, effics, bounds))  
     colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Upper Bounds")
     efficiencies[, 'Blocks'] = as.factor(efficiencies[, 'Blocks'])
     efficiencies
@@ -516,7 +506,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
     Design
   }
 # ******************************************************************************************************************************************************** 
-# Carries out some inputs validation
+# Carries out some input validation
 # ********************************************************************************************************************************************************     
  testInputs=function(treatments,replicates,blocklevels,searches,seed,jumps) {  
    if (missing(treatments) | missing(replicates) )  
@@ -571,11 +561,27 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
   if (is.null(seed)) seed=sample(1:100000,1)
   set.seed(seed) 
  if (is.null(jumps)) jumps=1
-stratumnames=c(" Main ")
+if (blocklevels[1]>1)
+stratumnames=" Main " else
+  stratumnames=NULL
+
+if (length(blocklevels)>1)
+  for (i in 2:length(blocklevels))
+    if (blocklevels[i]>1)
+    stratumnames=c(stratumnames,paste(" Sub ",(i-1)," ", sep=""))  
 
 sets=treatments*replicates
 treatments=treatments[sets>0]
 replicates=replicates[sets>0]
+
+if (!all(blocklevels==1))
+  blocklevels=blocklevels[blocklevels>1]
+else {
+  blocklevels=1
+  stratumnames=" Main "
+}
+
+
 
 if (max(replicates)==1) {
   nunits=sum(treatments) 
@@ -595,13 +601,8 @@ if (max(replicates)==1) {
   nunits=sum(treatlevs*replevs) 
   if (is.null(searches)) 
     searches=1+2000%/%(sum(treatments)+prod(blocklevels))
- if (!all(blocklevels==1)) {
-    blocklevels=blocklevels[blocklevels>1]
- } else {
-   blocklevels=1
- }
+ 
   strata=length(blocklevels)
- for (i in 1:strata)
   blocksizes=Sizes(nunits,blocklevels)
  
   facMat= matrix(nrow=prod(blocklevels),ncol=strata)
@@ -617,11 +618,10 @@ if (max(replicates)==1) {
   if (!all(replicates>1) )
    Design= fullDesign(Design,facMat,treatments,replicates,blocksizes,blocklevels) 
   Design=Design[,-1] 
+  
   # randomization
   Design=randBlocks(Design,facMat)
-  if (strata>1)
-    for (i in 1:(strata-1))
-      stratumnames=c(stratumnames,paste(" Sub ",i," ", sep=""))  
+  
   colnames(Design)=c(stratumnames,"Plots","Treatments")   
   rownames(Design) = NULL 
 }
