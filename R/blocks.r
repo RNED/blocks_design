@@ -570,13 +570,6 @@ if (length(blocklevels)>1)
     if (blocklevels[i]>1)
     stratumnames=c(stratumnames,paste("Sub",(i-1), sep=" "))  
 
-blevs=c(1,blocklevels)
-for ( i in 2:length(blevs)) 
-  blevs[i]=blevs[i-1]*blevs[i]
-
-for ( i in 2:length(blevs))
-  blevs[i-1]=blevs[i]-blevs[i-1]
-
 sets=treatments*replicates
 treatments=treatments[sets>0]
 replicates=replicates[sets>0]
@@ -645,16 +638,15 @@ if (max(replicates)==1) {
   dfDesign = Design[-(ncol(Design)-1)]
 if ( max(unlist(lapply( dfDesign , nlevels))>1)) {
   dfDesign=dfDesign[, unlist(lapply( dfDesign , nlevels))>1, drop=FALSE]  
-  Dummy=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = dfDesign))) 
-  Dummy=Dummy[,1,drop=FALSE]
+  Dummy=suppressWarnings(anova(lm(rnorm(nrow(dfDesign)) ~ ., data = dfDesign))) 
 } else {
-  dfDesign=as.data.frame(  cbind( c(1,2)  ))
+  dfDesign=as.data.frame(cbind( c(1,2)  ))
   colnames(dfDesign)="Treatments"
   dfDesign[]=lapply(dfDesign, factor) 
-  Dummy=suppressWarnings(anova(lm(rnorm(2) ~ ., data = dfDesign))) 
-  Dummy=Dummy[,1,drop=FALSE]
+  Dummy=suppressWarnings(anova(lm(rnorm(nrow(dfDesign)) ~ ., data = dfDesign))) 
   Dummy[1,1]=0
 }
+Dummy=Dummy[,1,drop=FALSE]
 
   list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=A_Efficiencies(Design),Design=Design,Plan=Plan(Design),AOV=Dummy,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
