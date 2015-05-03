@@ -562,13 +562,20 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
   set.seed(seed) 
  if (is.null(jumps)) jumps=1
 if (blocklevels[1]>1)
-stratumnames=" Main " else
+stratumnames="Main" else
   stratumnames=NULL
 
 if (length(blocklevels)>1)
   for (i in 2:length(blocklevels))
     if (blocklevels[i]>1)
-    stratumnames=c(stratumnames,paste(" Sub ",(i-1)," ", sep=""))  
+    stratumnames=c(stratumnames,paste("Sub",(i-1), sep=" "))  
+
+blevs=c(1,blocklevels)
+for ( i in 2:length(blevs)) 
+  blevs[i]=blevs[i-1]*blevs[i]
+
+for ( i in 2:length(blevs))
+  blevs[i-1]=blevs[i]-blevs[i-1]
 
 sets=treatments*replicates
 treatments=treatments[sets>0]
@@ -578,17 +585,15 @@ if (!all(blocklevels==1))
   blocklevels=blocklevels[blocklevels>1]
 else {
   blocklevels=1
-  stratumnames=" Main "
+  stratumnames="Main"
 }
-
-
-
 if (max(replicates)==1) {
   nunits=sum(treatments) 
   strata=1
   Design=as.data.frame(cbind(rep(1,each=nunits), rep(1:nunits), sample(1:nunits)    ))
   colnames(Design)=c(stratumnames,"Plots","Treatments") 
   Design[]=lapply(Design, factor) 
+  
   facMat= matrix(nrow=prod(blocklevels),ncol=strata)
   for (r in 1 : strata) 
     facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels)/prod(blocklevels[1:r])  )  
@@ -637,5 +642,19 @@ if (max(replicates)==1) {
   Treatments[]=lapply(Treatments, factor) 
   colnames(Treatments)=c("Treatments","Replicates")
 
-  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=A_Efficiencies(Design),Design=Design,Plan=Plan(Design),Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
+  dfDesign = Design[-(ncol(Design)-1)]
+if ( max(unlist(lapply( dfDesign , nlevels))>1)) {
+  dfDesign=dfDesign[, unlist(lapply( dfDesign , nlevels))>1, drop=FALSE]  
+  Dummy=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = dfDesign))) 
+  Dummy=Dummy[,1,drop=FALSE]
+} else {
+  dfDesign=as.data.frame(  cbind( c(1,2)  ))
+  colnames(dfDesign)="Treatments"
+  dfDesign[]=lapply(dfDesign, factor) 
+  Dummy=suppressWarnings(anova(lm(rnorm(2) ~ ., data = dfDesign))) 
+  Dummy=Dummy[,1,drop=FALSE]
+  Dummy[1,1]=0
+}
+
+  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=A_Efficiencies(Design),Design=Design,Plan=Plan(Design),AOV=Dummy,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
