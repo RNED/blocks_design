@@ -11,8 +11,8 @@
 #' and any nested blocks design with any feasible depth of nesting. 
 #' 
 #' The \code{treatments} and the \code{replicates} parameters define the treatments structure of the design where
-#' \code{treatments} is a partition of the total required number of treatments into sets of equally replicated treatments
-#' and \code{replicates} is a set of individual replication numbers for the individual treatment sets.
+#' \code{treatments} gives a partition of the total required number of treatments into sets of equally replicated treatments
+#' and \code{replicates} gives a set of individual replication numbers for the individual treatment sets.
 #' The \code{treatments} and \code{replicates} arguments must be of equal length and must be in matching order.  
 #'  
 #' The sum of the \code{treatments} sets is the total number of treatments and the sum of the cross-products of the \code{treatments} sets
@@ -20,7 +20,7 @@
 #'  Treatments are numbered consecutively according to the number of treatments in each set and different treatment sets with the same
 #'  replication number are permitted, if required. Single replicate treatments sets are permitted.
 #' 
-#' The \code{blocklevels} parameter contains the nested blocks factors taken in order from the highest to the lowest blocks strata where
+#' The \code{blocklevels} is the required set of nested blocks factors taken in order from the highest to the lowest blocks strata where
 #' the first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in main blocks, and so on down to any required depth of nesting. 
 #' The default value is the highest common factor of the replication numbers. 
 #' 
