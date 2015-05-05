@@ -7,13 +7,13 @@
 #' 
 #' @details
 #' 
-#' The \code{treatments} and \code{replicates} parameter lists define a partition of the total required number of treatments into equally replicated treatment sets where 
+#' The \code{treatments} and \code{replicates} lists define a partition of the total required number of treatments into equally replicated treatment sets where 
 #' \code{treatments} is a list of set sizes and \code{replicates} is a matching list of replication numbers.
 #'  The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes 
 #'  and the replication numbers is the total number of units. Treatments are numbered consecutively according to
 #'  the numbers of treatments in the consecutive treatment sets. 
 #' 
-#' The \code{blocklevels} parameters define the number of nested blocks in each blocks stratum taken in order from the highest to the lowest strata. The
+#' The \code{blocklevels} list defines the number of nested blocks in each blocks stratum taken in order from the highest to the lowest stratum. The
 #' first number is the number of main blocks, the second number, if any, is the number of sub-blocks nested in each main block, the third
 #' number, if any, is the number of sub-sub-blocks nested in each sub-block,and so on for all the reqired blocks strata.
 #' The default is the highest common factor of the replication numbers and defines a design with the maximum possible number of
@@ -23,7 +23,7 @@
 #'  where k < (v+2) if v is prime or prime-power, k < 5 if v = 10, or k < 4 generally, are lattice block designs and are constructed algebraically. 
 #'  All other non-orthogonal block designs are constructed by a D-optimality swapping algorithm that makes improving swaps between 
 #'  blocks until a local optima is atttained and no further improvement is possible. The swapping algorithm always works from the top stratum downwards and
-#'  is always constrained to make improving swaps within the levels of any existing blocks in any existing higher level strata.
+#'  is always constrained to make improving swaps within the levels of any existing blocks in any higher level strata.
 #'  
 #'  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 #' 
@@ -38,9 +38,9 @@
 #' 
 #' @param treatments cardinal numbers that provide a partition of the total required number of treatments into sets of equally replicated treatments.
 #' 
-#' @param replicates replication numbers that define the replication of each equally replicated treatments set defined by the \code{treatments} parameter list.
+#' @param replicates replication numbers for each equally replicated treatments set defined by the \code{treatments} list.
 #' 
-#' @param blocklevels factor levels that define the number of nested blocks in each succesive blocks strata taken in order from the highest to the lowest. 
+#' @param blocklevels factor levels that define the number of nested blocks in each succesive blocks stratum taken in order from the highest to the lowest. 
 #' The default is the hcf of the replication numbers.
 #' 
 #' @param seed integer initializing the random number generator. The default is a random seed.
