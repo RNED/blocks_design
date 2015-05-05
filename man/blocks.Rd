@@ -9,15 +9,16 @@ blocks(treatments, replicates, blocklevels = HCF(replicates),
   seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
-\item{treatments}{the total required number of treatments partitioned into sets of equally replicated treatments.}
+\item{treatments}{numbers that partition the total required number of treatments into sets of equally replicated treatments.}
 
-\item{replicates}{the replication numbers for the individual treatment sets defined above.}
+\item{replicates}{numbers that define the treatment replications for the treatments sets defined by the \code{treatments} parameters.}
 
-\item{blocklevels}{the block factor levels taken in nested block order from highest to lowest. The default is the hcf of the replication numbers.}
+\item{blocklevels}{block factor levels that define the number of nested blocks in each succesive blocks strata taken in order from the highest to the lowest.
+The default is the hcf of the replication numbers.}
 
 \item{searches}{the maximum number of local optima searched for a design optimization. The default is the maximum of 1 or (100 - total model terms).}
 
-\item{seed}{an integer initializing the random number generator. The default is a random seed.}
+\item{seed}{integer initializing the random number generator. The default is a random seed.}
 
 \item{jumps}{the number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.}
 }
@@ -32,48 +33,35 @@ blocks(treatments, replicates, blocklevels = HCF(replicates),
 \item{jumps}{Number of random treatment swaps to escape a local maxima}
 }
 \description{
-<<<<<<< HEAD
-Constructs randomized nested block designs for unstructured treatment sets where treatments can have arbitrary levels of replication
-and blocks can have arbitrary depth of nesting.
-}
-\details{
-\code{blocks} optimizes nested blocks designs for treatments with any arbitrary level of replication, not necessarily all equal,
-and any nested blocks design with any feasible depth of nesting.
-
-The \code{treatments} and the \code{replicates} parameters define the treatments structure of the design where
-\code{treatments} is a partition of the total required number of treatments into sets of equally replicated treatments
-and \code{replicates} is a set of individual replication numbers for the individual treatment sets.
-The \code{treatments} and \code{replicates} arguments must be of equal length and must be in matching order.
-
-=======
 Constructs randomized nested block designs for unstructured treatments where treatments can have arbitrary levels of replication
 and blocks can have arbitrary depth of nesting.
 }
 \details{
-The \code{blocks} function optimizes nested blocks designs where treatments can have any arbitrary level of replication, not necessarily all equal,
-and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting.
+\code{blocks} optimizes blocks designs for blocks with any feasible depth of nesting and treatments with any arbitrary level of replication, not necessarily all equal.
+
+The \code{treatments} and \code{replicates} parameter lists define sets of equally replicated treatments and
+must be of equal length and must be in matching order. Treatments are numbered consecutively according to
+ the order of the treatment sets.
+
+The \code{blocks} function optimizes nested blocks designs for treatments with any arbitrary level of replication, not necessarily all equal,
+where the blocks can be a simple main blocks design or can be a nested blocks design with any feasible depth of nesting.
 
 The \code{treatments} and \code{replicates} arguments define the treatments structure of the design.
 \code{treatments} is a partition of the total required number of treatments into sets where all treatments in the same set are assumed equally replicated.
 \code{replicates} is a vector containing the replication numbers for the individual treatment sets in \code{treatments} where the \code{treatments} and
  the \code{replicates} arguments must be of equal length and must be in matching order.
->>>>>>> dd6a13a2428b791b608f87a42d1ef9fc0ce8d00d
 The sum of the \code{treatments} sets is the total number of treatments and the sum of the cross-products of the \code{treatments} sets
  and the \code{replicates} numbers is the total number of units.
- Treatments are numbered consecutively according to the number of treatments in each set and different treatment sets with the same
- replication number are permitted, if required. Single replicate treatments sets are permitted.
 
-<<<<<<< HEAD
-The \code{blocklevels} parameter contains the nested blocks factors taken in order from the highest to the lowest blocks strata where
-the first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in main blocks, and so on down to any required depth of nesting.
+
+The \code{blocklevels} is the required set of nested blocks factors taken in order from the highest to the lowest blocks strata where
+the first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, and so on for any required depth of nesting.
 The default value is the highest common factor of the replication numbers.
 
-=======
-The \code{blocklevels} arguments are the nested blocks factors of the succesive blocks strata taken in order from the highest to the lowest where
-the first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in main blocks, and so on down to any required depth of nesting.
-The default value is the highest common factor of the replication numbers which defines a design with the maximum possible number of
+The \code{blocklevels} parameters define the nested blocks of the succesive blocks strata taken in order from the highest to the lowest where
+the first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, and so on down to any required depth of nesting.
+The default value is the highest common factor of the replication numbers and defines a design with the maximum possible number of
 orthogonal main blocks.
->>>>>>> dd6a13a2428b791b608f87a42d1ef9fc0ce8d00d
 Block sizes are always as equal as possible and never differ by more than a single unit in any particular stratum of the design.
 
 The \code{searches} argument is the maximum number of searches during an optimization. The default is the maximum of 1 or (100 - sum of model terms).

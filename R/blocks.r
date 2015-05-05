@@ -7,16 +7,15 @@
 #' 
 #' @details
 #' 
-#' \code{blocks} optimizes nested blocks designs for treatments with any arbitrary level of replication, not necessarily all equal,
-#' and any nested blocks design with any feasible depth of nesting. 
+#' \code{blocks} optimizes blocks designs for blocks with any feasible depth of nesting and treatments with any arbitrary level of replication, not necessarily all equal. 
 #' 
-#' The \code{treatments} and the \code{replicates} parameters define the treatments structure of the design where
-#' \code{treatments} gives a partition of the total required number of treatments into sets of equally replicated treatments
-#' and \code{replicates} gives a set of individual replication numbers for the individual treatment sets.
-#' The \code{treatments} and \code{replicates} arguments must be of equal length and must be in matching order.  
+
+#' The \code{treatments} and \code{replicates} parameter lists define sets of equally replicated treatments and
+#' must be of equal length and must be in matching order. Treatments are numbered consecutively according to
+#'  the order of the treatment sets.
 #'  
-#' The \code{blocks} function optimizes nested blocks designs where treatments can have any arbitrary level of replication, not necessarily all equal,
-#' and blocks can be either a simple main blocks design or a nested blocks design with any feasible depth of nesting. 
+#' The \code{blocks} function optimizes nested blocks designs for treatments with any arbitrary level of replication, not necessarily all equal,
+#' where the blocks can be a simple main blocks design or can be a nested blocks design with any feasible depth of nesting. 
 #' 
 #' The \code{treatments} and \code{replicates} arguments define the treatments structure of the design.
 #' \code{treatments} is a partition of the total required number of treatments into sets where all treatments in the same set are assumed equally replicated. 
@@ -24,16 +23,15 @@
 #'  the \code{replicates} arguments must be of equal length and must be in matching order.  
 #' The sum of the \code{treatments} sets is the total number of treatments and the sum of the cross-products of the \code{treatments} sets
 #'  and the \code{replicates} numbers is the total number of units. 
-#'  Treatments are numbered consecutively according to the number of treatments in each set and different treatment sets with the same
-#'  replication number are permitted, if required. Single replicate treatments sets are permitted.
+#'  
 #' 
 #' The \code{blocklevels} is the required set of nested blocks factors taken in order from the highest to the lowest blocks strata where
-#' the first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in main blocks, and so on down to any required depth of nesting. 
+#' the first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, and so on for any required depth of nesting. 
 #' The default value is the highest common factor of the replication numbers. 
 #' 
-#' The \code{blocklevels} arguments are the nested blocks factors of the succesive blocks strata taken in order from the highest to the lowest where
-#' the first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in main blocks, and so on down to any required depth of nesting. 
-#' The default value is the highest common factor of the replication numbers which defines a design with the maximum possible number of
+#' The \code{blocklevels} parameters define the nested blocks of the succesive blocks strata taken in order from the highest to the lowest where
+#' the first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, and so on down to any required depth of nesting. 
+#' The default value is the highest common factor of the replication numbers and defines a design with the maximum possible number of
 #' orthogonal main blocks. 
 #' Block sizes are always as equal as possible and never differ by more than a single unit in any particular stratum of the design. 
 #' 
@@ -74,13 +72,14 @@
 #'  \item  A table showing a skeleton analysis of degrees of freedom for the fitted block and treatment design. \cr
 #' } 
 #' 
-#' @param treatments the total required number of treatments partitioned into sets of equally replicated treatments.
+#' @param treatments numbers that partition the total required number of treatments into sets of equally replicated treatments.
 #' 
-#' @param replicates the replication numbers for the individual treatment sets defined above. 
+#' @param replicates numbers that define the treatment replications for the treatments sets defined by the \code{treatments} parameters.
 #' 
-#' @param blocklevels the block factor levels taken in nested block order from highest to lowest. The default is the hcf of the replication numbers.
+#' @param blocklevels block factor levels that define the number of nested blocks in each succesive blocks strata taken in order from the highest to the lowest. 
+#' The default is the hcf of the replication numbers.
 #' 
-#' @param seed an integer initializing the random number generator. The default is a random seed.
+#' @param seed integer initializing the random number generator. The default is a random seed.
 #' 
 #' @param searches the maximum number of local optima searched for a design optimization. The default is the maximum of 1 or (100 - total model terms). 
 #' 
@@ -232,6 +231,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
   mainSizes=tabulate(MF)
   nSamp=pmin(rep(8,nlevels(MF)),mainSizes)
   mainBlocks=split(rep(1:length(TF)),MF)  
+  
   repeat {
     improved=FALSE
     for (k in 1:nlevels(MF)) {
@@ -240,7 +240,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
       BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,nSamp[k])) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
       TB=M12[TF[S],BF[S],drop=FALSE]+t(M12[TF[S],BF[S],drop=FALSE])-tcrossprod(M12[cbind(TF[S],BF[S])]+rep(1,nSamp[k]))+tcrossprod(M12[cbind(TF[S],BF[S])]) + 2
       dMat=TB**2-TT*BB
-      sampn=which.max(dMat)   
+      sampn=which.max(dMat)  
       i=1+(sampn-1)%%nSamp[k]
       j=1+(sampn-1)%/%nSamp[k]
       if ( !isTRUE(all.equal(dMat[i,j],1)) & dMat[i,j]>1) {
@@ -317,6 +317,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
     fullrank=nlevels(BF)+nlevels(TF)-1
     rank=0
     counter1=0   
+    
     while (rank<fullrank & counter1<100) {
       counter1=counter1+1
       rand=sample(1:length(TF))
@@ -327,9 +328,10 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
       QD=qr(t(D))
       rank=QD$rank 
       counter2=0
-      while (rank<fullrank & counter2<(counter1*100)) {
+      while (rank<fullrank & counter2<(counter1*1000)) {
         counter2=counter2+1
         i=sample(QD$pivot[(rank+1):nrow(D)],1)
+        if (length(rep(1:length(TF))[ MF==MF[i] & BF!=BF[i] & TF!=TF[i] ])==0) next
         j=sample(rep(1:length(TF))[ MF==MF[i] & BF!=BF[i] & TF!=TF[i] ],1)
         D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] 
         QD=qr(t(D))
@@ -338,6 +340,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
           TF[c(i,j)]= TF[c(j,i)]  
         rank=max(rank,QD$rank) 
         }
+
       }
     if (rank<fullrank) return(NULL)
     V=chol2inv(chol(crossprod(cbind(Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE],Contrasts(MF,BF)[, rep(c(rep(TRUE,(nlevels(BF)/nlevels(MF)-1)),FALSE),nlevels(MF)),drop=FALSE]))))
@@ -629,7 +632,7 @@ if (max(replicates)==1) {
   if (!all(replicates>1) )
    Design= fullDesign(Design,facMat,treatments,replicates,blocksizes,blocklevels) 
   Design=Design[,-1] 
-  
+
   # randomization
   Design=randBlocks(Design,facMat)
   
