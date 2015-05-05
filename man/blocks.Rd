@@ -53,7 +53,7 @@ orthogonal main blocks. Block sizes are always as equal as possible and never di
  where k < (v+2) if v is prime or prime-power, k < 5 if v = 10, or k < 4 generally, are lattice block designs and are constructed algebraically.
  All other non-orthogonal block designs are constructed by a D-optimality swapping algorithm that makes improving swaps between
  blocks until a local optima is atttained and no further improvement is possible. The swapping algorithm always works from the top stratum downwards and
- is always constrained to make improving swaps within the levels of any existing blocks in any existing higher level strata.
+ is always constrained to make improving swaps within the levels of any existing blocks.
 
  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 
