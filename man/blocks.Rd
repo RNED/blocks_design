@@ -9,7 +9,7 @@ blocks(treatments, replicates, blocklevels = HCF(replicates),
   seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
-\item{treatments}{cardinal numbers that provide a partition of the total required number of treatments into sets of equally replicated treatments.}
+\item{treatments}{numbers that provide a partition of the total required number of treatments into sets of equally replicated treatments.}
 
 \item{replicates}{replication numbers for each equally replicated treatments set defined by the \code{treatments} list.}
 
@@ -53,7 +53,7 @@ orthogonal main blocks. Block sizes are always as equal as possible and never di
  where k < (v+2) if v is prime or prime-power, k < 5 if v = 10, or k < 4 generally, are lattice block designs and are constructed algebraically.
  All other non-orthogonal block designs are constructed by a D-optimality swapping algorithm that makes improving swaps between
  blocks until a local optima is atttained and no further improvement is possible. The swapping algorithm always works from the top stratum downwards and
- is always constrained to make improving swaps within the levels of any existing blocks in any higher level strata.
+ is always constrained to make improving swaps within the levels of any existing blocks in any existing higher level strata.
 
  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 
@@ -63,7 +63,7 @@ orthogonal main blocks. Block sizes are always as equal as possible and never di
  \item  A design matrix as above but with the last (bottom) blocks factor shown arranged horizontally to give a plan view. \cr
  \item  A set of incidence matrices, one for each blocks stratum, showing the number of times each treatment occurs in each block for each stratum. \cr
  \item  A table showing the achieved D- and A-efficiency factors for each nested blocks stratum together with an A-efficiency upper bound, where available. \cr
- \item  A table showing a skeleton analysis of degrees of freedom for the fitted block and treatment design. \cr
+ \item  A table showing a skeleton analysis of degrees of freedom for the combined block and treatment design. \cr
 }
 }
 \examples{
@@ -91,8 +91,8 @@ crossprod(blocks(13,4,13,searches=100)$Incidences[[1]])
 crossprod(blocks(c(13,13),c(4,1),13)$Incidences[[1]])
 
 # 2**10 treatments x 2 replicates in 2**10 blocks giving a fully saturated blocks design
-# (takes a longish time to run!)
-\dontrun{ blocks(1024,2,rep(2,10)) }
+# (requires a considerable time to run!)
+\dontrun{ d=blocks(1024,2,rep(2,10)) }
 }
 \references{
 Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes
