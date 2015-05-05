@@ -39,24 +39,25 @@ and blocks can have arbitrary depth of nesting.
 \details{
 \code{blocks} optimizes blocks designs for blocks with any feasible depth of nesting and treatments with any arbitrary level of replication, not necessarily all equal.
 
-The \code{treatments} and \code{replicates} parameter lists define a partition of the total number of treatments into equally replicated treatment sets where the
-\code{treatments} parameters are the set sizes and the \code{replicates} parameters are the replication levels.
- The sum of the \code{treatments} parameters is the total number of treatments and the sum of the cross-products of the \code{treatments}
- and the \code{replicates} parameters is the total number of units. Treatments are numbered consecutively according to
- the number of treatments in each consecutive treatment set.
+The \code{treatments} and \code{replicates} parameters define a partition of the total required number of treatments into equally replicated treatment sets where
+\code{treatments} is a list of set sizes and \code{replicates} is a matching list of replication numbers.
+ The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes
+ and the replication numbers is the total number of units. Treatments are numbered consecutively according to
+ the numbers of treatments in the consecutive treatment sets.
 
-The \code{blocklevels} parameters define the number of nested blocks in each blocks strata taken in order from the highest to the lowest where
-the first level is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, and so on for all reqired blocks strata.
+The \code{blocklevels} parameters define the number of nested blocks in each blocks stratum taken in order from the highest to the lowest strata where
+the first level is the number of main blocks, the second level, if any, is the number of sub-blocks nested in each main block, the third
+level, if any, is the number of sub-sub-blocks nested in each sub-block,and so on for all the reqired blocks strata.
 The default is the highest common factor of the replication numbers and defines a design with the maximum possible number of
 orthogonal main blocks. Block sizes are always as equal as possible and never differ by more than a single unit in any particular stratum of the design.
 
  Block designs for k replicates of v**2 treatments with k complete main blocks of size v**2 and v incomplete blocks of size v in each main block
  where k < (v+2) if v is prime or prime-power, k < 5 if v = 10, or k < 4 generally, are lattice block designs and are constructed algebraically.
- Prime-power, lattice designs are constructed using the \code{\link[crossdes]{MOLS}} package.
-
  All other non-orthogonal block designs are constructed by a D-optimality swapping algorithm that makes improving swaps between
  blocks until a local optima is atttained and no further improvement is possible. The swapping algorithm always works from the top stratum downwards and
- always constrains improving swaps within the levels of any existing blocks in any higher level strata.
+ is always constrained to make improving swaps within the levels of any existing blocks in any existing higher level strata.
+
+ Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 
  The principle design outputs comprise:
 \itemize{
