@@ -182,13 +182,13 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       e=c(rep(1,(ntrts-nblks)),
           eigen((diag(nblks)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])  
    }
-    aeff =round(1/mean(1/e),6) 
-    deff = round(exp(sum(log(e))/(ntrts-1)),6)
+    aeff =round(1/mean(1/e),4) 
+    deff = round(exp(sum(log(e))/(ntrts-1)),4)
     c(deff,aeff)
   }
 # ******************************************************************************************************************************************************** 
 # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
-# Sampling is used initially when many feasible swaps available but later a full search is used to ensure steepest ascent optimization.
+# Sampling is used initially when many feasible swaps are available but later a full search is used to ensure steepest ascent optimization.
 # ********************************************************************************************************************************************************
 D_Max=function(M11,M22,M12,TF,MF,BF) {   
   relD=1
@@ -272,6 +272,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
   } 
 # ******************************************************************************************************************************************************** 
 # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
+# (is there a better way to do this?)
 # ********************************************************************************************************************************************************    
   GenOpt=function(TF,Design,searches,jumps,stratum) { 
     MF=Design[,stratum]
@@ -332,7 +333,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
     TF=NULL
     while (is.null(TF)) {
       for (i in 1: hcf) 
-        TF=c(TF, sample(rep(1:ntrts , rep(replevs,treatlevs)/hcf)) )
+        TF=c(TF, sample(rep(1:ntrts , rep(replevs,treatlevs)/hcf) ) )
       TF=as.factor(TF)
       firstNest=TRUE
       for (i in 1 : strata) { 
@@ -388,7 +389,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
           TF=GenOpt(TF,Design,searches,jumps,i)
         }
       }   
-    }
+     }
    TF 
   }
 # ******************************************************************************************************************************************************** 
@@ -448,7 +449,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
   }
 # ******************************************************************************************************************************************************** 
 # Randomizes nested blocks for each nested stratum of a design. Nested blocks are randomised within the blocks of the next higher blocks stratum.
-# Plots are randomised within the bottom stratum of the deign.
+# Plots are randomised within the bottom stratum of the design.
 # ********************************************************************************************************************************************************     
   randBlocks=function(Design,facMat) {
     for (r in 1 : (ncol(Design)-1) )
