@@ -282,7 +282,6 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
     fullrank=nlevels(BF)+nlevels(TF)-1
     rank=0
     counter1=0   
-    
     while (rank<fullrank & counter1<100) {
       counter1=counter1+1
       rand=sample(1:length(TF))
@@ -305,7 +304,6 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
           TF[c(i,j)]= TF[c(j,i)]  
         rank=max(rank,QD$rank) 
         }
-
       }
     if (rank<fullrank) return(NULL)
     V=chol2inv(chol(crossprod(cbind(Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE],Contrasts(MF,BF)[, rep(c(rep(TRUE,(nlevels(BF)/nlevels(MF)-1)),FALSE),nlevels(MF)),drop=FALSE]))))
