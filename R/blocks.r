@@ -441,7 +441,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
       effics[i,]=optEffics(Design$Treatments,Design[,i])  
     }
     efficiencies=as.data.frame(cbind(names(Design)[1:strata]    ,blocks, effics, bounds))  
-    colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Upper Bounds")
+    colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies[, 'Blocks'] = as.factor(efficiencies[, 'Blocks'])
     efficiencies
   }
