@@ -295,17 +295,16 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
       while (rank<fullrank & counter2<(counter1*1000)) {
         counter2=counter2+1
         i=sample(QD$pivot[(rank+1):nrow(D)],1)
-        if (length(rep(1:length(TF))[ MF==MF[i] & BF!=BF[i] & TF!=TF[i] ])==0) next
-        j=sample(rep(1:length(TF))[ MF==MF[i] & BF!=BF[i] & TF!=TF[i] ],1)
-        D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] 
+        if ( !any( MF==MF[i] & BF!=BF[i] & TF!=TF[i] ) )  next
+        j=sample((1:length(TF))[ MF==MF[i] & BF!=BF[i] & TF!=TF[i] ],1)
+        D[c(i,j) , (ncol(BM)+1):fullrank ] = D[ c(j,i) , (ncol(BM)+1):fullrank] 
         QD=qr(t(D))
         if (QD$rank<rank) 
-          D[c(i,j) , (ncol(BM)+1):ncol(D) ] = D[ c(j,i) , (ncol(BM)+1):ncol(D) ] else
-          TF[c(i,j)]= TF[c(j,i)]  
+          D[c(i,j) , (ncol(BM)+1):fullrank ] = D[ c(j,i) , (ncol(BM)+1):fullrank  ] else TF[c(i,j)]= TF[c(j,i)]  
         rank=max(rank,QD$rank) 
-        }
       }
-    if (rank<fullrank) return(NULL)
+    }
+    if (rank<fullrank) stop
     V=chol2inv(chol(crossprod(cbind(Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE],Contrasts(MF,BF)[, rep(c(rep(TRUE,(nlevels(BF)/nlevels(MF)-1)),FALSE),nlevels(MF)),drop=FALSE]))))
     M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
     M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
@@ -318,7 +317,7 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
     M22=M22[perm,perm] 
     TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
     TF
-  }    
+  }     
 # ******************************************************************************************************************************************************** 
 # Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm GenOpt as appropriate
 # ********************************************************************************************************************************************************     
