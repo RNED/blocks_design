@@ -143,7 +143,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     return(TRUE)
   }      
 # ******************************************************************************************************************************************************** 
-# Contrasts for factor NF centered within the levels of factor MF ensuring that NF information is estimated within the levels of factor MF only  
+# Contrasts for factor NF centered within the levels of factor MF thus ensuring that NF information is estimated within the levels of factor MF only  
 # ********************************************************************************************************************************************************
  Contrasts=function(MF,NF) {
     NM=matrix(0,nrow=length(NF),ncol=nlevels(NF))
@@ -200,10 +200,10 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
     improved=FALSE
     for (k in 1:nlevels(MF)) {
       S=sort(sample(mainBlocks[[k]],nSamp[k]))  
-      TT=2*M11[TF[S],TF[S],drop=FALSE]-tcrossprod(M11[cbind(TF[S],TF[S])]+rep(1,nSamp[k])) + tcrossprod(M11[cbind(TF[S],TF[S])]) + 1
-      BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,nSamp[k])) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
-      TB=M12[TF[S],BF[S],drop=FALSE]+t(M12[TF[S],BF[S],drop=FALSE])-tcrossprod(M12[cbind(TF[S],BF[S])]+rep(1,nSamp[k]))+tcrossprod(M12[cbind(TF[S],BF[S])]) + 2
-      dMat=TB**2-TT*BB
+      TT=2*M11[TF[S],TF[S],drop=FALSE]-tcrossprod(M11[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(M11[cbind(TF[S],TF[S])]) + 1
+      BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,nSamp[k]) ) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
+      TB=M12[TF[S],BF[S],drop=FALSE]-tcrossprod(M12[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
+      dMat=(TB+t(TB)+1)**2-TT*BB
       sampn=which.max(dMat)  
       i=1+(sampn-1)%%nSamp[k]
       j=1+(sampn-1)%/%nSamp[k]
