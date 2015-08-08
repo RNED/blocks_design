@@ -155,20 +155,20 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
 # ******************************************************************************************************************************************************** 
 # Updates variance matrix for pairs of swapped treatments using standard matrix updating formula
 # ********************************************************************************************************************************************************
-  UpDate=function(M11,M22,M12,ti,tj,bi,bj,TF,BF) {  
-    m11=M11[ti,ti]+M11[tj,tj]-M11[tj,ti]-M11[ti,tj]
-    m22=M22[bi,bi]+M22[bj,bj]-M22[bi,bj]-M22[bj,bi]
-    m12=M12[ti,bi]-M12[tj,bi]-M12[ti,bj]+M12[tj,bj]   
-    f = sqrt(2+m11+m22-2*m12)
-    m = f/sqrt(1-2*m12-m11*m22+m12*m12)/2 
-    Z1 = (M12[,bi]-M12[,bj]-M11[,ti]+M11[,tj])/f     
-    Z2 = (M22[bi,]-M22[bj,]-M12[ti,]+M12[tj,])/f 
-    W1 = (M11[,ti]-M11[,tj]+M12[,bi]-M12[,bj] - Z1*(m22-m11)/f)*m
-    W2 = (M12[ti,]-M12[tj,]+M22[bi,]-M22[bj,] - Z2*(m22-m11)/f)*m
-    M11 = M11 - tcrossprod(Z1) + tcrossprod(W1)
-    M22 = M22 - tcrossprod(Z2) + tcrossprod(W2)
-    M12 = M12 - tcrossprod(Z1,Z2) + tcrossprod(W1,W2) 
-    list(M11=M11,M22=M22,M12=M12)
+  UpDate=function(MTT,MBB,MTB,ti,tj,bi,bj) {  
+    mtt=MTT[ti,ti]+MTT[tj,tj]-MTT[tj,ti]-MTT[ti,tj]
+    mbb=MBB[bi,bi]+MBB[bj,bj]-MBB[bi,bj]-MBB[bj,bi]
+    mtb=MTB[ti,bi]-MTB[tj,bi]-MTB[ti,bj]+MTB[tj,bj]   
+    f = sqrt(2+mtt+mbb-2*mtb)
+    m = f/sqrt(1-2*mtb-mtt*mbb+mtb*mtb)/2 
+    Z1 = (MTB[,bi]-MTB[,bj]-MTT[,ti]+MTT[,tj])/f     
+    Z2 = (MBB[bi,]-MBB[bj,]-MTB[ti,]+MTB[tj,])/f 
+    W1 = (MTT[,ti]-MTT[,tj]+MTB[,bi]-MTB[,bj] - Z1*(mbb-mtt)/f)*m
+    W2 = (MTB[ti,]-MTB[tj,]+MBB[bi,]-MBB[bj,] - Z2*(mbb-mtt)/f)*m
+    MTT = MTT - tcrossprod(Z1) + tcrossprod(W1)
+    MBB = MBB - tcrossprod(Z2) + tcrossprod(W2)
+    MTB = MTB - tcrossprod(Z1,Z2) + tcrossprod(W1,W2) 
+    list(MTT=MTT,MBB=MBB,MTB=MTB)
   }   
 # ******************************************************************************************************************************************************** 
 # Calculates A-optimality efficiency factor for treatment factor TF and block factor BF
@@ -190,19 +190,18 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
 # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
 # Sampling is used initially when many feasible swaps are available but later a full search is used to ensure steepest ascent optimization.
 # ********************************************************************************************************************************************************
-D_Max=function(M11,M22,M12,TF,MF,BF) {   
+D_Max=function(MTT,MBB,MTB,TF,MF,BF) {   
   relD=1
   mainSizes=tabulate(MF)
   nSamp=pmin(rep(8,nlevels(MF)),mainSizes)
   mainBlocks=split(rep(1:length(TF)),MF)  
-  
   repeat {
     improved=FALSE
     for (k in 1:nlevels(MF)) {
       S=sort(sample(mainBlocks[[k]],nSamp[k]))  
-      TT=2*M11[TF[S],TF[S],drop=FALSE]-tcrossprod(M11[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(M11[cbind(TF[S],TF[S])]) + 1
-      BB=2*M22[BF[S],BF[S],drop=FALSE]-tcrossprod(M22[cbind(BF[S],BF[S])]+rep(1,nSamp[k]) ) + tcrossprod(M22[cbind(BF[S],BF[S])]) + 1
-      TB=M12[TF[S],BF[S],drop=FALSE]-tcrossprod(M12[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
+      TT=2*MTT[TF[S],TF[S],drop=FALSE]-tcrossprod(MTT[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MTT[cbind(TF[S],TF[S])]) + 1
+      BB=2*MBB[BF[S],BF[S],drop=FALSE]-tcrossprod(MBB[cbind(BF[S],BF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MBB[cbind(BF[S],BF[S])]) + 1
+      TB=MTB[TF[S],BF[S],drop=FALSE]-tcrossprod(MTB[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
       dMat=(TB+t(TB)+1)**2-TT*BB
       sampn=which.max(dMat)  
       i=1+(sampn-1)%%nSamp[k]
@@ -210,10 +209,10 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
       if ( !isTRUE(all.equal(dMat[i,j],1)) & dMat[i,j]>1) {
         improved=TRUE
         relD=relD*dMat[i,j]
-        up=UpDate(M11,M22,M12,as.numeric(TF[S[i]]),as.numeric(TF[S[j]]), as.numeric(BF[S[i]]), as.numeric(BF[S[j]]), TF,BF)
-        M11=up$M11
-        M22=up$M22
-        M12=up$M12
+        up=UpDate(MTT,MBB,MTB,as.numeric(TF[S[i]]),as.numeric(TF[S[j]]), as.numeric(BF[S[i]]), as.numeric(BF[S[j]]))
+        MTT=up$MTT
+        MBB=up$MBB
+        MTB=up$MTB
         TF[c(S[i],S[j])]=TF[c(S[j],S[i])]
       }
     } 
@@ -224,12 +223,12 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
       break
     }
   }  
-  list(M11=M11,M22=M22,M12=M12,TF=TF,relD=relD)
+  list(MTT=MTT,MBB=MBB,MTB=MTB,TF=TF,relD=relD)
 }  
 # ******************************************************************************************************************************************************** 
 #  Number of searches for an optimization with selected number of searches and selected number of junps to escape from local optima
 # ********************************************************************************************************************************************************
-  Optimise=function(TF,BF,MF,M11,M22,M12,searches,jumps)  {
+  Optimise=function(TF,BF,MF,MTT,MBB,MTB,searches,jumps)  {
     relD=1
     globrelD=0
     globTF=TF
@@ -239,12 +238,12 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
     if (identical(max(treps),min(treps)) & identical(max(breps),min(breps))  )
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
     for (r in 1 : searches) {
-      dmax=D_Max(M11,M22,M12,TF,MF,BF)  
+      dmax=D_Max(MTT,MBB,MTB,TF,MF,BF)  
       relD=relD*dmax$relD
       TF=dmax$TF
-      M11=dmax$M11
-      M22=dmax$M22
-      M12=dmax$M12  
+      MTT=dmax$MTT
+      MBB=dmax$MBB
+      MTB=dmax$MTB  
       if (!isTRUE(all.equal(relD,globrelD)) &  relD>globrelD) {
         globTF=TF
         globrelD=relD
@@ -257,67 +256,79 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
         while(isTRUE(all.equal(dswap,0)) | dswap<0) {
           s=sample(rep(1:length(TF))[MF==sample(nlevels(MF),1)],2)
           if ( identical(TF[s[1]],TF[s[2]]) | identical(BF[s[1]],BF[s[2]])  ) next
-          dswap = (1+M12[TF[s[1]],BF[s[2]]]+M12[TF[s[2]],BF[s[1]]]-M12[TF[s[1]],BF[s[1]]]-M12[TF[s[2]],BF[s[2]]])**2-
-            (2*M11[TF[s[1]],TF[s[2]]]-M11[TF[s[1]],TF[s[1]]]-M11[TF[s[2]],TF[s[2]]])*(2*M22[BF[s[1]],BF[s[2]]]-M22[BF[s[1]],BF[s[1]]]-M22[BF[s[2]],BF[s[2]]])  
+          dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
+            (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
         }
         relD=relD*dswap
-        up=UpDate(M11,M22,M12,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]],TF,BF)
-        M11=up$M11
-        M22=up$M22
-        M12=up$M12
+        up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
+        MTT=up$MTT
+        MBB=up$MBB
+        MTB=up$MTB
         TF[c(s[1],s[2])]=TF[c(s[2],s[1])]  
       } 
     }
    globTF
   } 
-# ******************************************************************************************************************************************************** 
-# Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
-# (is there a better way to do this?)
-# ********************************************************************************************************************************************************    
+
+  # ******************************************************************************************************************************************************** 
+  # Random swaps
+  # ********************************************************************************************************************************************************    
+  Swaps=function(TF,MF,BF,pivot,rank){ 
+     repeat { 
+      s1=sample(pivot[(1+rank):length(pivot)],1)
+      p= (pivot)[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+      if (length(p)>0) break
+     }
+    s2=sample(p,1)
+    pivot[c(s1,s2)]=pivot[c(s2,s1)]
+    pivot
+  }
+  
+  # ******************************************************************************************************************************************************** 
+  # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
+  # (is there a better way to do this?)
+  # ********************************************************************************************************************************************************    
   GenOpt=function(TF,Design,searches,jumps,stratum) { 
     MF=Design[,stratum]
     BF=Design[,stratum+1]
+    rand=sample(1:length(TF))
+    TF=TF[rand][order(MF[rand])]
+    fullrank=nlevels(TF)+nlevels(BF)-1
     BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
     BM[cbind(1:length(BF),as.numeric(BF))]=1
-    fullrank=nlevels(BF)+nlevels(TF)-1
-    rank=0
-    counter1=0   
-    while (rank<fullrank & counter1<100) {
-      counter1=counter1+1
-      rand=sample(1:length(TF))
-      TF=TF[rand][order(MF[rand])]
-      TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-      TM[cbind(1:length(TF),as.numeric(TF))]=1    
-      D=cbind(BM,TM[,-nlevels(TF),drop=FALSE])
-      QD=qr(t(D))
-      rank=QD$rank 
-      counter2=0
-      while (rank<fullrank & counter2<(counter1*1000)) {
-        counter2=counter2+1
-        i=sample(QD$pivot[(rank+1):nrow(D)],1)
-        if ( !any( MF==MF[i] & BF!=BF[i] & TF!=TF[i] ) )  next
-        j=sample((1:length(TF))[ MF==MF[i] & BF!=BF[i] & TF!=TF[i] ],1)
-        D[c(i,j) , (ncol(BM)+1):fullrank ] = D[ c(j,i) , (ncol(BM)+1):fullrank] 
-        QD=qr(t(D))
-        if (QD$rank<rank) 
-          D[c(i,j) , (ncol(BM)+1):fullrank ] = D[ c(j,i) , (ncol(BM)+1):fullrank  ] else TF[c(i,j)]= TF[c(j,i)]  
-        rank=max(rank,QD$rank) 
+    BM=BM[,-nlevels(BF),drop=FALSE] 
+    TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+    TM[cbind(1:length(TF),as.numeric(TF))]=1    
+    Q=qr(t(cbind(BM,TM)))
+    rank=Q$rank
+    pivot=Q$pivot
+    while (rank<fullrank) {
+      newpivot=Swaps(TF,MF,BF,pivot,rank)
+      newQ=qr(t(cbind(BM,TM[newpivot,])))
+      if ( (newQ$rank+rpois(1,.5))>=rank) {
+       TM=TM[newpivot,]
+       TF=TF[newpivot]
+       rank=newQ$rank
+       pivot=newQ$pivot
       }
     }
-    if (rank<fullrank) stop
-    V=chol2inv(chol(crossprod(cbind(Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE],Contrasts(MF,BF)[, rep(c(rep(TRUE,(nlevels(BF)/nlevels(MF)-1)),FALSE),nlevels(MF)),drop=FALSE]))))
-    M11=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
-    M22=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
-    M12=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
-    M11[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[1:(nlevels(TF)-1),1:(nlevels(TF)-1),drop=FALSE]
-    M12[1:(nlevels(TF)-1),1:(ncol(V)-nlevels(TF)+1)]=V[1:(nlevels(TF)-1),nlevels(TF):ncol(V),drop=FALSE]
-    M22[1:(ncol(V)-nlevels(TF)+1),1:(ncol(V)-nlevels(TF)+1)]=V[nlevels(TF):ncol(V),nlevels(TF):ncol(V),drop=FALSE]
-    perm=order(order((1:nlevels(BF))%%(nlevels(BF)/nlevels(MF))==0)   )
-    M12=M12[,perm]
-    M22=M22[perm,perm] 
-    TF=Optimise(TF,BF,MF,M11,M22,M12,searches,jumps)
+    blevels=nlevels(BF)%/%nlevels(MF)
+    BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
+    TM=Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE] 
+    V=chol2inv(chol(crossprod(cbind(BM,TM))))
+    MBB=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+    MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
+    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
+    MBB[1:(nlevels(BF)-nlevels(MF)), 1:(nlevels(BF)-nlevels(MF))]=V[1:(nlevels(BF)-nlevels(MF)),1:(nlevels(BF)-nlevels(MF)),drop=FALSE]
+    MTT[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[(nlevels(BF)-nlevels(MF)+1):ncol(V),(nlevels(BF)-nlevels(MF)+1):ncol(V), drop=FALSE]
+    MTB[1:(nlevels(TF)-1),  1:(nlevels(BF)-nlevels(MF)) ]=V[(nlevels(BF)-nlevels(MF)+1):ncol(V),1:(nlevels(BF)-nlevels(MF)),drop=FALSE]
+    perm=order(order( (1:nlevels(BF))%%blevels ==0  ))  
+    MTB=MTB[,perm]
+    MBB=MBB[perm,perm] 
+    TF=Optimise(TF,BF,MF,MTT,MBB,MTB,searches,jumps)
     TF
-  }     
+  }  
+  
 # ******************************************************************************************************************************************************** 
 # Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm GenOpt as appropriate
 # ********************************************************************************************************************************************************     
@@ -523,11 +534,15 @@ D_Max=function(M11,M22,M12,TF,MF,BF) {
      if (anyNA(seed) ) return(" NA seed values not allowed") 
      if ( !all(is.finite(seed)) | !all(!is.nan(seed))) return(" Seed must be a finite integer ") 
      if (seed<1)  return(" Seed must be at least one ")   
-   }  
+   } 
+   
+   if (  sum(treatments*replicates) < 2*prod(blocklevels)) 
+     return(paste("The algorithm requires at least two plots per block but the total number of plots is",  sum(treatments*replicates) , 
+                  "and the total number of blocks is", prod(blocklevels), "which is not feasible. "))  
+   
    if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
      return(paste("The total number of plots is",  sum(treatments*replicates) , 
-                  "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments),
-                  " Either reduce the blocks or treatments or increase the replication until the number of plots is at least equal to the required number of model parameters. "))  
+                  "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments)," which is not feasible. "))  
    return(TRUE)
  }
 # ******************************************************************************************************************************************************** 
