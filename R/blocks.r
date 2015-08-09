@@ -182,8 +182,8 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       e=c(rep(1,(ntrts-nblks)),
           eigen((diag(nblks)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])  
    }
-    aeff =round(1/mean(1/e),4) 
-    deff = round(exp(sum(log(e))/(ntrts-1)),4)
+    aeff =round(1/mean(1/e),6) 
+    deff = round(exp(sum(log(e))/(ntrts-1)),6)
     c(deff,aeff)
   }
 # ******************************************************************************************************************************************************** 
@@ -291,27 +291,6 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
   GenOpt=function(TF,Design,searches,jumps,stratum) { 
     MF=Design[,stratum]
     BF=Design[,stratum+1]
-    rand=sample(1:length(TF))
-    TF=TF[rand][order(MF[rand])]
-    fullrank=nlevels(TF)+nlevels(BF)-1
-    BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
-    BM[cbind(1:length(BF),as.numeric(BF))]=1
-    BM=BM[,-nlevels(BF),drop=FALSE] 
-    TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-    TM[cbind(1:length(TF),as.numeric(TF))]=1    
-    Q=qr(t(cbind(BM,TM)))
-    rank=Q$rank
-    pivot=Q$pivot
-    while (rank<fullrank) {
-      newpivot=Swaps(TF,MF,BF,pivot,rank)
-      newQ=qr(t(cbind(BM,TM[newpivot,])))
-      if ( (newQ$rank+rpois(1,.5))>=rank) {
-       TM=TM[newpivot,]
-       TF=TF[newpivot]
-       rank=newQ$rank
-       pivot=newQ$pivot
-      }
-    }
     blevels=nlevels(BF)%/%nlevels(MF)
     BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
     TM=Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE] 
@@ -328,28 +307,56 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     TF=Optimise(TF,BF,MF,MTT,MBB,MTB,searches,jumps)
     TF
   }  
-  
+ 
+  # ******************************************************************************************************************************************************** 
+  # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
+  # (is there a better way to do this?)
+  # ********************************************************************************************************************************************************    
+  NonSing=function(TF,Design,searches,jumps,stratum) { 
+    MF=Design[,stratum]
+    BF=Design[,stratum+1]
+    rand=sample(1:length(TF))
+    TF=TF[rand][order(MF[rand])]
+    fullrank=nlevels(TF)+nlevels(BF)-1
+    BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
+    BM[cbind(1:length(BF),as.numeric(BF))]=1
+    BM=BM[,-nlevels(BF),drop=FALSE] 
+    TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+    TM[cbind(1:length(TF),as.numeric(TF))]=1    
+    Q=qr(t(cbind(BM,TM)))
+    rank=Q$rank
+    pivot=Q$pivot
+    while (rank<fullrank) {
+      newpivot=Swaps(TF,MF,BF,pivot,rank)
+      newQ=qr(t(cbind(BM,TM[newpivot,])))
+      if ( (newQ$rank+rpois(1,.5))>=rank) {
+        TM=TM[newpivot,]
+        TF=TF[newpivot]
+        rank=newQ$rank
+        pivot=newQ$pivot
+      }
+    }
+    TF
+  }  
+ 
 # ******************************************************************************************************************************************************** 
 # Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm GenOpt as appropriate
 # ********************************************************************************************************************************************************     
-    optTF=function(Design,treatlevs,replevs,searches,jumps)  {
+    optTF=function(Design,treatlevs,replevs,blocklevels,searches,jumps)  {
     nunits=nrow(Design)
-    strata=ncol(Design)-2    
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
-    regreps=(identical(max(replevs),min(replevs) ) )
     TF=NULL
-    while (is.null(TF)) {
       for (i in 1: hcf) 
         TF=c(TF, sample(rep(1:ntrts , rep(replevs,treatlevs)/hcf) ) )
       TF=as.factor(TF)
       firstNest=TRUE
-      for (i in 1 : strata) { 
-        bsizes=tabulate(Design[,i+1])
-        if (all( bsizes %% (nunits/hcf)  == 0)) next 
+      #TF=NonSing(TF,Design)
+      for (i in 1 : length(blocklevels)) { 
+       if ( identical( hcf %% prod(blocklevels[1:i]), 0)) next
         v=sqrt(ntrts)
-        nblocks=nlevels(Design[,i+1])
-        reglat=(regreps & firstNest &  identical( nunits/nblocks , v ) &  identical( v, floor(v)) & identical(max(bsizes),min(bsizes))) 
+        nblocks=prod(blocklevels[1:i])
+        reglat=(identical(max(replevs),min(replevs)) & firstNest & identical(nunits/nblocks , v ) & identical(v, floor(v)) & identical(nunits %% nblocks, 0)  ) 
         firstNest=FALSE
         if (  reglat &  replevs[1]<4   ) {
           TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
@@ -397,7 +404,6 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
           TF=GenOpt(TF,Design,searches,jumps,i)
         }
       }   
-     }
    TF 
   }
 # ******************************************************************************************************************************************************** 
@@ -536,13 +542,11 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
      if (seed<1)  return(" Seed must be at least one ")   
    } 
    
-   if (  sum(treatments*replicates) < 2*prod(blocklevels)) 
-     return(paste("The algorithm requires at least two plots per block but the total number of plots is",  sum(treatments*replicates) , 
-                  "and the total number of blocks is", prod(blocklevels), "which is not feasible. "))  
+   
    
    if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
      return(paste("The total number of plots is",  sum(treatments*replicates) , 
-                  "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments)," which is not feasible. "))  
+                  "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments),", which is not feasible. "))  
    return(TRUE)
  }
 # ******************************************************************************************************************************************************** 
@@ -603,7 +607,7 @@ if (max(replicates)==1) {
   Design=facMat[rep(1:length(blocksizes),blocksizes),]
   Design=as.data.frame(cbind(rep(1,nunits), Design, rep(1:nunits)))
   Design[]=lapply(Design, factor) 
-  Design=cbind(Design,optTF(Design,treatlevs,replevs,searches,jumps))  
+  Design=cbind(Design,optTF(Design,treatlevs,replevs,blocklevels,searches,jumps))  
  
   # add back single replicate treatments here 
   if (!all(replicates>1) )
