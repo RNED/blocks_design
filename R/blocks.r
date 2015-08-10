@@ -288,9 +288,41 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # (is there a better way to do this?)
   # ********************************************************************************************************************************************************    
-  GenOpt=function(TF,Design,searches,jumps,stratum) { 
+  NonSing=function(TF,MF,BF,blocklevs,hcf,nunits,stratum) { 
+      rand=sample(1:length(TF))
+      TF=TF[rand][order(MF[rand])]
+      fullrank=nlevels(TF)+nlevels(BF)-1
+      BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
+      BM[cbind(1:length(BF),as.numeric(BF))]=1
+      BM=BM[,-nlevels(BF),drop=FALSE] 
+      TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+      TM[cbind(1:length(TF),as.numeric(TF))]=1   
+      Q=qr(t(cbind(BM,TM)))
+      rank=Q$rank
+      pivot=Q$pivot
+      while (rank<fullrank) {
+        newpivot=Swaps(TF,MF,BF,pivot,rank)
+        newQ=qr(t(cbind(BM,TM[newpivot,])))
+        if ( (newQ$rank+rpois(1,.5))>=rank) {
+          TM=TM[newpivot,]
+          TF=TF[newpivot]
+          rank=newQ$rank
+          pivot=newQ$pivot
+        }
+      }
+      return(TF)
+  }  
+  
+  # ******************************************************************************************************************************************************** 
+  # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
+  # (is there a better way to do this?)
+  # ********************************************************************************************************************************************************    
+  GenOpt=function(TF,Design,searches,jumps,stratum,blocklevs,hcf) { 
     MF=Design[,stratum]
     BF=Design[,stratum+1]
+    if ( !identical( hcf %% prod(blocklevels[1:stratum]), 0))
+    TF=NonSing(TF,MF,BF,blocklevs,hcf,nunits,stratum)
+    
     blevels=nlevels(BF)%/%nlevels(MF)
     BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
     TM=Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE] 
@@ -308,36 +340,6 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     TF
   }  
  
-  # ******************************************************************************************************************************************************** 
-  # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
-  # (is there a better way to do this?)
-  # ********************************************************************************************************************************************************    
-  NonSing=function(TF,Design,searches,jumps,stratum) { 
-    MF=Design[,stratum]
-    BF=Design[,stratum+1]
-    rand=sample(1:length(TF))
-    TF=TF[rand][order(MF[rand])]
-    fullrank=nlevels(TF)+nlevels(BF)-1
-    BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
-    BM[cbind(1:length(BF),as.numeric(BF))]=1
-    BM=BM[,-nlevels(BF),drop=FALSE] 
-    TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-    TM[cbind(1:length(TF),as.numeric(TF))]=1    
-    Q=qr(t(cbind(BM,TM)))
-    rank=Q$rank
-    pivot=Q$pivot
-    while (rank<fullrank) {
-      newpivot=Swaps(TF,MF,BF,pivot,rank)
-      newQ=qr(t(cbind(BM,TM[newpivot,])))
-      if ( (newQ$rank+rpois(1,.5))>=rank) {
-        TM=TM[newpivot,]
-        TF=TF[newpivot]
-        rank=newQ$rank
-        pivot=newQ$pivot
-      }
-    }
-    TF
-  }  
  
 # ******************************************************************************************************************************************************** 
 # Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm GenOpt as appropriate
@@ -351,7 +353,8 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
         TF=c(TF, sample(rep(1:ntrts , rep(replevs,treatlevs)/hcf) ) )
       TF=as.factor(TF)
       firstNest=TRUE
-      #TF=NonSing(TF,Design)
+
+      
       for (i in 1 : length(blocklevels)) { 
        if ( identical( hcf %% prod(blocklevels[1:i]), 0)) next
         v=sqrt(ntrts)
@@ -401,7 +404,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
           TF=as.factor(TF)
           levels(TF)=sample(1:ntrts)
         } else {
-          TF=GenOpt(TF,Design,searches,jumps,i)
+          TF=GenOpt(TF,Design,searches,jumps,i,blocklevels,hcf)
         }
       }   
    TF 
