@@ -288,13 +288,29 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # (is there a better way to do this?)
   # ********************************************************************************************************************************************************    
-  Singular=function(TF,MF,BF,blocklevs,hcf,nunits,stratum,loops) { 
+  Singular=function(TF,MF,BF,treatlevs,replevs,blocklevels,hcf,nunits,stratum,loops) { 
       fullrank=nlevels(TF)+nlevels(BF)-1
       BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
       BM[cbind(1:length(BF),as.numeric(BF))]=1
+      bsizes=apply(BM, 2, sum)
+      RedBM=BM[,bsizes[BF]>1]
+      RedBF=BF[bsizes[BF]>1]
+      RedMF=MF[bsizes[BF]>1]
+      trts=sort(c(replevs,treatlevs))
+      
+      for (i in 1: ndrop) {
+      trts[length(trts)]= trts[length(trts)]-1
+      trts=sort(trts)
+      }
+      
+        
+        
+        
       BM=BM[,-nlevels(BF),drop=FALSE] 
+
       TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-      TM[cbind(1:length(TF),as.numeric(TF))]=1   
+      TM[cbind(1:length(TF),as.numeric(TF))]=1  
+      
       Q=qr(t(cbind(BM,TM)))
       rank=Q$rank
       pivot=Q$pivot
@@ -318,13 +334,13 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # (is there a better way to do this?)
   # ********************************************************************************************************************************************************    
-  GenOpt=function(TF,Design,searches,jumps,stratum,blocklevs,hcf,loops) { 
+  GenOpt=function(TF,Design,searches,jumps,stratum,treatlevs,replevs,blocklevels,hcf,loops) { 
     MF=Design[,stratum]
     BF=Design[,stratum+1]
     rand=sample(1:length(TF))
     TF=TF[rand][order(MF[rand])]
     if ( !identical( hcf %% prod(blocklevels[1:stratum]), 0)) 
-    TF=Singular(TF,MF,BF,blocklevs,hcf,nunits,stratum,loops)
+    TF=Singular(TF,MF,BF,treatlevs,replevs,blocklevels,hcf,nunits,stratum,loops)
     if (!is.null(TF)) {
     blevels=nlevels(BF)%/%nlevels(MF)
     BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
@@ -404,7 +420,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
           TF=as.factor(TF)
           levels(TF)=sample(1:ntrts)
         } else {
-          TF=GenOpt(TF,Design,searches,jumps,i,blocklevels,hcf,loops)
+          TF=GenOpt(TF,Design,searches,jumps,i,treatlevs,replevs,blocklevels,hcf,loops)
         }
         if (is.null(TF)) break
       }   
@@ -524,7 +540,9 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     return("Replicates must be non-negative integers")  
   if (  sum(treatments*replicates) <=0 ) 
     return("Design cannot be fitted : number of plots must be greater than zero")  
-  
+   if (  sum(treatments) <=1 ) 
+     return("Number of treatments must be greater than 1")  
+   
    if (!is.null(blocklevels)) {
      if (anyNA(blocklevels) ) return(" NA blocklevels values not allowed") 
      if (!all(is.finite(blocklevels)) | !all(!is.nan(blocklevels)) ) return(" Blocklevels can contain only finite integers ")
@@ -616,6 +634,8 @@ if (max(replicates)==1) {
   while (is.null(TF)) {
   TF=optTF(Design,treatlevs,replevs,blocklevels,searches,jumps,loops)
   loops=loops+1
+  if (loops>10)  
+    return("Cannot find a non-singular starting design ")   
   }
   Design=cbind(Design,TF)  
  
