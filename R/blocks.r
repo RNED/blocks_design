@@ -147,7 +147,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
 # ********************************************************************************************************************************************************
  Contrasts=function(MF,NF) {
     NM=matrix(0,nrow=length(NF),ncol=nlevels(NF))
-    NM[cbind(1:length(NF),as.numeric(NF))]=1 # factor indicator matrix  
+    NM[cbind(1:length(NF),NF)]=1 # factor indicator matrix  
     for (i in 1:nlevels(MF)) 
       NM[MF==i,]=scale(NM[MF==i,] , center = TRUE, scale = FALSE)
   NM
@@ -286,31 +286,15 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
   
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
-  # (is there a better way to do this?)
+  #rBF=BF[bsizes[BF]>1,drop=TRUE]
   # ********************************************************************************************************************************************************    
-  Singular=function(TF,MF,BF,treatlevs,replevs,blocklevels,hcf,nunits,stratum,loops) { 
+  Singular=function(TF,MF,BF,stratum,loops) { 
       fullrank=nlevels(TF)+nlevels(BF)-1
       BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
-      BM[cbind(1:length(BF),as.numeric(BF))]=1
-      bsizes=apply(BM, 2, sum)
-      RedBM=BM[,bsizes[BF]>1]
-      RedBF=BF[bsizes[BF]>1]
-      RedMF=MF[bsizes[BF]>1]
-      trts=sort(c(replevs,treatlevs))
-      
-      for (i in 1: ndrop) {
-      trts[length(trts)]= trts[length(trts)]-1
-      trts=sort(trts)
-      }
-      
-        
-        
-        
+      BM[cbind(1:length(BF),BF)]=1
       BM=BM[,-nlevels(BF),drop=FALSE] 
-
       TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-      TM[cbind(1:length(TF),as.numeric(TF))]=1  
-      
+      TM[cbind(1:length(TF),TF)]=1  
       Q=qr(t(cbind(BM,TM)))
       rank=Q$rank
       pivot=Q$pivot
@@ -334,13 +318,13 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # (is there a better way to do this?)
   # ********************************************************************************************************************************************************    
-  GenOpt=function(TF,Design,searches,jumps,stratum,treatlevs,replevs,blocklevels,hcf,loops) { 
+  GenOpt=function(TF,Design,searches,jumps,stratum,blocklevels,hcf,loops) { 
     MF=Design[,stratum]
     BF=Design[,stratum+1]
     rand=sample(1:length(TF))
     TF=TF[rand][order(MF[rand])]
     if ( !identical( hcf %% prod(blocklevels[1:stratum]), 0)) 
-    TF=Singular(TF,MF,BF,treatlevs,replevs,blocklevels,hcf,nunits,stratum,loops)
+    TF=Singular(TF,MF,BF,stratum,loops)
     if (!is.null(TF)) {
     blevels=nlevels(BF)%/%nlevels(MF)
     BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
@@ -420,7 +404,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
           TF=as.factor(TF)
           levels(TF)=sample(1:ntrts)
         } else {
-          TF=GenOpt(TF,Design,searches,jumps,i,treatlevs,replevs,blocklevels,hcf,loops)
+          TF=GenOpt(TF,Design,searches,jumps,i,blocklevels,hcf,loops)
         }
         if (is.null(TF)) break
       }   
