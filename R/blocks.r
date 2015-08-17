@@ -156,9 +156,10 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
 # Updates variance matrix for pairs of swapped treatments using standard matrix updating formula
 # ********************************************************************************************************************************************************
   UpDate=function(MTT,MBB,MTB,ti,tj,bi,bj) {  
+    
     mtt=MTT[ti,ti]+MTT[tj,tj]-MTT[tj,ti]-MTT[ti,tj]
     mbb=MBB[bi,bi]+MBB[bj,bj]-MBB[bi,bj]-MBB[bj,bi]
-    mtb=MTB[ti,bi]-MTB[tj,bi]-MTB[ti,bj]+MTB[tj,bj]   
+    mtb=MTB[ti,bi]-MTB[tj,bi]-MTB[ti,bj]+MTB[tj,bj] 
     f = sqrt(2+mtt+mbb-2*mtb)
     m = f/sqrt(1-2*mtb-mtt*mbb+mtb*mtb)/2 
     Z1 = (MTB[,bi]-MTB[,bj]-MTT[,ti]+MTT[,tj])/f     
@@ -203,7 +204,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
       BB=2*MBB[BF[S],BF[S],drop=FALSE]-tcrossprod(MBB[cbind(BF[S],BF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MBB[cbind(BF[S],BF[S])]) + 1
       TB=MTB[TF[S],BF[S],drop=FALSE]-tcrossprod(MTB[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
       dMat=(TB+t(TB)+1)**2-TT*BB
-      sampn=which.max(dMat)  
+      sampn=which.max(dMat) 
       i=1+(sampn-1)%%nSamp[k]
       j=1+(sampn-1)%/%nSamp[k]
       if ( !isTRUE(all.equal(dMat[i,j],1)) & dMat[i,j]>1) {
@@ -238,7 +239,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     if (identical(max(treps),min(treps)) & identical(max(breps),min(breps))  )
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
     for (r in 1 : searches) {
-      dmax=D_Max(MTT,MBB,MTB,TF,MF,BF)  
+      dmax=D_Max(MTT,MBB,MTB,TF,MF,BF) 
       relD=relD*dmax$relD
       TF=dmax$TF
       MTT=dmax$MTT
@@ -289,28 +290,27 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
   #rBF=BF[bsizes[BF]>1,drop=TRUE]
   # ********************************************************************************************************************************************************    
   NonSingular=function(TF,MF,BF,stratum,cycles) { 
-      fullrank=nlevels(TF)+nlevels(BF)-1
       BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
       BM[cbind(1:length(BF),BF)]=1
-      BM=BM[,-nlevels(BF),drop=FALSE] 
+      fullrank=nlevels(TF)+nlevels(BF)-1
       TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-      TM[cbind(1:length(TF),TF)]=1  
+      TM[cbind(1:length(TF),TF)]=1
       Q=qr(t(cbind(BM,TM)))
       rank=Q$rank
       pivot=Q$pivot
       searches=0
-      while (rank<fullrank & searches<(cycles*50)) {
+      while (rank<fullrank & searches<(cycles*5)) {
         searches=searches+1
         newpivot=Swaps(TF,MF,BF,pivot,rank)
         newQ=qr(t(cbind(BM,TM[newpivot,])))
-        if ( (newQ$rank+rpois(1,.5))>=rank) {
+          if ( newQ$rank>=rank) { 
           TM=TM[newpivot,]
           TF=TF[newpivot]
           rank=newQ$rank
           pivot=newQ$pivot
         }
       }
-      if (searches>=(cycles*50)) TF=NULL 
+      if (searches>=(cycles*5)) TF=NULL 
       TF
   }  
   
@@ -547,9 +547,6 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
      if ( !all(is.finite(seed)) | !all(!is.nan(seed))) return(" Seed must be a finite integer ") 
      if (seed<1)  return(" Seed must be at least one ")   
    } 
-   
-   
-   
    if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
      return(paste("The total number of plots is",  sum(treatments*replicates) , 
                   "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments),", which is not feasible. "))  
@@ -618,8 +615,8 @@ if (max(replicates)==1) {
   while (is.null(TF)) {
   TF=optTF(Design,treatlevs,replevs,blocklevels,searches,jumps,cycles)
   cycles=cycles+1
-  if (cycles>10)  
-    return("Cannot find a non-singular starting design in every stratum - please try a simpler design structure")   
+  
+  if (cycles>100) stop("Cannot find a non-singular starting design in every stratum - please try a simpler design structure")
   }
   Design=cbind(Design,TF)  
  
