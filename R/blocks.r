@@ -7,12 +7,12 @@
 #' 
 #' @details
 #' 
-#' \code{treatments} and \code{replicates} partition the required number of treatments into equally replicated treatment sets where 
-#' \code{treatments} contains the required treatment sets and \code{replicates} contains the required replication numbers. 
-#'  The sum of the \code{treatments} is the total number of treatments and the sum of the cross-products of the \code{treatments}
-#'  and the \code{replicates} is the total number of plots. Treatments are numbered consecutively according to the treatments in the consecutive treatment sets. 
+#' The \code{treatments} and \code{replicates} parameters provide a partition of the treatments design into sets of equally replicated treatment where 
+#' \code{treatments} contains the set sizes and \code{replicates} contains the replication numbers. 
+#'  The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
+#'  is the total number of plots. Treatments are numbered consecutively according to the treatments in the consecutive treatment sets. 
 #' 
-#' The \code{blocklevels} parameters are the numbers of nested blocks in the individual blocks strata taken from the highest to the lowest. The
+#' The \code{blocklevels} parameter contains the numbers of nested blocks in the individual strata taken in order from highest to lowest. The
 #' first number is the number of main blocks, the second number, if any, is the number of sub-blocks nested in each main block, the third
 #' number, if any, is the number of sub-sub-blocks nested in each sub-block,and so on for all the reqired strata.
 #' The default number of blocks is the maximum possible number of orthogonal main blocks (the highest common factor of the replication numbers). 
@@ -22,8 +22,7 @@
 #'  where k < (v+2) if v is prime or prime-power, k < 5 if v = 10, or k < 4 generally, are lattice block designs and are constructed algebraically. 
 #'  All other non-orthogonal block designs are constructed by a D-optimality swapping algorithm that makes improving swaps between 
 #'  blocks until a local optima is atttained and no further improvement is possible. The swapping algorithm always works from the top stratum downwards and
-#'  is always constrained to make improving swaps within the levels of any existing blocks.
-#'  
+#'  is always constrained to make improving swaps within the levels of any existing blocks. 
 #'  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 #' 
 #'  The principle design outputs comprise:
@@ -34,6 +33,10 @@
 #'  \item  A table showing the achieved D- and A-efficiency factors for each nested blocks stratum together with an A-efficiency upper bound, where available. \cr
 #'  \item  A table showing a skeleton analysis of degrees of freedom for the combined block and treatment design. \cr
 #' } 
+#' 
+#' Very occasionally, the algorithm may fail to converge due to a near-singular design. Typically, such designs will contain some single plot
+#' blocks and then it is usually possible to construct a reduced design by excluding the single plot blocks during optimization 
+#' and then adding them back later using heuristic methods.
 #' 
 #' @param treatments numbers that provide a partition of the total required number of treatments into sets of equally replicated treatments.
 #' 
@@ -155,9 +158,8 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
 # Updates variance matrix for pairs of swapped treatments using standard matrix updating formula
 # ********************************************************************************************************************************************************
   UpDate=function(MTT,MBB,MTB,ti,tj,bi,bj) {  
-    
-    mtt=MTT[ti,ti]+MTT[tj,tj]-MTT[tj,ti]-MTT[ti,tj]
-    mbb=MBB[bi,bi]+MBB[bj,bj]-MBB[bi,bj]-MBB[bj,bi]
+    mtt=MTT[ti,ti]+MTT[tj,tj]-2*MTT[tj,ti]
+    mbb=MBB[bi,bi]+MBB[bj,bj]-2*MBB[bi,bj]
     mtb=MTB[ti,bi]-MTB[tj,bi]-MTB[ti,bj]+MTB[tj,bj] 
     f = sqrt(2+mtt+mbb-2*mtb)
     m = f/sqrt(1-2*mtb-mtt*mbb+mtb*mtb)/2 
@@ -171,7 +173,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     list(MTT=MTT,MBB=MBB,MTB=MTB)
   }   
 # ******************************************************************************************************************************************************** 
-# Calculates A-optimality efficiency factor for treatment factor TF and block factor BF
+# Calculates A-efficiency for treatment factor TF assuming block factor BF
 # ********************************************************************************************************************************************************
   optEffics=function(TF,BF) { 
     ntrts=nlevels(TF)
@@ -182,9 +184,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
       e=c(rep(1,(ntrts-nblks)),
           eigen((diag(nblks)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])  
    }
-    aeff =round(1/mean(1/e),6) 
-    deff = round(exp(sum(log(e))/(ntrts-1)),6)
-    c(deff,aeff)
+    c(round(exp(sum(log(e))/(ntrts-1)),6),round(1/mean(1/e),6))
   }
 # ******************************************************************************************************************************************************** 
 # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
@@ -232,8 +232,8 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     relD=1
     globrelD=0
     globTF=TF
-    treps=as.integer(tabulate(TF))
-    breps=as.integer(tabulate(BF))
+    treps=tabulate(TF)
+    breps=tabulate(BF)
     bound=NA
     if (identical(max(treps),min(treps)) & identical(max(breps),min(breps))  )
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
@@ -254,8 +254,10 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
       for (iswap in 1 : jumps) {
         dswap=0
         while(isTRUE(all.equal(dswap,0)) | dswap<0) {
-          s=sample(rep(1:length(TF))[MF==sample(nlevels(MF),1)],2)
-          if ( identical(TF[s[1]],TF[s[2]]) | identical(BF[s[1]],BF[s[2]])  ) next
+          s1=sample(1:length(TF),1)
+          z=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+          if (length(z)==0) next
+           s=c(s1,sample(z,1)) 
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
             (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
         }

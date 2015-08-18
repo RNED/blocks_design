@@ -37,12 +37,12 @@ Constructs randomized nested block designs for unstructured treatments where tre
 and blocks can have arbitrary depth of nesting.
 }
 \details{
-\code{treatments} and \code{replicates} partition the required number of treatments into equally replicated treatment sets where
-\code{treatments} contains the required treatment sets and \code{replicates} contains the required replication numbers.
- The sum of the \code{treatments} is the total number of treatments and the sum of the cross-products of the \code{treatments}
- and the \code{replicates} is the total number of plots. Treatments are numbered consecutively according to the treatments in the consecutive treatment sets.
+The \code{treatments} and \code{replicates} parameters provide a partition of the treatments design into sets of equally replicated treatment where
+\code{treatments} contains the set sizes and \code{replicates} contains the replication numbers.
+ The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
+ is the total number of plots. Treatments are numbered consecutively according to the treatments in the consecutive treatment sets.
 
-The \code{blocklevels} parameters are the numbers of nested blocks in the individual blocks strata taken from the highest to the lowest. The
+The \code{blocklevels} parameter contains the numbers of nested blocks in the individual strata taken in order from highest to lowest. The
 first number is the number of main blocks, the second number, if any, is the number of sub-blocks nested in each main block, the third
 number, if any, is the number of sub-sub-blocks nested in each sub-block,and so on for all the reqired strata.
 The default number of blocks is the maximum possible number of orthogonal main blocks (the highest common factor of the replication numbers).
@@ -53,7 +53,6 @@ Block sizes are always as equal as possible and never differ by more than a sing
  All other non-orthogonal block designs are constructed by a D-optimality swapping algorithm that makes improving swaps between
  blocks until a local optima is atttained and no further improvement is possible. The swapping algorithm always works from the top stratum downwards and
  is always constrained to make improving swaps within the levels of any existing blocks.
-
  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 
  The principle design outputs comprise:
@@ -64,6 +63,10 @@ Block sizes are always as equal as possible and never differ by more than a sing
  \item  A table showing the achieved D- and A-efficiency factors for each nested blocks stratum together with an A-efficiency upper bound, where available. \cr
  \item  A table showing a skeleton analysis of degrees of freedom for the combined block and treatment design. \cr
 }
+
+Very occasionally, the algorithm may fail to converge due to a near-singular design. Typically, such designs will contain some single plot
+blocks and then it is usually possible to construct a reduced design by excluding the single plot blocks during optimization
+and then adding them back later using heuristic methods.
 }
 \examples{
 # 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates
