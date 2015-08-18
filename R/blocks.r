@@ -7,17 +7,16 @@
 #' 
 #' @details
 #' 
-#' The \code{treatments} and \code{replicates} lists define a partition of the total required number of treatments into equally replicated treatment sets where 
-#' \code{treatments} is a list of set sizes and \code{replicates} is a matching list of replication numbers.
-#'  The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes 
-#'  and the replication numbers is the total number of units. Treatments are numbered consecutively according to
-#'  the numbers of treatments in the consecutive treatment sets. 
+#' \code{treatments} and \code{replicates} partition the required number of treatments into equally replicated treatment sets where 
+#' \code{treatments} contains the required treatment sets and \code{replicates} contains the required replication numbers. 
+#'  The sum of the \code{treatments} is the total number of treatments and the sum of the cross-products of the \code{treatments}
+#'  and the \code{replicates} is the total number of plots. Treatments are numbered consecutively according to the treatments in the consecutive treatment sets. 
 #' 
-#' The \code{blocklevels} list defines the number of nested blocks in each blocks stratum taken in order from the highest to the lowest stratum. The
+#' The \code{blocklevels} parameters are the numbers of nested blocks in the individual blocks strata taken from the highest to the lowest. The
 #' first number is the number of main blocks, the second number, if any, is the number of sub-blocks nested in each main block, the third
-#' number, if any, is the number of sub-sub-blocks nested in each sub-block,and so on for all the reqired blocks strata.
-#' The default is the highest common factor of the replication numbers and defines a design with the maximum possible number of
-#' orthogonal main blocks. Block sizes are always as equal as possible and never differ by more than a single unit in any particular stratum of the design. 
+#' number, if any, is the number of sub-sub-blocks nested in each sub-block,and so on for all the reqired strata.
+#' The default number of blocks is the maximum possible number of orthogonal main blocks (the highest common factor of the replication numbers). 
+#' Block sizes are always as equal as possible and never differ by more than a single unit in any particular stratum of the design. 
 #' 
 #'  Block designs for k replicates of v**2 treatments with k complete main blocks of size v**2 and v incomplete blocks of size v in each main block 
 #'  where k < (v+2) if v is prime or prime-power, k < 5 if v = 10, or k < 4 generally, are lattice block designs and are constructed algebraically. 
@@ -524,9 +523,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     return("Replicates must be non-negative integers")  
   if (  sum(treatments*replicates) <=0 ) 
     return("Design cannot be fitted : number of plots must be greater than zero")  
-   if (  sum(treatments) <=1 ) 
-     return("Number of treatments must be greater than 1")  
-   
+  
    if (!is.null(blocklevels)) {
      if (anyNA(blocklevels) ) return(" NA blocklevels values not allowed") 
      if (!all(is.finite(blocklevels)) | !all(!is.nan(blocklevels)) ) return(" Blocklevels can contain only finite integers ")
@@ -594,8 +591,7 @@ if (max(replicates)==1) {
   # omit any single replicate treatments here 
    treatlevs=treatments[replicates>1]
    replevs = replicates[replicates>1]
-  if (is.null(blocklevels)) 
-    blocklevels=HCF(replevs)
+   
   nunits=sum(treatlevs*replevs) 
   if (is.null(searches)) 
     searches=1+2000%/%(sum(treatments)+prod(blocklevels))
@@ -612,12 +608,15 @@ if (max(replicates)==1) {
   Design[]=lapply(Design, factor) 
   TF=NULL
   cycles=1
-  while (is.null(TF)) {
-  TF=optTF(Design,treatlevs,replevs,blocklevels,searches,jumps,cycles)
-  cycles=cycles+1
-  
-  if (cycles>100) stop("Cannot find a non-singular starting design in every stratum - please try a simpler design structure")
+  if (sum(treatlevs)==1) 
+    TF=as.factor(rep(1,replevs))
+  else
+  while (is.null(TF) & cycles<100) {
+    TF=optTF(Design,treatlevs,replevs,blocklevels,searches,jumps,cycles)
+    cycles=cycles+1
   }
+  
+  if (cycles>=100) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure")  
   Design=cbind(Design,TF)  
  
   # add back single replicate treatments here 
