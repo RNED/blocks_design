@@ -37,7 +37,7 @@ Constructs randomized nested block designs for unstructured treatments where tre
 and blocks can have arbitrary depth of nesting.
 }
 \details{
-The \code{treatments} and \code{replicates} parameters provide a partition of the treatments design into sets of equally replicated treatment where
+The \code{treatments} and \code{replicates} parameters partition the treatments design into sets of equally replicated treatments where
 \code{treatments} contains the set sizes and \code{replicates} contains the replication numbers.
  The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
  is the total number of plots. Treatments are numbered consecutively according to the treatments in the consecutive treatment sets.
@@ -65,8 +65,7 @@ Block sizes are always as equal as possible and never differ by more than a sing
 }
 
 Very occasionally, the algorithm may fail to converge due to a near-singular design. Typically, such designs will contain some single plot
-blocks and then it is usually possible to construct a reduced design by excluding the single plot blocks during optimization
-and then adding them back later using heuristic methods.
+blocks and it is then usually possible to construct a simplified reduced design without the single plot blocks and to add these back later, ad hoc.
 }
 \examples{
 # 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates
