@@ -8,7 +8,7 @@
 #' @details
 #' 
 #' The \code{treatments} and \code{replicates} parameters partition the treatments design into sets of equally replicated treatments where 
-#' \code{treatments} contains the equally replicated set sizes and \code{replicates} contains the set replication numbers. 
+#' \code{treatments} contains the set sizes and \code{replicates} contains the set replication numbers. 
 #'  The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
 #'  is the total number of plots. Treatments are numbered consecutively according to the treatments in the consecutive treatment sets. 
 #' 
@@ -21,9 +21,10 @@
 #'  Block designs for k replicates of v**2 treatments with k complete main blocks of size v**2 and v incomplete blocks of size v in each main block 
 #'  where k < (v+2) if v is prime or prime-power, k < 5 if v = 10, or k < 4 generally, are lattice block designs and are constructed algebraically. 
 #'  All other non-orthogonal block designs are constructed by a D-optimality swapping algorithm that makes improving swaps between 
-#'  blocks until a local optima is atttained. The swapping algorithm always works from the top stratum downwards and
-#'  is always constrained to make improving swaps within the levels of any existing blocks. The whole process will be repeated according to the number of searches defined by the
-#'  search parameter and the design returned will be the design with the best top-down stratum efficiencies.
+#'  blocks until a local optima is atttained. The swapping algorithm works from the top stratum downwards and
+#'  is always constrained to make improving swaps within the levels of any existing blocks. The whole process will be repeated according to the 
+#'  number of searches defined by the search parameter and the design returned will be the design with the best overall stratum efficiencies in top-down 
+#'  order.
 #'  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 #' 
 #'  The principle design outputs comprise:
@@ -35,7 +36,9 @@
 #'  \item  A table showing a skeleton analysis of degrees of freedom for the combined block and treatment design. \cr
 #' } 
 #' 
-#' Very occasionally, the algorithm may fail to converge due to a near-singular design typically containing a large number of single plot blocks.
+#' Very occasionally, the algorithm may fail to converge due to a near-singular design with a large number of single plot blocks.
+#' In that case, it may be best to build a simpler block design with larger blocks and then to add the extra block constraints by hand using ad hoc or heuristic 
+#' methods.     
 #' 
 #' @param treatments numbers that provide a partition of the total required number of treatments into sets of equally replicated treatments.
 #' 
