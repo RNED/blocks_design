@@ -37,7 +37,7 @@
 #' } 
 #' 
 #' Very occasionally, the algorithm may fail to converge due to a near-singular design with a large number of single plot blocks.
-#' In that case, it may be best to build a simpler block design with larger blocks and then to add the extra block constraints by hand using ad hoc or heuristic 
+#' In that case, it may be best to build a simpler design with larger blocks and then to add the extra block constraints by hand using ad hoc or heuristic 
 #' methods.     
 #' 
 #' @param treatments numbers that provide a partition of the total required number of treatments into sets of equally replicated treatments.
@@ -323,7 +323,6 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
   
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
-  # (is there a better way to do this?)
   # ********************************************************************************************************************************************************    
   GenOpt=function(TF,Design,searches,jumps,stratum,blocklevels,hcf,cycles) { 
     MF=Design[,stratum]
@@ -419,7 +418,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     }
     
 # ******************************************************************************************************************************************************** 
-# Single replicate treatments are omiited before blocking and are then replaced after optimization. Single replicate treatments are added back one block 
+# Single replicate treatments are omitted before blocking and are then replaced after optimization. Single replicate treatments are added back one block 
 # at a time while maintaining block size equality or near-equality with not more than one unit difference in each block for each stratum of the design.
 # ********************************************************************************************************************************************************     
   fullDesign=function(Design,facMat,treatments,replicates,oldblocksizes,blocklevels) {
@@ -560,7 +559,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
  }
  
  # ******************************************************************************************************************************************************** 
- # Main body of the blocks() design function tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
+ # Main body of blocks design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
  # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
  # ********************************************************************************************************************************************************     
  testout=testInputs(treatments,replicates,blocklevels,searches,seed,jumps) 
@@ -598,7 +597,6 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
    for (r in 1 : strata) 
      facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels)/prod(blocklevels[1:r])  )  
  } else {  
-   # omit any single replicate treatments here 
    treatlevs=treatments[replicates>1]
    replevs = replicates[replicates>1]
    

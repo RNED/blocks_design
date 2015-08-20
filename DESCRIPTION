@@ -1,8 +1,8 @@
 Package: blocksdesign
 Type: Package
 Title: Nested Block Designs for Unstructured Treatments
-Version: 1.6
-Date: 2015-05-04
+Version: 1.7
+Date: 2015-08-20
 Author: R. N. Edmondson
 Maintainer: Rodney Edmondson <rodney.edmondson@gmail.com>
 Depends:

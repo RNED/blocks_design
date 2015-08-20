@@ -67,7 +67,7 @@ Block sizes are always as equal as possible and never differ by more than a sing
 }
 
 Very occasionally, the algorithm may fail to converge due to a near-singular design with a large number of single plot blocks.
-In that case, it may be best to build a simpler block design with larger blocks and then to add the extra block constraints by hand using ad hoc or heuristic
+In that case, it may be best to build a simpler design with larger blocks and then to add the extra block constraints by hand using ad hoc or heuristic
 methods.
 }
 \examples{
