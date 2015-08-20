@@ -8,7 +8,7 @@
 #' @details
 #' 
 #' The \code{treatments} and \code{replicates} parameters partition the treatments design into sets of equally replicated treatments where 
-#' \code{treatments} contains the set sizes and \code{replicates} contains the replication numbers. 
+#' \code{treatments} contains the equally replicated set sizes and \code{replicates} contains the set replication numbers. 
 #'  The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
 #'  is the total number of plots. Treatments are numbered consecutively according to the treatments in the consecutive treatment sets. 
 #' 
@@ -21,8 +21,9 @@
 #'  Block designs for k replicates of v**2 treatments with k complete main blocks of size v**2 and v incomplete blocks of size v in each main block 
 #'  where k < (v+2) if v is prime or prime-power, k < 5 if v = 10, or k < 4 generally, are lattice block designs and are constructed algebraically. 
 #'  All other non-orthogonal block designs are constructed by a D-optimality swapping algorithm that makes improving swaps between 
-#'  blocks until a local optima is atttained and no further improvement is possible. The swapping algorithm always works from the top stratum downwards and
-#'  is always constrained to make improving swaps within the levels of any existing blocks. 
+#'  blocks until a local optima is atttained. The swapping algorithm always works from the top stratum downwards and
+#'  is always constrained to make improving swaps within the levels of any existing blocks. The whole process will be repeated according to the number of searches defined by the
+#'  search parameter and the design returned will be the design with the best top-down stratum efficiencies.
 #'  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 #' 
 #'  The principle design outputs comprise:
@@ -34,8 +35,7 @@
 #'  \item  A table showing a skeleton analysis of degrees of freedom for the combined block and treatment design. \cr
 #' } 
 #' 
-#' Very occasionally, the algorithm may fail to converge due to a near-singular design. Typically, such designs will contain some single plot
-#' blocks and it is then usually possible to construct a simplified reduced design without the single plot blocks and to add these back later, ad hoc.  
+#' Very occasionally, the algorithm may fail to converge due to a near-singular design typically containing a large number of single plot blocks.
 #' 
 #' @param treatments numbers that provide a partition of the total required number of treatments into sets of equally replicated treatments.
 #' 
@@ -204,7 +204,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
       sampn=which.max(dMat) 
       i=1+(sampn-1)%%nSamp[k]
       j=1+(sampn-1)%/%nSamp[k]
-      if ( !isTRUE(all.equal(dMat[i,j],1)) & dMat[i,j]>1) {
+      if ( !isTRUE(all.equal(dMat[i,j],1)) && dMat[i,j]>1) {
         improved=TRUE
         relD=relD*dMat[i,j]
         up=UpDate(MTT,MBB,MTB,TF[S[i]],TF[S[j]],BF[S[i]],BF[S[j]])
@@ -232,31 +232,27 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     globTF=TF
     treps=tabulate(TF)
     breps=tabulate(BF)
-    if (identical(max(treps),min(treps)) & identical(max(breps),min(breps))  )
+    if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  )
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
     else
       bound=NA
-    
-
     for (r in 1 : searches) {
-      
       dmax=D_Max(MTT,MBB,MTB,TF,MF,BF) 
       
-      if (!isTRUE(all.equal(dmax$relD,1)) &  dmax$relD>1) {
+      if (!isTRUE(all.equal(dmax$relD,1)) &&  dmax$relD>1) {
         newrelD=newrelD*dmax$relD 
         TF=dmax$TF
         MTT=dmax$MTT
         MBB=dmax$MBB
         MTB=dmax$MTB 
       
-        if (!isTRUE(all.equal(newrelD,globrelD)) &  newrelD>globrelD) {
+        if (!isTRUE(all.equal(newrelD,globrelD)) &&  newrelD>globrelD) {
           globTF=TF
           globrelD=newrelD
-          if ( !is.na(bound) &  isTRUE( all.equal(bound,  optEffics(globTF,BF)[2])) ) break
+          if ( !is.na(bound) &&  isTRUE( all.equal(bound,  optEffics(globTF,BF)[2])) ) break
         }
       }
       
-    
       if (r==searches) break
       for (iswap in 1 : jumps) {
         dswap=0
@@ -287,7 +283,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
   Swaps=function(TF,MF,BF,pivot,rank) { 
      repeat { 
       s1=sample(pivot[(1+rank):length(pivot)],1)
-      s2= (1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+      s2=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
       if (length(s2)>0) break
      }
     s=c(s1,s2)
@@ -315,9 +311,8 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
             TF[c(s[1],s[2])]=TF[c(s[2],s[1])]
             rank=newQ$rank
             pivot=newQ$pivot
-          } else {
-              TM[c(s[2],s[1]),]=TM[c(s[1],s[2]),]
-          }
+          } else 
+            TM[c(s[2],s[1]),]=TM[c(s[1],s[2]),]
         }
       if (searches>=(cycles*5)) TF=NULL 
       TF
@@ -368,9 +363,9 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
        if ( identical( hcf %% prod(blocklevels[1:i]), 0)) next
         v=sqrt(ntrts)
         nblocks=prod(blocklevels[1:i])
-        reglat=(identical(max(replevs),min(replevs)) & firstNest & identical(nunits/nblocks , v ) & identical(v, floor(v)) & identical(nunits %% nblocks, 0)  ) 
+        reglat=(identical(max(replevs),min(replevs)) && firstNest && identical(nunits/nblocks , v ) && identical(v, floor(v)) && identical(nunits %% nblocks, 0)  ) 
         firstNest=FALSE
-        if (  reglat &  replevs[1]<4   ) {
+        if (  reglat &&  replevs[1]<4   ) {
           TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
           if (replevs[1]>2) {
             set=NULL
@@ -381,7 +376,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
             TF=as.factor(TF)
             levels(TF)=sample(1:ntrts)
           }
-        } else if ( reglat &  replevs[1]<(v+2)  & isPrime(v) ) { 
+        } else if ( reglat &&  replevs[1]<(v+2)  && isPrime(v) ) { 
           TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
           for (z in 1: (replevs[1]-2)) {
             set=NULL
@@ -392,7 +387,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
             TF=as.factor(TF)
           levels(TF)=sample(1:ntrts)
           }
-        } else if (reglat  &  replevs[1]<(v+2)  &  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
+        } else if (reglat  &&  replevs[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
           index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
           mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
           TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
@@ -400,7 +395,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
             TF=c(TF, rep(1:ntrts)[order(    as.numeric(mols[,,i]) ) ]) 
           TF=as.factor(TF)
           levels(TF)=sample(1:ntrts)
-        } else if (  reglat & v==10  & replevs[1]<5  ) {
+        } else if (  reglat && v==10  && replevs[1]<5  ) {
           TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])  
           if (replevs[1]>2)
             TF=c(TF, rep(1:ntrts)[order(c(
@@ -464,10 +459,10 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
       blocks[i]=nlevels(Design[,i])   
     breps=tabulate(Design[,i])
       
-    if ( all(treps==treps[1]) & all(breps==breps[1]) )
+    if ( all(treps==treps[1]) && all(breps==breps[1]) )
      bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Treatments),blocks[i])  
       
-    if (nlevels(Design$Treatments)>1 & nlevels(Design[,i])>1)
+    if (nlevels(Design$Treatments)>1 && nlevels(Design[,i])>1)
       effics[i,]=optEffics(Design$Treatments,Design[,i])  
     }
     efficiencies=as.data.frame(cbind(names(Design)[1:strata]    ,blocks, effics, bounds))  
@@ -623,7 +618,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
    if (sum(treatlevs)==1) 
      TF=as.factor(rep(1,replevs))
    else
-     while (is.null(TF) & cycles<100) {
+     while (is.null(TF) && cycles<100) {
        TF=optTF(Design,treatlevs,replevs,blocklevels,searches,jumps,cycles)
        cycles=cycles+1
      }
