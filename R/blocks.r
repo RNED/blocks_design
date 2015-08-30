@@ -98,7 +98,7 @@
 #'          
 #' @export
 #' 
-#' 
+#' @importFrom stats anova lm
 #' 
 blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
   
@@ -490,9 +490,9 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
 #  Plan output for printing
 # ********************************************************************************************************************************************************     
   Plan=function(Design)  {
+    strata=ncol(Design)-2
     nblocks=nlevels(Design[,strata])
     trts=as.numeric(levels(Design[,ncol(Design)]))[Design[,ncol(Design)]]
-    strata=ncol(Design)-2
     bSizes=c(0,tabulate(Design[,strata]))
     cumSizes=bSizes
     for (i in 1:nblocks)
@@ -508,7 +508,15 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     stratumnames=colnames(Design)
     Design=cbind(Design,rep(" ",nblocks),plan)
     Design[is.na(Design)]  = " "   
-    colnames(Design)=c(stratumnames , "Sub_plots", 1:ncol(plan) )
+    labs=NULL
+    for (i in 1:ncol(plan))
+      labs=c(labs,paste0("Plot_",i))
+    colnames(Design)=c(stratumnames , " ", labs)
+    if (strata>1)
+      for (z in 2:strata) {
+        i=strata-z+2
+        Design[,i]=1+(as.numeric(Design[,i])-1)%%( nlevels(Design[,i]) /nlevels(Design[,i-1]))
+      }
     Design
   }
 # ******************************************************************************************************************************************************** 
