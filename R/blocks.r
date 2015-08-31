@@ -491,33 +491,30 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
 # ********************************************************************************************************************************************************     
   Plan=function(Design)  {
     strata=ncol(Design)-2
-    nblocks=nlevels(Design[,strata])
-    trts=as.numeric(levels(Design[,ncol(Design)]))[Design[,ncol(Design)]]
-    bSizes=c(0,tabulate(Design[,strata]))
-    cumSizes=bSizes
-    for (i in 1:nblocks)
-      cumSizes[i+1]=cumSizes[i]+cumSizes[i+1]    
-    for (i in 1:nblocks)
-      Design[i,]=Design[1+sum(bSizes[1:i]) ,]
-    Design=Design[1:nblocks,1:strata, drop = FALSE]
-    fullsize=max(bSizes)
-    fulltrts=rep(NA, fullsize*nblocks)
-    for (i in 1:nblocks) 
-      fulltrts[ ((i-1)*fullsize+1) : ((i-1)*fullsize+bSizes[i+1]) ] = trts[  (cumSizes[i]+1 ) : cumSizes[i+1]   ]   
-    plan=matrix(fulltrts,nrow=nblocks,ncol=max(bSizes),byrow=TRUE)
-    stratumnames=colnames(Design)
-    Design=cbind(Design,rep(" ",nblocks),plan)
-    Design[is.na(Design)]  = " "   
-    labs=NULL
-    for (i in 1:ncol(plan))
-      labs=c(labs,paste0("Plot_",i))
-    colnames(Design)=c(stratumnames , " ", labs)
-    if (strata>1)
-      for (z in 2:strata) {
-        i=strata-z+2
-        Design[,i]=1+(as.numeric(Design[,i])-1)%%( nlevels(Design[,i]) /nlevels(Design[,i-1]))
+    blevels=as.numeric(lapply(Design[,1:strata,drop=FALSE], nlevels))
+    if (strata>1) 
+      for (i in 2:strata)
+        blevels[strata-i+2]=blevels[strata-i+2]/blevels[strata-i+1]
+    trts=as.numeric(Design[,strata+2])
+    bSizes=tabulate(Design[,strata])
+    facMat= matrix(nrow=prod(blevels),ncol=strata)
+    for (r in 1 : strata) 
+      facMat[,r]=gl(blevels[r],prod(blevels[r:strata])%/%blevels[r] )
+    plan=matrix(nrow=length(bSizes),ncol=max(bSizes))
+    counter=0
+    for (i in 1:length(bSizes))
+      for (j in 1:bSizes[i]) {
+        counter=counter+1
+        plan[i,j]=trts[counter]
       }
-    Design
+    Plan=as.data.frame(cbind(facMat,plan))
+    Plan[is.na(Plan)] = ""
+    Plan[]=lapply(Plan, factor) 
+    plannames=colnames(Design[1:strata])
+    for (i in 1:ncol(plan))
+      plannames=c(plannames,paste0("Plot_",i))
+    colnames(Plan)=plannames
+    Plan
   }
 # ******************************************************************************************************************************************************** 
 # Carries out some input validation
@@ -614,10 +611,13 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
    
    strata=length(blocklevels)
    blocksizes=Sizes(nunits,blocklevels)
-   
-   facMat= matrix(nrow=prod(blocklevels),ncol=strata)
+   prodlevels=blocklevels
+   if (strata>1)
+     for (i in 2:strata)
+       prodlevels[i]=prodlevels[i-1]*prodlevels[i]  
+   facMat= matrix(nrow=prodlevels[strata],ncol=strata)
    for (r in 1 : strata) 
-     facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels)/prod(blocklevels[1:r])  )  
+     facMat[,r]=gl(prodlevels[r],prodlevels[strata]%/%prodlevels[r] )  
    
    Design=facMat[rep(1:length(blocksizes),blocksizes),]
    Design=as.data.frame(cbind(rep(1,nunits), Design, rep(1:nunits)))
