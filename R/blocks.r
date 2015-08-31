@@ -507,12 +507,13 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
         counter=counter+1
         plan[i,j]=trts[counter]
       }
-    Plan=as.data.frame(cbind(facMat,plan))
+    Plan=as.data.frame(cbind(facMat,rep(NA,length(bSizes)),plan))
     Plan[is.na(Plan)] = ""
-    Plan[]=lapply(Plan, factor) 
+    Plan[]=lapply(Plan,factor) 
     plannames=colnames(Design[1:strata])
+    plannames=c(plannames,"Plots:")
     for (i in 1:ncol(plan))
-      plannames=c(plannames,paste0("Plot_",i))
+    plannames=c(plannames,paste0("P",i))
     colnames(Plan)=plannames
     Plan
   }
