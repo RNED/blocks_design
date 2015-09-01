@@ -513,10 +513,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     Plan=as.data.frame(cbind(facMat,rep(NA,length(bSizes)),plan))
     Plan[is.na(Plan)] = ""
     Plan[]=lapply(Plan,factor) 
-    plannames=colnames(Design[1:strata])
-    plannames=c(plannames,"Plots:")
-    plannames=c(plannames,rep(1:ncol(plan)))
-    colnames(Plan)=plannames
+    colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
     Plan
   }
 # ******************************************************************************************************************************************************** 
