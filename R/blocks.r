@@ -279,7 +279,6 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
    globTF
   } 
   
-  
   # ******************************************************************************************************************************************************** 
   # Random swaps
   # ********************************************************************************************************************************************************    
@@ -482,7 +481,11 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     Design=Design[ do.call(order, Design), ] 
     blocksizes=tabulate(as.numeric( order(unique(Design[,ncol(Design)-2])))[Design[,ncol(Design)-2]])
     Design[,1 : (ncol(Design)-2)] = facMat[rep(1:length(blocksizes),blocksizes),1 : (ncol(Design)-2)]
-    Design[,(ncol(Design)-1)]=rep(1:nrow(Design))
+    blocksizes=tabulate(Design[,(ncol(Design)-2)])
+    plots=NULL
+    for (i in 1:length(blocksizes))
+      plots=c(plots,(1:blocksizes[i]))
+    Design[,(ncol(Design)-1)]=plots
     Design[]=lapply(Design, factor) 
     Design
   }
@@ -512,8 +515,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     Plan[]=lapply(Plan,factor) 
     plannames=colnames(Design[1:strata])
     plannames=c(plannames,"Plots:")
-    for (i in 1:ncol(plan))
-    plannames=c(plannames,paste0("P",i))
+    plannames=c(plannames,rep(1:ncol(plan)))
     colnames(Plan)=plannames
     Plan
   }
@@ -572,15 +574,16 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
  if (!isTRUE(testout)) stop(testout)
  if (is.null(seed)) seed=sample(1:100000,1)
  set.seed(seed) 
+ 
  if (is.null(jumps)) jumps=1
  if (blocklevels[1]>1)
-   stratumnames="Main" else
+   stratumnames="Main_blocks" else
      stratumnames=NULL
  
  if (length(blocklevels)>1)
    for (i in 2:length(blocklevels))
      if (blocklevels[i]>1)
-       stratumnames=c(stratumnames,paste("Sub",(i-1), sep="_"))  
+       stratumnames=c(stratumnames,paste0("Sub",(i-1),"_blocks"))  
  
  sets=treatments*replicates
  treatments=treatments[sets>0]
@@ -590,7 +593,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
    blocklevels=blocklevels[blocklevels>1]
  else {
    blocklevels=1
-   stratumnames="Main"
+   stratumnames="Main_blocks"
  }
  if (max(replicates)==1) {
    nunits=sum(treatments) 
@@ -605,8 +608,8 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
  } else {  
    treatlevs=treatments[replicates>1]
    replevs = replicates[replicates>1]
-   
    nunits=sum(treatlevs*replevs) 
+ 
    if (is.null(searches)) 
      searches=1+2000%/%(sum(treatments)+prod(blocklevels))
    
@@ -623,6 +626,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
    Design=facMat[rep(1:length(blocksizes),blocksizes),]
    Design=as.data.frame(cbind(rep(1,nunits), Design, rep(1:nunits)))
    Design[]=lapply(Design, factor) 
+
    TF=NULL
    cycles=1
    if (sum(treatlevs)==1) 
@@ -643,7 +647,6 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
    
    # randomization
    Design=randBlocks(Design,facMat)
-   
    colnames(Design)=c(stratumnames,"Plots","Treatments")   
    rownames(Design) = NULL 
  }
