@@ -574,13 +574,13 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
  
  if (is.null(jumps)) jumps=1
  if (blocklevels[1]>1)
-   stratumnames="Main_blocks" else
+   stratumnames="Main" else
      stratumnames=NULL
  
  if (length(blocklevels)>1)
    for (i in 2:length(blocklevels))
      if (blocklevels[i]>1)
-       stratumnames=c(stratumnames,paste0("Sub",(i-1),"_blocks"))  
+       stratumnames=c(stratumnames,paste0("Sub_",(i-1)))  
  
  sets=treatments*replicates
  treatments=treatments[sets>0]
@@ -590,7 +590,7 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
    blocklevels=blocklevels[blocklevels>1]
  else {
    blocklevels=1
-   stratumnames="Main_blocks"
+   stratumnames="Main"
  }
  if (max(replicates)==1) {
    nunits=sum(treatments) 
