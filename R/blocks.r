@@ -511,7 +511,6 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
       bSum=bSum+bSizes[i]
       }
     }
-
     Plan=as.data.frame(cbind(facMat,rep(NA,length(bSizes)),plan))
     Plan[is.na(Plan)] = ""
     Plan[]=lapply(Plan,factor) 
