@@ -162,18 +162,24 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   UpDate=function(MTT,MBB,MTB,ti,tj,bi,bj) {  
     mtt=MTT[ti,ti]+MTT[tj,tj]-2*MTT[tj,ti]
     mbb=MBB[bi,bi]+MBB[bj,bj]-2*MBB[bi,bj]
-    mtb=MTB[ti,bi]-MTB[tj,bi]-MTB[ti,bj]+MTB[tj,bj] 
-    f = sqrt(2+mtt+mbb-2*mtb)
-    m = f/sqrt(1-2*mtb-mtt*mbb+mtb*mtb)/2 
-    Z1 = (MTB[,bi]-MTB[,bj]-MTT[,ti]+MTT[,tj])/f     
-    Z2 = (MBB[bi,]-MBB[bj,]-MTB[ti,]+MTB[tj,])/f 
-    W1 = (MTT[,ti]-MTT[,tj]+MTB[,bi]-MTB[,bj] - Z1*(mbb-mtt)/f)*m
-    W2 = (MTB[ti,]-MTB[tj,]+MBB[bi,]-MBB[bj,] - Z2*(mbb-mtt)/f)*m
+    mtb=1-MTB[ti,bi]+MTB[tj,bi]+MTB[ti,bj]-MTB[tj,bj]  
+    d =  2*sqrt(mtb**2-mtt*mbb)
+    f =  sqrt(2*mtb+mtt+mbb)
+    g =  mbb-mtt
+    TBbij=MTB[,bi]-MTB[,bj]
+    TBtij=MTB[ti,]-MTB[tj,]
+    TTtij=MTT[,ti]-MTT[,tj]
+    BBbij=MBB[bi,]-MBB[bj,]
+    Z1 = (TBbij-TTtij)/f     
+    Z2 = (BBbij-TBtij)/f 
+    W1 = ( f*(TTtij+TBbij) - g*Z1) /d
+    W2 = ( f*(TBtij+BBbij) - g*Z2) /d
     MTT = MTT - tcrossprod(Z1) + tcrossprod(W1)
     MBB = MBB - tcrossprod(Z2) + tcrossprod(W2)
     MTB = MTB - tcrossprod(Z1,Z2) + tcrossprod(W1,W2) 
     list(MTT=MTT,MBB=MBB,MTB=MTB)
-  }   
+  }  
+  
 # ******************************************************************************************************************************************************** 
 # Calculates A-efficiency for treatment factor TF assuming block factor BF
 # ********************************************************************************************************************************************************
@@ -241,21 +247,18 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
       bound=NA
     for (r in 1 : searches) {
       dmax=D_Max(MTT,MBB,MTB,TF,MF,BF) 
-      
       if (!isTRUE(all.equal(dmax$relD,1)) &&  dmax$relD>1) {
         newrelD=newrelD*dmax$relD 
         TF=dmax$TF
         MTT=dmax$MTT
         MBB=dmax$MBB
         MTB=dmax$MTB 
-      
         if (!isTRUE(all.equal(newrelD,globrelD)) &&  newrelD>globrelD) {
           globTF=TF
           globrelD=newrelD
           if ( !is.na(bound) &&  isTRUE( all.equal(bound,  optEffics(globTF,BF)[2])) ) break
         }
       }
-      
       if (r==searches) break
       for (iswap in 1 : jumps) {
         dswap=0
@@ -267,7 +270,6 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
             (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
         }
-        
         newrelD=newrelD*dswap
         up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
         MTT=up$MTT
@@ -494,10 +496,8 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
 # ********************************************************************************************************************************************************     
   Plan=function(Design)  {
     strata=ncol(Design)-2
-    blevels=as.numeric(lapply(Design[,1:strata,drop=FALSE], nlevels))
-    if (strata>1) 
-      for (i in 2:strata)
-        blevels[strata-i+2]=blevels[strata-i+2]/blevels[strata-i+1]
+    blevels=sapply(Design, nlevels)[1:strata]
+    blevels=blevels/c(1,blevels)[1:length(blevels)]
     trts=as.numeric(Design[,strata+2])
     bSizes=tabulate(Design[,strata])
     facMat= matrix(nrow=prod(blevels),ncol=strata)
