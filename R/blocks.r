@@ -504,11 +504,10 @@ D_Max=function(MTT,MBB,MTB,TF,MF,BF) {
     for (r in 1 : strata) 
       facMat[,r]=gl(blevels[r],prod(blevels[r:strata])%/%blevels[r] )
     plan=matrix(nrow=length(bSizes),ncol=max(bSizes))
-    counter=0
-    for (i in 1:length(bSizes))
-      for (j in 1:bSizes[i]) {
-        counter=counter+1
-        plan[i,j]=trts[counter]
+    bSum=0
+    for (i in 1:length(bSizes)) {
+        plan[i, 1:bSizes[i] ] = trts[  (1:bSizes[i]) + bSum  ]
+        bSum=bSum+bSizes[i]
       }
     Plan=as.data.frame(cbind(facMat,rep(NA,length(bSizes)),plan))
     Plan[is.na(Plan)] = ""
