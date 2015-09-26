@@ -544,23 +544,20 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  testout=testInputs(treatments,replicates,blocklevels,searches,seed,jumps) 
  if (!isTRUE(testout)) stop(testout)
  if (is.null(seed)) seed=sample(1:100000,1)
- set.seed(seed) 
+ set.seed(seed)
  if (is.null(jumps)) jumps=1
+ sets=treatments*replicates
+ treatments=treatments[sets>0]
+ replicates=replicates[sets>0]
+ if (!all(blocklevels==1))
+   blocklevels=blocklevels[blocklevels>1] else 
+   blocklevels=1
   stratumnames="Main" 
  if (length(blocklevels)>1)
    for (i in 2:length(blocklevels))
      if (blocklevels[i]>1)
        stratumnames=c(stratumnames,paste0("Sub_",(i-1)))  
- sets=treatments*replicates
- treatments=treatments[sets>0]
- replicates=replicates[sets>0]
- if (!all(blocklevels==1))
-   blocklevels=blocklevels[blocklevels>1]
- else {
-   blocklevels=1
-   stratumnames="Main"
- }
- 
+  
  if (max(replicates)==1) {
    nunits=sum(treatments) 
    strata=1
