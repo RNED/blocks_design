@@ -145,7 +145,25 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
         if( v %% (i-1) == 0 | v %% (i+1) == 0) return(FALSE) 
     }
     return(TRUE)
-  }      
+  } 
+  
+  # ******************************************************************************************************************************************************** 
+  # Orthogonal 10 x 10 squares
+  # ********************************************************************************************************************************************************
+  MOLS10=function(ntrts,r,v) { 
+  TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])  
+  if (replevs[1]>2)
+    TF=c(TF, rep(1:ntrts)[order(c(
+      1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
+      5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8))]) 
+  if (replevs[1]==4) 
+    TF=c(TF, rep(1:ntrts)[order(c(
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
+      6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]) 
+  TF
+  }
+  
+  
 # ******************************************************************************************************************************************************** 
 # Contrasts for factor NF centered within the levels of factor MF to ensure that NF information is estimated within the levels of factor MF only  
 # ********************************************************************************************************************************************************
@@ -365,71 +383,85 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     TF=rep( rep(1:ntrts,rep(replevs%/%hcf,treatlevs)), hcf)
     rand=sample(nunits)
     TF=as.factor(TF[rand][order(rep(1:hcf,each=(nunits%/%hcf))[rand])])
-      firstNest=TRUE
-      for (i in 1 : length(blocklevels)) { 
-       if ( identical( hcf %% prod(blocklevels[1:i]), 0)) next
-        v=sqrt(ntrts)
+    firstPass=TRUE
+    for (i in 1 : length(blocklevels)) { 
+      if ( identical( hcf %% prod(blocklevels[1:i]), 0)) next
         nblocks=prod(blocklevels[1:i])
         bsize=nunits/nblocks
-        reg=(identical(max(replevs),min(replevs)) && firstNest && identical(bsize, floor(bsize)) )
-        reglat=(reg && identical(v, floor(v)))
-        rectlat=(reg && identical(ntrts,bsize*replevs[1])  )
-        firstNest=FALSE
-        if (  reglat &&  replevs[1]<4   ) {
-          TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
-          if (replevs[1]>2) {
-            set=NULL
-            for (j in 0: (v-1)) 
-              for (k in 0: (v-1)) 
-                set=c(set, (j+k)%%v )
-            TF=c(TF, rep(1:ntrts)[order(set)])
+        regular=(firstPass && identical(max(replevs),min(replevs)) && identical(bsize, floor(bsize)) )
+        firstPass=FALSE
+        sqrLattice=FALSE
+        rectLattice=FALSE
+        if (regular && identical( sqrt(ntrts),floor(sqrt(ntrts))) &&  identical( nunits/nblocks , sqrt(ntrts) ) ) {
+          v=sqrt(ntrts)
+          if (replevs[1]<4) {
+            TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
+            if (replevs[1]>2) {
+              set=NULL
+              for (j in 0: (v-1)) 
+                for (k in 0: (v-1)) 
+                  set=c(set, (j+k)%%v )
+              TF=c(TF, rep(1:ntrts)[order(set)])
+              TF=as.factor(TF)
+              levels(TF)=sample(1:ntrts)
+              }
+              sqrLattice=TRUE
+          } else if (replevs[1]<(v+2)  && isPrime(v) ) { 
+              TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
+              for (z in 1: (replevs[1]-2)) {
+                set=NULL
+                for (j in 0: (v-1)) 
+                  for (k in 0: (v-1)) 
+                    set=c(set,(j+k*z)%%v)
+                TF=c(TF, rep(1:ntrts)[order(set)])
+                TF=as.factor(TF)
+                levels(TF)=sample(1:ntrts)
+              }
+              sqrLattice=TRUE
+          } else if (replevs[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
+              index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
+              mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
+              TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
+              for (i in 1: (replevs[1]-2))
+                TF=c(TF, rep(1:ntrts)[order(    as.numeric(mols[,,i]) ) ]) 
+              TF=as.factor(TF)
+              sqrLattice=TRUE
+          } else if ( v==10  && replevs[1]<5  ) {
+              TF=as.factor(MOLS10(ntrts,replevs[1],v))
+              levels(TF)=sample(1:ntrts)
+              sqrLattice=TRUE
+          }
+        } else if (regular && identical(sqrt(nblocks),floor(sqrt(nblocks)))  && identical(ntrts,bsize*replevs[1]) ) {
+          v=sqrt(nblocks)
+          s=nunits/nblocks
+         if (s<v  && isPrime(v) ) { 
+            TF=NULL
+            BM=matrix(nrow=nblocks,ncol=s)
+            for (z in 1:s) 
+              for (j in 0: (v-1)) 
+                for (k in 0: (v-1)) 
+                  BM[j*v+k+1,z]=(j+k*z)%%v
+            for (z in 1:s) 
+              BM[,z]=BM[,z]+1+(z-1)*v
+            TF=as.factor(t(BM))
+            levels(TF)=sample(1:ntrts)
+            rectLattice=TRUE
+          } else if (s<v  &&  nblocks%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
+            index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==nblocks)
+            mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])		
+            TF=NULL
+            for (i in 1: v)
+            for (j in 1: v)
+            for (k in 1: s)
+            TF=c(TF,mols[i,j,k]+(k-1)*v)
             TF=as.factor(TF)
             levels(TF)=sample(1:ntrts)
+            rectLattice=TRUE
           }
-        } else if ( reglat &&  replevs[1]<(v+2)  && isPrime(v) ) { 
-          TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
-          for (z in 1: (replevs[1]-2)) {
-            set=NULL
-            for (j in 0: (v-1)) 
-              for (k in 0: (v-1)) 
-                set=c(set,(j+k*z)%%v)
-            TF=c(TF, rep(1:ntrts)[order(set)])
-            TF=as.factor(TF)
-          levels(TF)=sample(1:ntrts)
-          }
-        } else if (reglat  &&  replevs[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
-          index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
-          mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
-          TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
-          for (i in 1: (replevs[1]-2))
-            TF=c(TF, rep(1:ntrts)[order(    as.numeric(mols[,,i]) ) ]) 
-          TF=as.factor(TF)
-        } else if (  reglat && v==10  && replevs[1]<5  ) {
-          TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])  
-          if (replevs[1]>2)
-            TF=c(TF, rep(1:ntrts)[order(c(
-            1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
-            5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8))]) 
-          if (replevs[1]==4) 
-          TF=c(TF, rep(1:ntrts)[order(c(
-            1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
-            6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]) 
-          TF=as.factor(TF)
-          levels(TF)=sample(1:ntrts)
-        } else if (  rectlat && isPrime(replevs[1]) && bsize<replevs[1]) {
-          v=replevs[1]
-          m=matrix(nrow=bsize,ncol=v*v)
-          for (z in 1: bsize) {
-            for (j in 0: (v-1)) 
-              for (k in 0: (v-1)) 
-                m[z,j*v+k+1]=(j+k*z)%%v
-              m[z,]=m[z,]+1+(z-1)*v
-          }
-          TF=as.factor(m)
-          levels(TF)=sample(1:ntrts)
-        } else {
+        } else if (!sqrLattice && !rectLattice) {
           TF=GenOpt(TF,Design,searches,jumps,i,blocklevels,hcf,cycles)
         }
+  
         if (is.null(TF)) break
       }   
    TF 
@@ -626,10 +658,12 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  dummyAOV=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = Design))) 
   AOV=dummyAOV[,1,drop=FALSE]
  }
+ Efficiencies=A_Efficiencies(Design)
  
  Treatments=as.data.frame(table(Design[,"Treatments"]))
  Treatments[]=lapply(Treatments, as.factor) 
  colnames(Treatments)=c("Treatments","Replicates")
+ 
  if (strata>1) {
  for (r in 2 : (ncol(Design)-1) ) {
    Design[,r]= (as.numeric(Design[,r])-1 )%%blocklevels[r]+1
@@ -639,7 +673,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Plan[]=lapply(Plan, as.factor) 
  }
  
- list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=A_Efficiencies(Design),Design=Design,Plan=Plan,AOV=AOV,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
+ list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=Efficiencies,Design=Design,Plan=Plan,AOV=AOV,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
  
  
