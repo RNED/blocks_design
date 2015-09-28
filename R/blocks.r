@@ -461,7 +461,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
         } else if (!sqrLattice && !rectLattice) {
           TF=GenOpt(TF,Design,searches,jumps,i,blocklevels,hcf,cycles)
         }
-  
         if (is.null(TF)) break
       }   
    TF 
@@ -551,7 +550,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  sets=treatments*replicates
  treatments=treatments[sets>0]
  replicates=replicates[sets>0]
- 
  if (!all(blocklevels==1))
    blocklevels=blocklevels[blocklevels>1] else 
    blocklevels=1
@@ -569,7 +567,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    Design[]=lapply(Design, as.factor) 
    facMat= matrix(1,nrow=1,ncol=1)
    blocksizes=nunits
- } else {  
+ } else { 
    treatlevs=treatments[replicates>1]
    replevs = replicates[replicates>1]
    nunits=sum(treatlevs*replevs) 
@@ -592,7 +590,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
        cycles=cycles+1
      }
    if (cycles>=100) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure")  
-   
    # add back single replicate treatments here 
    if ( min(replicates)==1 && max(replicates)>1 ) {
        nunits=sum(treatments*replicates)
@@ -617,7 +614,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
        Design=as.data.frame(facMat[rep(1:length(newblocksizes),newblocksizes),])
        TF=TF[order(BF)]
    }
-  
    # randomization
   Design[,c("plots","Treatments")]  = c( rep(1:nrow(Design)) ,TF)
   Design[]=lapply(Design, as.factor) 
@@ -631,7 +627,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   colnames(Design)=c(stratumnames,"Treatments")   
   rownames(Design) = NULL 
  }
-  
  Design[]=lapply(Design, as.factor) 
  Incidences=vector(mode = "list", length =strata )
  for (i in 1:strata)
@@ -647,19 +642,23 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    for (i in 1 : length(index))
      plantrts=append(plantrts,NA,after=(index[i]-1)) 
  }
-
  plan=matrix(plantrts,nrow=length(blocksizes),ncol=max(blocksizes),byrow=TRUE)
  Plan=as.data.frame(cbind(facMat,rep(NA,length(blocksizes)),plan))
  Plan[is.na(Plan)] = ""
  Plan[]=lapply(Plan,as.factor) 
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
- 
- if (max(replicates)==1) AOV=NULL else {
- dummyAOV=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = Design))) 
+
+ if (max(replicates)==1) {
+   AOV=NULL 
+ } else if (nlevels(Design[,1])==1)   {
+   dummyAOV=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-1]))) 
+   AOV=dummyAOV[,1,drop=FALSE]
+ } else { 
+  dummyAOV=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = Design))) 
   AOV=dummyAOV[,1,drop=FALSE]
  }
- Efficiencies=A_Efficiencies(Design)
  
+ Efficiencies=A_Efficiencies(Design)
  Treatments=as.data.frame(table(Design[,"Treatments"]))
  Treatments[]=lapply(Treatments, as.factor) 
  colnames(Treatments)=c("Treatments","Replicates")
@@ -672,7 +671,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Design[]=lapply(Design, as.factor) 
  Plan[]=lapply(Plan, as.factor) 
  }
- 
  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=Efficiencies,Design=Design,Plan=Plan,AOV=AOV,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
  
