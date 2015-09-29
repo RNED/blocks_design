@@ -551,8 +551,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  treatments=treatments[sets>0]
  replicates=replicates[sets>0]
  if (!all(blocklevels==1))
-   blocklevels=blocklevels[blocklevels>1] else 
-   blocklevels=1
+   blocklevels=blocklevels[blocklevels>1] else blocklevels=1
+ 
   stratumnames="Main" 
  if (length(blocklevels)>1)
    for (i in 2:length(blocklevels))
@@ -647,8 +647,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Plan[is.na(Plan)] = ""
  Plan[]=lapply(Plan,as.factor) 
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
-
- if (max(replicates)==1 || min(sapply(Design,nlevels))==1) {
+ 
+ if (max(replicates)==1 || max(treatments)==1) {
    AOV=NULL 
  } else { 
   dummyAOV=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = Design))) 
