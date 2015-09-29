@@ -552,19 +552,16 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  replicates=replicates[sets>0]
  if (!all(blocklevels==1))
    blocklevels=blocklevels[blocklevels>1] else blocklevels=1
- 
   stratumnames="Main" 
  if (length(blocklevels)>1)
    for (i in 2:length(blocklevels))
      if (blocklevels[i]>1)
        stratumnames=c(stratumnames,paste0("Sub_",(i-1)))  
-  
  if (max(replicates)==1) {
    nunits=sum(treatments) 
    strata=1
    Design=as.data.frame(cbind(rep(1,nunits), sample(1:nunits)    ))
    colnames(Design)=c("Main","Treatments") 
-   Design[]=lapply(Design, as.factor) 
    facMat= matrix(1,nrow=1,ncol=1)
    blocksizes=nunits
  } else { 
@@ -594,22 +591,19 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    if ( min(replicates)==1 && max(replicates)>1 ) {
        nunits=sum(treatments*replicates)
        ntrts=sum(treatments)
-       TF=as.factor(c( as.numeric(TF), ((nlevels(TF)+1):ntrts)[sample(ntrts-nlevels(TF))]  ) ) 
+       TF=as.factor(c( TF, ((nlevels(TF)+1):ntrts)[sample(ntrts-nlevels(TF))]  ) ) 
        trtlabs=NULL  
        extlabs=NULL
        index=0
        for (i in 1 : length(treatments)) {
-         if (replicates[i]>1) {
-           trtlabs=c(trtlabs,  (index+1):(index+treatments[i]) )
-         } else {
+         if (replicates[i]>1) 
+           trtlabs=c(trtlabs,  (index+1):(index+treatments[i]) ) else 
            extlabs=c(extlabs,  (index+1):(index+treatments[i]) )
-         }
          index=index+treatments[i] 
        }    
        levels(TF)=c(trtlabs,extlabs)
        TF=as.numeric(levels(TF))[TF]
        newblocksizes=Sizes(nunits,blocklevels)
-       
        BF=c( rep( 1:length(blocksizes),blocksizes),  rep( 1:length(blocksizes),(newblocksizes-blocksizes) ) )
        Design=as.data.frame(facMat[rep(1:length(newblocksizes),newblocksizes),])
        TF=TF[order(BF)]
@@ -627,6 +621,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   colnames(Design)=c(stratumnames,"Treatments")   
   rownames(Design) = NULL 
  }
+  
  Design[]=lapply(Design, as.factor) 
  Incidences=vector(mode = "list", length =strata )
  for (i in 1:strata)
@@ -648,13 +643,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Plan[]=lapply(Plan,as.factor) 
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
  
- if ( max(replicates)==1 || max(treatments)==1 || max(blocklevels)==1 ) {
-   AOV=NULL 
- } else { 
-  dummyAOV=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = Design))) 
-  AOV=dummyAOV[,1,drop=FALSE]
- }
- 
+ if ( max(replicates)==1 || max(treatments)==1 || max(blocklevels)==1 ) AOV=NULL else  
+  AOV=suppressWarnings( anova(lm(rnorm(nrow(Design)) ~ ., data = Design))[,1,drop=FALSE]  ) 
+  
  Efficiencies=A_Efficiencies(Design)
  Treatments=as.data.frame(table(Design[,"Treatments"]))
  Treatments[]=lapply(Treatments, as.factor) 
