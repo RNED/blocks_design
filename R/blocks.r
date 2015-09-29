@@ -648,11 +648,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Plan[]=lapply(Plan,as.factor) 
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
 
- if (max(replicates)==1 || nlevels(Design[,ncol(Design)])==1) {
+ if (max(replicates)==1 || min(sapply(Design,nlevels))==1) {
    AOV=NULL 
- } else if (nlevels(Design[,1])==1)   {
-   dummyAOV=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-1]))) 
-   AOV=dummyAOV[,1,drop=FALSE]
  } else { 
   dummyAOV=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = Design))) 
   AOV=dummyAOV[,1,drop=FALSE]
