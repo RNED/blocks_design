@@ -648,7 +648,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Plan[]=lapply(Plan,as.factor) 
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
  
- if (max(replicates)==1 || max(treatments)==1) {
+ if ( max(replicates)==1 || max(treatments)==1 || max(blocklevels)==1 ) {
    AOV=NULL 
  } else { 
   dummyAOV=suppressWarnings(anova(lm(rnorm(nrow(Design)) ~ ., data = Design))) 
