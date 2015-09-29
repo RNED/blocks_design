@@ -647,7 +647,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Plan[is.na(Plan)] = ""
  Plan[]=lapply(Plan,as.factor) 
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
-print(Design)
 
  if (max(replicates)==1 || nlevels(Design[,ncol(Design)])==1) {
    AOV=NULL 
