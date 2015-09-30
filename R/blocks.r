@@ -396,17 +396,16 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
               levels(TF)=sample(1:ntrts)
               }
               sqrLattice=TRUE
-          } else if (replevs[1]<(v+2)  && isPrime(v) ) { 
-              TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
-              for (z in 1: (replevs[1]-2)) {
-                set=NULL
-                for (j in 0: (v-1)) 
-                  for (k in 0: (v-1)) 
-                    set=c(set,(j+k*z)%%v)
-                TF=c(TF, rep(1:ntrts)[order(set)])
-                TF=as.factor(TF)
-                levels(TF)=sample(1:ntrts)
-              }
+          } else if (replevs[1]<(v+2)  && isPrime(v) ) {
+            tt=vector(length=nunits)
+            tt[1:ntrts]=rep(0:(v-1),each=v)
+            tt[(ntrts+1):(2*ntrts)]=rep(0:(v-1),v) +v
+            for (z in 1: (replevs[1]-2))
+              for (j in 0: (v-1)) 
+                for (k in 0: (v-1)) 
+                  tt[ (z+1)*v*v + j*v + k +1] = (j+k*z)%%v + v*(z+1) 
+              TF=rep(1:ntrts,replevs[1])[order(tt+1)]
+              levels(TF)=sample(1:ntrts)
               sqrLattice=TRUE
           } else if (replevs[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
               index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
@@ -425,15 +424,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           v=sqrt(nblocks)
           s=nunits/nblocks
          if (s<v  && isPrime(v) ) { 
-            TF=NULL
-            BM=matrix(nrow=nblocks,ncol=s)
-            for (z in 1:s) 
-              for (j in 0: (v-1)) 
+           for (z in 1:s)
+             for (j in 0: (v-1)) 
                 for (k in 0: (v-1)) 
-                  BM[j*v+k+1,z]=(j+k*z)%%v
-            for (z in 1:s) 
-              BM[,z]=BM[,z]+1+(z-1)*v
-            TF=as.factor(t(BM))
+                  TF[ (k+j*v)*s+z]=(j+k*z)%%v + (z-1)*v +1
+            TF=as.factor(TF)
             levels(TF)=sample(1:ntrts)
             rectLattice=TRUE
           } else if (s<v  &&  nblocks%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
