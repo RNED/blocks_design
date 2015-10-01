@@ -150,13 +150,12 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   # ******************************************************************************************************************************************************** 
   # Orthogonal 10 x 10 squares
   # ********************************************************************************************************************************************************
-  MOLS10=function(ntrts,r,v) { 
-  TF=c(1:ntrts)
-  if (r>1) TF=c(TF,rep(1:ntrts)[order(rep(0:(v-1),v))])  
-  if (r>2) TF=c(TF, rep(1:ntrts)[order(c(
+  MOLS10.4=function() { 
+  TF=c(1:100,rep(1:100)[order(rep(0:9,10))])  
+  TF=c(TF, rep(1:100)[order(c(
       1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
       5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8))]) 
-  if (r>3) TF=c(TF, rep(1:ntrts)[order(c(
+  TF=c(TF, rep(1:100)[order(c(
       1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
       6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]) 
   TF
@@ -386,14 +385,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
         v=sqrt(ntrts)   
         w=sqrt(nblocks)
         if (sqrLattice  && replevs[1]<4) {
-            TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
-            if (replevs[1]>2) {
-              set=NULL
-              for (j in 0: (v-1)) 
-                for (k in 0: (v-1)) 
-                  set=c(set, (j+k)%%v )
-              TF=c(TF, rep(1:ntrts)[order(set)])
-            }
+          t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
+          if (replevs[1]>2)
+            for (i in 0: (v-1)) 
+              t=c(t,(rep(0:(v-1))+i)%%v + 2*v)
+            TF=rep(1:(v*v),replevs[1])[order(t)]
           } else if (sqrLattice  &&  replevs[1]<(v+2)  && isPrime(v) ) {
             tt=vector(length=nunits)
             tt[1:ntrts]=rep(0:(v-1),each=v)
@@ -409,8 +405,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
               TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
               for (i in 1: (replevs[1]-2))
                 TF=c(TF, rep(1:ntrts)[order(    as.numeric(mols[,,i]) ) ]) 
-          } else if (sqrLattice  && v==10  && replevs[1]<5  ) {
-              TF=MOLS10(ntrts,replevs[1],v)
+          } else if (sqrLattice  && v==10  && replevs[1]==4 ) {
+              TF=MOLS10.4()
           } else if (rectLattice  && isPrime(w) ) {
             s=nunits/nblocks
               for (z in 1:s)
