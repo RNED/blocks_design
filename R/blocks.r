@@ -62,7 +62,7 @@
 #' \item{seed}{Numerical seed for random number generator}
 #' \item{searches}{Maximum number of searches in each stratum}
 #' \item{jumps}{Number of random treatment swaps to escape a local maxima}
-
+#' 
 #' @references
 #' 
 #' Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes
@@ -99,6 +99,7 @@
 #' @export
 #' 
 #' @importFrom stats anova lm
+#' 
 #' 
 blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
   
@@ -150,17 +151,17 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   # Orthogonal 10 x 10 squares
   # ********************************************************************************************************************************************************
   MOLS10=function(ntrts,r,v) { 
-  TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])  
-  if (replevs[1]>2)
-    TF=c(TF, rep(1:ntrts)[order(c(
+  TF=c(1:ntrts)
+  if (r>1) TF=c(TF,rep(1:ntrts)[order(rep(0:(v-1),v))])  
+  if (r>2) TF=c(TF, rep(1:ntrts)[order(c(
       1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
       5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8))]) 
-  if (replevs[1]==4) 
-    TF=c(TF, rep(1:ntrts)[order(c(
+  if (r>3) TF=c(TF, rep(1:ntrts)[order(c(
       1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
       6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]) 
   TF
   }
+  
 # ******************************************************************************************************************************************************** 
 # Contrasts for factor NF centered within the levels of factor MF to ensure that NF information is estimated within the levels of factor MF only  
 # ********************************************************************************************************************************************************
@@ -378,13 +379,13 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       if ( identical( hcf %% prod(blocklevels[1:i]), 0)) next
         nblocks=prod(blocklevels[1:i])
         bsize=nunits/nblocks
-        regular=(firstPass && identical(max(replevs),min(replevs)) && identical(bsize, floor(bsize)) )
+        regular=firstPass && identical(max(replevs),min(replevs)) && identical(bsize, floor(bsize))
         firstPass=FALSE
-        sqrLattice=FALSE
-        rectLattice=FALSE
-        if (regular && identical( sqrt(ntrts),floor(sqrt(ntrts))) &&  identical( nunits/nblocks , sqrt(ntrts) ) ) {
-          v=sqrt(ntrts)
-          if (replevs[1]<4) {
+        sqrLattice  =regular && identical( nunits,nblocks*sqrt(ntrts)) 
+        rectLattice =regular && identical(replevs[1], sqrt(nblocks)) && (nunits< (nblocks*replevs[1]) )
+        v=sqrt(ntrts)   
+        w=sqrt(nblocks)
+        if (sqrLattice  && replevs[1]<4) {
             TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
             if (replevs[1]>2) {
               set=NULL
@@ -392,11 +393,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
                 for (k in 0: (v-1)) 
                   set=c(set, (j+k)%%v )
               TF=c(TF, rep(1:ntrts)[order(set)])
-              TF=as.factor(TF)
-              levels(TF)=sample(1:ntrts)
-              }
-              sqrLattice=TRUE
-          } else if (replevs[1]<(v+2)  && isPrime(v) ) {
+            }
+          } else if (sqrLattice  &&  replevs[1]<(v+2)  && isPrime(v) ) {
             tt=vector(length=nunits)
             tt[1:ntrts]=rep(0:(v-1),each=v)
             tt[(ntrts+1):(2*ntrts)]=rep(0:(v-1),v) +v
@@ -405,49 +403,33 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
                 for (k in 0: (v-1)) 
                   tt[ (z+1)*v*v + j*v + k +1] = (j+k*z)%%v + v*(z+1) 
               TF=rep(1:ntrts,replevs[1])[order(tt+1)]
-              levels(TF)=sample(1:ntrts)
-              sqrLattice=TRUE
-          } else if (replevs[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
+          } else if (sqrLattice  && replevs[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
               index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
               mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
               TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
               for (i in 1: (replevs[1]-2))
                 TF=c(TF, rep(1:ntrts)[order(    as.numeric(mols[,,i]) ) ]) 
-              TF=as.factor(TF)
-              sqrLattice=TRUE
-          } else if ( v==10  && replevs[1]<5  ) {
-              TF=as.factor(MOLS10(ntrts,replevs[1],v))
-              levels(TF)=sample(1:ntrts)
-              sqrLattice=TRUE
-          }
-        } else if (regular && identical(sqrt(nblocks),floor(sqrt(nblocks)))  && identical(ntrts,bsize*replevs[1]) ) {
-          v=sqrt(nblocks)
-          s=nunits/nblocks
-         if (s<v  && isPrime(v) ) { 
-           for (z in 1:s)
-             for (j in 0: (v-1)) 
-                for (k in 0: (v-1)) 
-                  TF[ (k+j*v)*s+z]=(j+k*z)%%v + (z-1)*v +1
-            TF=as.factor(TF)
-            levels(TF)=sample(1:ntrts)
-            rectLattice=TRUE
-          } else if (s<v  &&  nblocks%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
-            index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==nblocks)
-            mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])		
-            TF=NULL
-            for (i in 1: v)
-            for (j in 1: v)
-            for (k in 1: s)
-            TF=c(TF,mols[i,j,k]+(k-1)*v)
-            TF=as.factor(TF)
-            levels(TF)=sample(1:ntrts)
-            rectLattice=TRUE
-          }
-        } else if (!sqrLattice && !rectLattice) {
-          TF=GenOpt(TF,Design,searches,jumps,i,blocklevels,hcf,cycles)
-        }
+          } else if (sqrLattice  && v==10  && replevs[1]<5  ) {
+              TF=MOLS10(ntrts,replevs[1],v)
+          } else if (rectLattice  && isPrime(w) ) {
+            s=nunits/nblocks
+              for (z in 1:s)
+                for (j in 0: (w-1)) 
+                  for (k in 0: (w-1)) 
+                    TF[ (k+j*w)*s+z]=(j+k*z)%%w + (z-1)*w +1
+          } else if (rectLattice &&  nblocks%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
+              index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==nblocks)
+              mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])		
+              TF=NULL
+              for (i in 1: w)
+                for (j in 1: w)
+                  for (k in 1: (nunits/nblocks))
+                    TF=c(TF,mols[i,j,k]+(k-1)*w)
+          } else TF=GenOpt(TF,Design,searches,jumps,i,blocklevels,hcf,cycles)
         if (is.null(TF)) break
-      }   
+        TF=as.factor(TF)
+        levels(TF)=sample(1:ntrts)
+    }
    TF 
   }
 # ******************************************************************************************************************************************************** 
