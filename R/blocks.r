@@ -428,23 +428,21 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
 # ******************************************************************************************************************************************************** 
 # Finds A-efficiency factors for the blocks in each stratum of a design 
 # ********************************************************************************************************************************************************     
-  A_Efficiencies=function(Design)  {
-    strata=ncol(Design)-1
-    treps=tabulate(Design$Treatments)
+  A_Efficiencies=function(Design,treatments,replicates)  {
+    strata=ncol(Design)-2
+    nunits=nrow(Design)
+    nblocks=as.numeric(sapply(Design,nlevels)[1:strata])
     effics=matrix(1,nrow=strata,ncol=2)
     bounds=rep(NA,strata) 
-    blocks=rep(0,strata)  
     for (i in 1:strata) { 
-      blocks[i]=nlevels(Design[,i])   
-    breps=tabulate(Design[,i])
-    if ( all(treps==treps[1]) && all(breps==breps[1]) )
-     bounds[i]=upper_bounds(nrow(Design),nlevels(Design$Treatments),blocks[i])  
-    if (nlevels(Design$Treatments)>1 && nlevels(Design[,i])>1)
-      effics[i,]=optEffics(Design$Treatments,Design[,i])  
+      if ( all(treatments==treatments[1]) && identical(nunits%%nblocks[i],0) )
+        bounds[i]=upper_bounds(nunits,sum(treatments),nblocks[i]) 
+      if ( sum(treatments)>1 && nblocks[i]>1)
+        effics[i,]=optEffics(Design$Treatments,Design[,i])  
     }
-    efficiencies=as.data.frame(cbind(names(Design)[1:strata]    ,blocks, effics, bounds))  
+    efficiencies=as.data.frame(cbind( names(Design)[1:strata] ,nblocks, effics, bounds))  
     colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
-    efficiencies[, 'Blocks'] = as.factor(efficiencies[, 'Blocks'])
+    efficiencies[,'Blocks'] = as.factor(efficiencies[,'Blocks'])
     efficiencies
   }
 # ******************************************************************************************************************************************************** 
@@ -561,7 +559,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
        TF=TF[order(BF)]
    }
    # randomization
-  Design[,c("plots","Treatments")]  = c( rep(1:nrow(Design)) ,TF)
+  Design[,c("Plots","Treatments")]  = c( rep(1:nrow(Design)) ,TF)
   Design[]=lapply(Design, as.factor) 
   for (r in 1 : (ncol(Design)-1))
     Design[,r]=as.numeric( sample(nlevels( Design[,r]) ))[Design[,r]]  
@@ -569,14 +567,19 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   blocksizes=tabulate(Design[,strata])[unique(Design[,strata])]
   TF=Design[,"Treatments"]
   Design=as.data.frame(facMat[rep(1:length(blocksizes),blocksizes),])
-  Design[,"Treatments"]=TF
-  colnames(Design)=c(stratumnames,"Treatments")   
+  plots=NULL
+  for ( i in 1 : length(blocksizes)) 
+    plots=c(plots,rep(1:blocksizes[i]))
+    
+  Design=cbind(Design,plots,TF)
+  colnames(Design)=c(stratumnames,"Plots","Treatments")   
   rownames(Design) = NULL 
  }
  Design[]=lapply(Design, as.factor) 
+
  Incidences=vector(mode = "list", length =strata )
  for (i in 1:strata)
-   Incidences[[i]]=table( Design[,i] ,Design[,strata+1])  
+   Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
  names(Incidences)=stratumnames
  BlockSizes=as.data.frame(cbind(facMat,blocksizes))
  BlockSizes[]=lapply(BlockSizes, as.factor) 
@@ -595,18 +598,19 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
  
  if ( max(replicates)==1 || max(treatments)==1 || max(blocklevels)==1 ) AOV=NULL else  
-  AOV=suppressWarnings( anova(lm(rnorm(nrow(Design)) ~ ., data = Design))[,1,drop=FALSE]  ) 
+  AOV=suppressWarnings( anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)]))[,1,drop=FALSE]  ) 
   
- Efficiencies=A_Efficiencies(Design)
+ Efficiencies=A_Efficiencies(Design,treatments,replicates)
  Treatments=as.data.frame(table(Design[,"Treatments"]))
  Treatments[]=lapply(Treatments, as.factor) 
  colnames(Treatments)=c("Treatments","Replicates")
  
  if (strata>1) {
- for (r in 2 : (ncol(Design)-1) ) {
+ for (r in 2 : strata ) {
    Design[,r]= (as.numeric(Design[,r])-1 )%%blocklevels[r]+1
    Plan[,r]= (as.numeric(Plan[,r])-1 )%%blocklevels[r]+1
-  }
+ }
+ 
  Design[]=lapply(Design, as.factor) 
  Plan[]=lapply(Plan, as.factor) 
  }
