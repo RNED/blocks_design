@@ -391,14 +391,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
               t=c(t,(rep(0:(v-1))+i)%%v + 2*v)
             TF=rep(1:(v*v),replevs[1])[order(t)]
           } else if (sqrLattice  &&  replevs[1]<(v+2)  && isPrime(v) ) {
-            tt=vector(length=nunits)
-            tt[1:ntrts]=rep(0:(v-1),each=v)
-            tt[(ntrts+1):(2*ntrts)]=rep(0:(v-1),v) +v
+            t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
             for (z in 1: (replevs[1]-2))
               for (j in 0: (v-1)) 
-                for (k in 0: (v-1)) 
-                  tt[ (z+1)*v*v + j*v + k +1] = (j+k*z)%%v + v*(z+1) 
-              TF=rep(1:ntrts,replevs[1])[order(tt+1)]
+                t=c(t,(rep(0:(v-1))*z +j)%%v + v*(z+1) )
+              TF=rep(1:(v*v),replevs[1])[order(t)]
           } else if (sqrLattice  && replevs[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
               index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
               mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
