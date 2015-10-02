@@ -513,8 +513,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  if (max(replicates)==1) {
    blocksizes=sum(treatments) 
    strata=1
-   Design=as.data.frame(cbind(rep(1,blocksizes), sample(1:blocksizes)))
-   colnames(Design)=c("Main","Treatments") 
+   Design=as.data.frame(cbind(rep(1,blocksizes)))
+   TF=sample(1:blocksizes)
+   colnames(Design)=c("Main") 
    facMat= matrix(1,nrow=1,ncol=1)
  } else { 
    treatlevs=treatments[replicates>1]
@@ -567,14 +568,14 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   blocksizes=tabulate(Design[,strata])[unique(Design[,strata])]
   TF=Design[,"Treatments"]
   Design=as.data.frame(facMat[rep(1:length(blocksizes),blocksizes),])
+  
+ }
   plots=NULL
   for ( i in 1 : length(blocksizes)) 
     plots=c(plots,rep(1:blocksizes[i]))
-    
   Design=cbind(Design,plots,TF)
   colnames(Design)=c(stratumnames,"Plots","Treatments")   
   rownames(Design) = NULL 
- }
  Design[]=lapply(Design, as.factor) 
 
  Incidences=vector(mode = "list", length =strata )
@@ -597,8 +598,13 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Plan[]=lapply(Plan,as.factor) 
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
  
- if ( max(replicates)==1 || max(treatments)==1 || max(blocklevels)==1 ) AOV=NULL else  
-  AOV=suppressWarnings( anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)]))[,1,drop=FALSE]  ) 
+ if (  max(treatments)==1 ) AOV=NULL else { 
+   aovDesign=Design[-(ncol(Design)-1)]
+   ind=sapply(aovDesign,nlevels)==1
+   for (i in 1:length(ind))
+     if (ind[i]) aovDesign=aovDesign[-i]
+  AOV=suppressWarnings( anova(lm(rnorm(nrow(Design)) ~ ., data = aovDesign))[,1,drop=FALSE]  ) 
+ }
   
  Efficiencies=A_Efficiencies(Design,treatments,replicates)
  Treatments=as.data.frame(table(Design[,"Treatments"]))
