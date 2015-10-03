@@ -598,17 +598,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Plan[]=lapply(Plan,as.factor) 
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
  
- if (  sum(treatments)==1 ) {
-   AOV= data.frame(Df=c(0,(sum(replicates)-1)),row.names=c("Treatments","Residuals")) 
-   AOV[]=lapply(AOV, as.factor) 
-   } else { 
-   aovDesign=Design[-(ncol(Design)-1)]
-   ind=sapply(aovDesign,nlevels)==1
-   for (i in 1:length(ind))
-     if (ind[i]) aovDesign=aovDesign[-i]
-  AOV=suppressWarnings( anova(lm(rnorm(nrow(Design)) ~ ., data = aovDesign))[,1,drop=FALSE]  ) 
- }
-  
+ if (sum(treatments)==1 || sum(blocklevels)==1 ) { 
+   AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
+   AOV[] <- lapply(AOV, round, 0)
+  } else AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]   
+
  Efficiencies=A_Efficiencies(Design,treatments,replicates)
  Treatments=as.data.frame(table(Design[,"Treatments"]))
  Treatments[]=lapply(Treatments, as.factor) 
