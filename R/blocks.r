@@ -600,7 +600,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  
  if (sum(treatments)==1 || sum(blocklevels)==1 ) { 
    AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
-   AOV[] <- lapply(AOV, round, 0)
+   AOV[] <- lapply(AOV, factor)
   } else AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]   
 
  Efficiencies=A_Efficiencies(Design,treatments,replicates)
