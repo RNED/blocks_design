@@ -2,8 +2,8 @@
 #' 
 #' @description
 #' 
-#' Constructs randomized nested block designs for unstructured treatment sets where treatments can have arbitrary levels of replication
-#' and blocks can have arbitrary depth of nesting.
+#' Constructs randomized nested block designs for unstructured treatment sets where treatments can have any arbitrary levels of replication
+#' and blocks can have any arbitrary feasible depth of nesting.
 #' 
 #' @details
 #' 

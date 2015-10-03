@@ -33,8 +33,8 @@ The default is the hcf of the replication numbers.}
 \item{jumps}{Number of random treatment swaps to escape a local maxima}
 }
 \description{
-Constructs randomized nested block designs for unstructured treatments where treatments can have arbitrary levels of replication
-and blocks can have arbitrary depth of nesting.
+Constructs randomized nested block designs for unstructured treatment sets where treatments can have any arbitrary levels of replication
+and blocks can have any arbitrary feasible depth of nesting.
 }
 \details{
 The \code{treatments} and \code{replicates} parameters partition the treatments design into sets of equally replicated treatments where
