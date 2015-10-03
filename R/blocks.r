@@ -599,8 +599,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
  
  if (  max(treatments)==1 ) {
-   AOV= data.frame(Df=c(0,sum(replicates)-1),row.names=c("Treatments","Residuals")) 
-   AOV[]=lapply(AOV, as.factor) 
+   AOV= data.frame(Df=round(c(0,(sum(replicates)-1)),0),row.names=c("Treatments","Residuals")) 
    } else { 
    aovDesign=Design[-(ncol(Design)-1)]
    ind=sapply(aovDesign,nlevels)==1
