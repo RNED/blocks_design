@@ -598,7 +598,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Plan[]=lapply(Plan,as.factor) 
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
  
- if (  max(treatments)==1 ) {
+ if (  sum(treatments)==1 ) {
    AOV= data.frame(Df=c(0,(sum(replicates)-1)),row.names=c("Treatments","Residuals")) 
    AOV[]=lapply(AOV, as.factor) 
    } else { 
