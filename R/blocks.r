@@ -599,8 +599,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
  
  if (sum(treatments)==1 || sum(blocklevels)==1 ) { 
-   AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
-   AOV[] <- lapply(AOV, factor)
+   AOV= data.frame(Df=round(c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),0),row.names=c("Treatments","Residuals")) 
   } else AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]   
 
  Efficiencies=A_Efficiencies(Design,treatments,replicates)
