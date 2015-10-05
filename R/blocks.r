@@ -368,7 +368,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
         firstPass=FALSE
         sqrLattice  =regular && identical( nunits,nblocks*v) 
         rectLattice =regular && identical(replevs[1], w) && (nunits< (nblocks*replevs[1]) )
-        
         if (sqrLattice  && replevs[1]<4) {
             t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
             if (replevs[1]>2)
@@ -489,9 +488,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  testout=testInputs(treatments,replicates,blocklevels,searches,seed,jumps) 
  if (!isTRUE(testout)) stop(testout)
  set.seed(seed)
- sets=treatments*replicates
- treatments=treatments[sets>0]
- replicates=replicates[sets>0]
+ sets=treatments*replicates>0
+ treatments=treatments[sets]
+ replicates=replicates[sets]
  if (!all(blocklevels==1))
    blocklevels=blocklevels[blocklevels>1] else blocklevels=1
   stratumnames="Main" 
@@ -530,23 +529,18 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    if (cycles>=100) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure")  
    # add back single replicate treatments here 
    if ( min(replicates)==1 && max(replicates)>1 ) {
-       ntrts=sum(treatments)
-       TF=as.factor(c( TF, ((nlevels(TF)+1):ntrts)[sample(ntrts-nlevels(TF))]  ) ) 
-       trtlabs=NULL  
-       extlabs=NULL
-       index=0
-       for (i in 1 : length(treatments)) {
-         if (replicates[i]>1) 
-           trtlabs=c(trtlabs,  (index+1):(index+treatments[i]) ) else 
-           extlabs=c(extlabs,  (index+1):(index+treatments[i]) )
-         index=index+treatments[i] 
-       }    
-       levels(TF)=c(trtlabs,extlabs)
-       TF=as.numeric(levels(TF))[TF]
-       newblocksizes=Sizes(sum(treatments*replicates),blocklevels)
-       BF=c( rep( 1:length(blocksizes),blocksizes),  rep( 1:length(blocksizes),(newblocksizes-blocksizes) ) )
-       Design=as.data.frame(facMat[rep(1:length(newblocksizes),newblocksizes),])
-       TF=TF[order(BF)]
+     TF=as.factor(c(TF, sample( (sum(treatlevs)+1) :sum(treatments) ) ))
+     reptrts=NULL
+     for (i in 1 : length(replicates))
+       if (replicates[i]>1)
+         reptrts=c(reptrts,rep(FALSE,treatments[i])) else  
+           reptrts=c(reptrts,rep(TRUE,treatments[i]))  
+     levels(TF)= (1:sum(treatments*replicates))[order(reptrts)] 
+     TF=as.numeric(levels(TF))[TF]
+     newblocksizes=Sizes(sum(treatments*replicates),blocklevels)
+     BF=c( rep( 1:length(blocksizes),blocksizes),  rep( 1:length(blocksizes),(newblocksizes-blocksizes) ) )
+     Design=as.data.frame(facMat[rep(1:length(newblocksizes),newblocksizes),])
+     TF=TF[order(BF)]
    }
    # randomization
   Design[,c("Plots","Treatments")]  = c( rep(1:nrow(Design)) ,TF)
