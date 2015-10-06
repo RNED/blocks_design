@@ -481,6 +481,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
                   "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments),", which is not feasible. "))  
    return(TRUE)
  }
+ 
  # ******************************************************************************************************************************************************** 
  # Main body of blocks design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
  # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
@@ -527,7 +528,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
        cycles=cycles+1
      }
    if (cycles>=100) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure")  
-   # add back single replicate treatments here 
    if ( min(replicates)==1 && max(replicates)>1 ) {
      TF=as.factor(c(TF, sample( (sum(treatlevs)+1) :sum(treatments) ) ))
      reptrts=NULL
@@ -538,9 +538,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      levels(TF)= (1:sum(treatments*replicates))[order(reptrts)] 
      TF=as.numeric(levels(TF))[TF]
      newblocksizes=Sizes(sum(treatments*replicates),blocklevels)
-     BF=c( rep( 1:length(blocksizes),blocksizes),  rep( 1:length(blocksizes),(newblocksizes-blocksizes) ) )
      Design=as.data.frame(facMat[rep(1:length(newblocksizes),newblocksizes),])
-     TF=TF[order(BF)]
+     TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
    }
    # randomization
   Design[,c("Plots","Treatments")]  = c( rep(1:nrow(Design)) ,TF)
