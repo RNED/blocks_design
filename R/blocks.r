@@ -528,6 +528,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
        cycles=cycles+1
      }
    if (cycles>=100) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure")  
+   #add back single rep treatments
    if ( min(replicates)==1 && max(replicates)>1 ) {
      TF=as.factor(c(TF, sample( (sum(treatlevs)+1) :sum(treatments) ) ))
      reptrts=NULL
@@ -541,41 +542,43 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      Design=as.data.frame(facMat[rep(1:length(newblocksizes),newblocksizes),])
      TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
    }
-   # randomization
-  Design[,c("Plots","Treatments")]  = c( rep(1:nrow(Design)) ,TF)
-  Design[]=lapply(Design, as.factor) 
-  for (r in 1 : (ncol(Design)-1))
-    Design[,r]=as.numeric( sample(nlevels( Design[,r]) ))[Design[,r]]  
-  Design=Design[ do.call(order, Design), ] 
-  blocksizes=tabulate(Design[,strata])[unique(Design[,strata])]
-  TF=Design[,"Treatments"]
-  Design=as.data.frame(facMat[rep(1:length(blocksizes),blocksizes),])
  }
-  plots=NULL
+   # randomization
+  Design[,c("Plots","Treatments")]  = c(rep(1:nrow(Design)) ,TF)
+  Design[]=lapply(Design, as.factor)
+  for (r in 1 : (ncol(Design)-1))
+    Design[,r]=as.numeric( sample(nlevels( Design[,r]) ))[Design[,r]] 
+  Design=Design[ do.call(order, Design), ] 
+  Design[]=lapply(Design, as.factor)
+  for (r in 1 : (ncol(Design)-1)) 
+    Design[,r]=rep(1:nlevels(Design[,r]),(tabulate(Design[,r]))[unique(Design[,r])])
+  Design[]=lapply(Design, as.factor)
+  blocksizes=tabulate(Design[,ncol(Design)-2])
+  NestPlots=NULL
   for ( i in 1 : length(blocksizes)) 
-    plots=c(plots,rep(1:blocksizes[i]))
-  Design=cbind(Design,plots,TF)
-  colnames(Design)=c(stratumnames,"Plots","Treatments")   
-  rownames(Design) = NULL 
- Design[]=lapply(Design, as.factor) 
- Incidences=vector(mode = "list", length =strata )
- for (i in 1:strata)
+    NestPlots=c(NestPlots,rep(1:blocksizes[i]))
+  Design[,ncol(Design)-1]=NestPlots
+  row.names(Design)=c(1:nrow(Design))
+  colnames(Design)=c(stratumnames,"Plots","Treatments")
+  Incidences=vector(mode = "list", length =strata )
+  for (i in 1:strata)
    Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
- names(Incidences)=stratumnames
- BlockSizes=as.data.frame(cbind(facMat,blocksizes))
- BlockSizes[]=lapply(BlockSizes, as.factor) 
- colnames(BlockSizes)=c(stratumnames," Sizes ")  
- plantrts=as.numeric(Design[,"Treatments"])
- if  (!identical(max(blocksizes),min(blocksizes))) {
+  names(Incidences)=stratumnames
+  BlockSizes=as.data.frame(cbind(facMat,blocksizes))
+  BlockSizes[]=lapply(BlockSizes, as.factor) 
+  colnames(BlockSizes)=c(stratumnames," Sizes ")  
+  plantrts=as.numeric(Design[,"Treatments"])
+  if  (!identical(max(blocksizes),min(blocksizes))) {
    index=which(blocksizes==min(blocksizes))*max(blocksizes)
    for (i in 1 : length(index))
      plantrts=append(plantrts,NA,after=(index[i]-1)) 
- }
- plan=matrix(plantrts,nrow=length(blocksizes),ncol=max(blocksizes),byrow=TRUE)
- Plan=as.data.frame(cbind(facMat,rep(NA,length(blocksizes)),plan))
- Plan[is.na(Plan)] = ""
- Plan[]=lapply(Plan,as.factor) 
- colnames(Plan)=c(colnames(Design[1:strata]),"Plots:",rep(1:ncol(plan)))
+  }
+  Plots=rep(NA,length(blocksizes))
+  Plan=cbind(Design[Design["Plots"]==1,1:strata,drop=FALSE]   ,Plots ,matrix(plantrts,nrow=length(blocksizes),ncol=max(blocksizes),byrow=TRUE))
+  names(Plan)[names(Plan) == "Plots"] = "Plots:"
+  Plan[is.na(Plan)] = ""
+  Plan[]=lapply(Plan,as.factor) 
+  row.names(Plan)=c(1:nrow(Plan))
  if (sum(treatments)==1 || sum(blocklevels)==1 ) { 
    AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
    AOV[]=lapply(AOV, as.factor) 
@@ -584,13 +587,5 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Treatments=as.data.frame(table(Design[,"Treatments"]))
  Treatments[]=lapply(Treatments, as.factor) 
  colnames(Treatments)=c("Treatments","Replicates")
- if (strata>1) {
- for (r in 2 : strata ) {
-   Design[,r]= (as.numeric(Design[,r])-1 )%%blocklevels[r]+1
-   Plan[,r]= (as.numeric(Plan[,r])-1 )%%blocklevels[r]+1
- }
- Design[]=lapply(Design, as.factor) 
- Plan[]=lapply(Plan, as.factor) 
- }
  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=Efficiencies,Design=Design,Plan=Plan,AOV=AOV,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
