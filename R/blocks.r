@@ -530,7 +530,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    if (cycles>=100) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure")  
    #add back single rep treatments
    if ( min(replicates)==1 && max(replicates)>1 ) {
-     TF=as.factor(c(TF, sample( (sum(treatlevs)+1) :sum(treatments) ) ))
+     TF=as.factor(c(TF, (sum(treatlevs)+1) :sum(treatments)))
      reptrts=NULL
      for (i in 1 : length(replicates))
        if (replicates[i]>1)
