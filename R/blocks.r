@@ -547,13 +547,12 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   Design[,c("Plots","Treatments")]  = c(rep(1:nrow(Design)) ,TF)
   Design[]=lapply(Design, as.factor)
   for (r in 1 : (ncol(Design)-1))
-    Design[,r]=as.numeric( sample(nlevels( Design[,r]) ))[Design[,r]] 
+    Design[,r]=as.numeric( sample(nlevels(Design[,r])) )[Design[,r]] 
   Design=Design[ do.call(order, Design), ] 
-  Design[]=lapply(Design, as.factor)
-  for (r in 1 : (ncol(Design)-1)) 
-    Design[,r]=rep(1:nlevels(Design[,r]),(tabulate(Design[,r]))[unique(Design[,r])])
-  Design[]=lapply(Design, as.factor)
-  blocksizes=tabulate(Design[,ncol(Design)-2])
+  for (r in 1 : (strata+1)) 
+    Design[,r]=rep(1:max(Design[,r]),tabulate(Design[,r])[unique(Design[,r])])
+  blocksizes=tabulate(Design[,strata])
+
   NestPlots=NULL
   for ( i in 1 : length(blocksizes)) 
     NestPlots=c(NestPlots,rep(1:blocksizes[i]))
@@ -564,9 +563,23 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   for (i in 1:strata)
    Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
   names(Incidences)=stratumnames
-  BlockSizes=as.data.frame(cbind(facMat,blocksizes))
+  Design[]=lapply(Design, as.factor)
+  Efficiencies=A_Efficiencies(Design,treatments,replicates)
+  if (sum(treatments)==1 || sum(blocklevels)==1 ) { 
+    AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
+    AOV[]=lapply(AOV, as.factor) 
+  } else AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]
+  
+  if (strata>1)
+  for (r in 2 : strata ) 
+    Design[,r]= (  as.numeric(Design[,r])-1 )%%blocklevels[r]+1
+  Design[]=lapply(Design, as.factor)
+  
+  BlockSizes=data.frame(Design[Design["Plots"]==1,1:strata,drop=FALSE] ,blocksizes)
   BlockSizes[]=lapply(BlockSizes, as.factor) 
+  row.names(BlockSizes)=c(1:nrow(BlockSizes))
   colnames(BlockSizes)=c(stratumnames," Sizes ")  
+  
   plantrts=as.numeric(Design[,"Treatments"])
   if  (!identical(max(blocksizes),min(blocksizes))) {
    index=which(blocksizes==min(blocksizes))*max(blocksizes)
@@ -574,18 +587,13 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      plantrts=append(plantrts,NA,after=(index[i]-1)) 
   }
   Plots=rep(NA,length(blocksizes))
-  Plan=cbind(Design[Design["Plots"]==1,1:strata,drop=FALSE]   ,Plots ,matrix(plantrts,nrow=length(blocksizes),ncol=max(blocksizes),byrow=TRUE))
-  names(Plan)[names(Plan) == "Plots"] = "Plots:"
+  Plan=data.frame(Design[Design["Plots"]==1,rep(1:strata),drop=FALSE] ,Plots ,matrix(plantrts,nrow=length(blocksizes),ncol=max(blocksizes),byrow=TRUE))
+  colnames(Plan)=c(stratumnames,"Plots:",rep(1:max(blocksizes)))
   Plan[is.na(Plan)] = ""
   Plan[]=lapply(Plan,as.factor) 
   row.names(Plan)=c(1:nrow(Plan))
- if (sum(treatments)==1 || sum(blocklevels)==1 ) { 
-   AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
-   AOV[]=lapply(AOV, as.factor) 
-  } else AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]   
- Efficiencies=A_Efficiencies(Design,treatments,replicates)
- Treatments=as.data.frame(table(Design[,"Treatments"]))
- Treatments[]=lapply(Treatments, as.factor) 
- colnames(Treatments)=c("Treatments","Replicates")
+  Treatments=as.data.frame(table(Design[,"Treatments"]))
+  Treatments[]=lapply(Treatments, as.factor) 
+  colnames(Treatments)=c("Treatments","Replicates")
  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=Efficiencies,Design=Design,Plan=Plan,AOV=AOV,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
