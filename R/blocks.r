@@ -205,7 +205,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   repeat {
     improved=FALSE
     for (k in 1:nlevels(MF)) {
-      S=sort(sample( (1:length(TF))[MF==k]  ,nSamp[k])) 
+      S=sort(sample((1:length(TF))[MF==k],nSamp[k])) 
       TT=2*MTT[TF[S],TF[S],drop=FALSE]-tcrossprod(MTT[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MTT[cbind(TF[S],TF[S])]) + 1
       BB=2*MBB[BF[S],BF[S],drop=FALSE]-tcrossprod(MBB[cbind(BF[S],BF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MBB[cbind(BF[S],BF[S])]) + 1
       TB=MTB[TF[S],BF[S],drop=FALSE]-tcrossprod(MTB[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
@@ -265,7 +265,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           s1=sample(1:length(TF),1)
           z=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
           if (length(z)==0) next
-           s=c(s1,sample(z,1)) 
+          if (length(z)>1) s=c(s1,sample(z,1)) else s=c(s1,z[1])
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
             (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
         }
@@ -283,11 +283,17 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   # Random swaps
   # ********************************************************************************************************************************************************    
   Swaps=function(TF,MF,BF,pivot,rank) { 
-     repeat { 
-      s1=sample(pivot[(1+rank):length(pivot)],1)
-      s2=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
-      if (length(s2)>0) break
-     }
+     repeat {
+       if ( (1+rank)<length(pivot))
+      s1=sample(pivot[(1+rank):length(pivot)],1) else 
+         s1=pivot[length(pivot)]
+      candidates=TF[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+      if ( length(candidates)>1 ) 
+        s2=sample(candidates,1) else if ( length(candidates)==1 ) 
+          s2=candidates[1] else 
+            s2=NA
+        if (!is.na(s2)) break
+      }
     s=c(s1,s2)
   }
   # ******************************************************************************************************************************************************** 
@@ -502,8 +508,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  if (max(replicates)==1) {
    blocksizes=sum(treatments) 
    strata=1
-   Design=as.data.frame(cbind(rep(1,blocksizes)))
-   TF=sample(1:blocksizes)
+   Design=data.frame(rep(1,blocksizes))
+   TF=sample(1:sum(treatments))
    colnames(Design)=c("Main") 
    facMat= matrix(1,nrow=1,ncol=1)
  } else { 
@@ -530,7 +536,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    if (cycles>=100) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure")  
    #add back single rep treatments
    if ( min(replicates)==1 && max(replicates)>1 ) {
-     TF=as.factor(c(TF, (sum(treatlevs)+1) :sum(treatments)))
+     TF=as.factor(c(TF, (sum(treatlevs)+1) :sum(treatments)) )  
      reptrts=NULL
      for (i in 1 : length(replicates))
        if (replicates[i]>1)
