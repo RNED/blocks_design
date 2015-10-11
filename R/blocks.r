@@ -224,16 +224,13 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       }
     } 
     if (improved) next
-    if (sum(nSamp) < min(length(TF),512)) {
-      nSamp=pmin(mainSizes,2*nSamp)
-     } else {
-       break
-     }
+    if (sum(nSamp) >= min(length(TF),512)) break
+    nSamp=pmin(mainSizes,2*nSamp)
   }  
   list(MTT=MTT,MBB=MBB,MTB=MTB,TF=TF,relD=relD)
 }  
 # ******************************************************************************************************************************************************** 
-#  Number of searches for an optimization with selected number of searches and selected number of junps to escape from local optima
+#  Number of searches for an optimization with selected number of searches and selected number of junps to escape local optima
 # ********************************************************************************************************************************************************
   Optimise=function(TF,BF,MF,MTT,MBB,MTB,searches,jumps)  {
     newrelD=1
@@ -241,11 +238,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     globTF=TF
     treps=tabulate(TF)
     breps=tabulate(BF)
-    if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  ) {
+    bound=NA
+    if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))) 
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
-    } else {
-      bound=NA
-    }
     for (r in 1 : searches) {
       dmax=DMax(MTT,MBB,MTB,TF,MF,BF) 
       if (!isTRUE(all.equal(dmax$relD,1)) &&  dmax$relD>1) {
@@ -366,7 +361,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     TF
   }  
 # ******************************************************************************************************************************************************** 
-# Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm GenOpt as appropriate
+# Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm as appropriate
 # ********************************************************************************************************************************************************     
     optTF=function(Design,treatlevs,replevs,blocklevels,searches,jumps,cycles) {
     nunits=sum(treatlevs*replevs)
@@ -527,7 +522,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    strata=1
    Design=data.frame(rep(1,blocksizes))
    TF=sample(1:sum(treatments))
-   colnames(Design)=c("Main") 
+   colnames(Design)=stratumnames
    facMat= matrix(1,nrow=1,ncol=1)
  } else { 
    treatlevs=treatments[replicates>1]
