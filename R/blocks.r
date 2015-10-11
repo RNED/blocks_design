@@ -524,6 +524,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels[1:strata])/prod(blocklevels[1:r]))  
    Design=as.data.frame(facMat[rep(1:length(blocksizes),blocksizes),])
    Design[]=lapply(Design, as.factor) 
+   colnames(Design)=stratumnames
    TF=NULL
    cycles=1
    if (sum(treatlevs)==1) 
@@ -552,19 +553,22 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    # randomization
   Design[,c("Plots","Treatments")]  = c(rep(1:nrow(Design)) ,TF)
   Design[]=lapply(Design, as.factor)
-  for (r in 1 : (ncol(Design)-1))
+  for (r in 1 : (ncol(Design)-1)) 
     Design[,r]=as.numeric( sample(nlevels(Design[,r])) )[Design[,r]] 
   Design=Design[ do.call(order, Design), ] 
-  for (r in 1 : (strata+1)) 
-    Design[,r]=rep(1:max(Design[,r]),tabulate(Design[,r])[unique(Design[,r])])
+  Design[]=lapply(Design, as.factor)
+  for (r in 1 : (ncol(Design)-1))
+    levels(Design[,r])=order(as.numeric(unique(Design[,r])))
+  for (r in 1 : (ncol(Design)-1))
+    Design[,r]=as.numeric(levels(Design[,r]))[Design[,r]] 
+  Design[]=lapply(Design, as.factor)
+  colnames(Design)=c(stratumnames,"Plots","Treatments")  
+  row.names(Design)=c(1:nrow(Design))
   blocksizes=tabulate(Design[,strata])
-
   NestPlots=NULL
   for ( i in 1 : length(blocksizes)) 
     NestPlots=c(NestPlots,rep(1:blocksizes[i]))
   Design[,ncol(Design)-1]=NestPlots
-  row.names(Design)=c(1:nrow(Design))
-  colnames(Design)=c(stratumnames,"Plots","Treatments")
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
    Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
@@ -575,17 +579,14 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
     AOV[]=lapply(AOV, as.factor) 
   } else AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]
-  
   if (strata>1)
   for (r in 2 : strata ) 
     Design[,r]= (  as.numeric(Design[,r])-1 )%%blocklevels[r]+1
   Design[]=lapply(Design, as.factor)
-  
   BlockSizes=data.frame(Design[Design["Plots"]==1,1:strata,drop=FALSE] ,blocksizes)
   BlockSizes[]=lapply(BlockSizes, as.factor) 
   row.names(BlockSizes)=c(1:nrow(BlockSizes))
   colnames(BlockSizes)=c(stratumnames," Sizes ")  
-  
   plantrts=as.numeric(Design[,"Treatments"])
   if  (!identical(max(blocksizes),min(blocksizes))) {
    index=which(blocksizes==min(blocksizes))*max(blocksizes)
