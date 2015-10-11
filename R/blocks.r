@@ -224,10 +224,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       }
     } 
     if (improved) next
-    if (sum(nSamp) < min(length(TF),512))
+    if (sum(nSamp) < min(length(TF),512)) {
       nSamp=pmin(mainSizes,2*nSamp)
-     else 
-      break
+     } else {
+       break
+     }
   }  
   list(MTT=MTT,MBB=MBB,MTB=MTB,TF=TF,relD=relD)
 }  
@@ -240,10 +241,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     globTF=TF
     treps=tabulate(TF)
     breps=tabulate(BF)
-    if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  )
+    if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  ) {
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
-    else
+    } else {
       bound=NA
+    }
     for (r in 1 : searches) {
       dmax=DMax(MTT,MBB,MTB,TF,MF,BF) 
       if (!isTRUE(all.equal(dmax$relD,1)) &&  dmax$relD>1) {
@@ -265,7 +267,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           s1=sample(1:length(TF),1)
           z=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
           if (length(z)==0) next
-          if (length(z)>1) s=c(s1,sample(z,1)) else s=c(s1,z[1])
+          if (length(z)>1) {
+            s=c(s1,sample(z,1)) 
+            } else {
+              s=c(s1,z[1])
+            }
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
             (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
         }
@@ -284,14 +290,19 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   # ********************************************************************************************************************************************************    
   Swaps=function(TF,MF,BF,pivot,rank) { 
      repeat {
-       if ( (1+rank)<length(pivot))
-      s1=sample(pivot[(1+rank):length(pivot)],1) else 
+       if ( (1+rank)<length(pivot)) {
+        s1=sample(pivot[(1+rank):length(pivot)],1)
+      } else { 
          s1=pivot[length(pivot)]
+      }
       candidates=TF[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
-      if ( length(candidates)>1 ) 
-        s2=sample(candidates,1) else if ( length(candidates)==1 ) 
-          s2=candidates[1] else 
+      if ( length(candidates)>1 ) {
+        s2=sample(candidates,1) 
+        } else if ( length(candidates)==1 ) { 
+          s2=candidates[1] 
+          } else { 
             s2=NA
+          }
         if (!is.na(s2)) break
       }
     s=c(s1,s2)
@@ -318,8 +329,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
             TF[c(s[1],s[2])]=TF[c(s[2],s[1])]
             rank=newQ$rank
             pivot=newQ$pivot
-          } else 
+          } else {
             TM[c(s[2],s[1]),]=TM[c(s[1],s[2]),]
+          }
         }
       if (searches>=(cycles*5)) TF=NULL 
       TF
@@ -415,7 +427,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
                 for (j in 1: w)
                   for (k in 1: (nunits/nblocks))
                     TF=c(TF,mols[i,j,k]+(k-1)*w)
-        } else TF=GenOpt(TF,Design,searches,jumps,i,blocklevels,hcf,cycles)
+        } else {
+          TF=GenOpt(TF,Design,searches,jumps,i,blocklevels,hcf,cycles)
+        }
         if (is.null(TF)) break
         TF=as.factor(TF)
         levels(TF)=sample(1:ntrts)
@@ -498,8 +512,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  sets=treatments*replicates>0
  treatments=treatments[sets]
  replicates=replicates[sets]
- if (!all(blocklevels==1))
-   blocklevels=blocklevels[blocklevels>1] else blocklevels=1
+ if (!all(blocklevels==1)) {
+   blocklevels=blocklevels[blocklevels>1] 
+   } else {
+     blocklevels=1
+   }
   stratumnames="Main" 
  if (length(blocklevels)>1)
    for (i in 2:length(blocklevels))
@@ -527,22 +544,25 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    colnames(Design)=stratumnames
    TF=NULL
    cycles=1
-   if (sum(treatlevs)==1) 
+   if (sum(treatlevs)==1) {
      TF=as.factor(rep(1,replevs))
-   else
+   } else {
      while (is.null(TF) && cycles<100) {
        TF=optTF(Design,treatlevs,replevs,blocklevels,searches,jumps,cycles)
        cycles=cycles+1
      }
+   }
    if (cycles>=100) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure")  
    #add back single rep treatments
    if ( min(replicates)==1 && max(replicates)>1 ) {
      TF=as.factor(c(TF, (sum(treatlevs)+1) :sum(treatments)) )  
      reptrts=NULL
      for (i in 1 : length(replicates))
-       if (replicates[i]>1)
-         reptrts=c(reptrts,rep(FALSE,treatments[i])) else  
-           reptrts=c(reptrts,rep(TRUE,treatments[i]))  
+       if (replicates[i]>1) {
+         reptrts=c(reptrts,rep(FALSE,treatments[i])) 
+         } else {  
+           reptrts=c(reptrts,rep(TRUE,treatments[i]))
+         }
      levels(TF)= (1:sum(treatments*replicates))[order(reptrts)] 
      TF=as.numeric(levels(TF))[TF]
      newblocksizes=Sizes(sum(treatments*replicates),blocklevels)
@@ -578,7 +598,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   if (sum(treatments)==1 || sum(blocklevels)==1 ) { 
     AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
     AOV[]=lapply(AOV, as.factor) 
-  } else AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]
+  } else {
+    AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]
+  }
   if (strata>1)
   for (r in 2 : strata ) 
     Design[,r]= (  as.numeric(Design[,r])-1 )%%blocklevels[r]+1
