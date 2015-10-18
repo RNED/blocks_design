@@ -103,7 +103,7 @@
 #' 
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
+blocks = function(treatments, replicates, blocklevels=HCF(replicates), covars=NULL, searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
 # ******************************************************************************************************************************************************** 
 #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
 # ********************************************************************************************************************************************************
@@ -180,19 +180,46 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     MTB = MTB - tcrossprod(Z1,Z2) + tcrossprod(W1,W2) 
     list(MTT=MTT,MBB=MBB,MTB=MTB)
   }  
-# ******************************************************************************************************************************************************** 
-# Calculates A-efficiency for treatment factor TF assuming block factor BF
-# ********************************************************************************************************************************************************
+
+  # ******************************************************************************************************************************************************** 
+  # Calculates D and A-efficiency empirical efficiency factors for checking optEffics (not used live)
+  # ********************************************************************************************************************************************************
+  empiricOptEffics=function(TF,BF) { 
+    B=matrix(0,nrow=length(BF),ncol=nlevels(BF))
+    B[cbind(1:length(BF),BF)]=1
+    B=scale(B, center = TRUE, scale = FALSE)
+    T=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+    T[cbind(1:length(TF),TF)]=1
+    T=scale(T, center = TRUE, scale = FALSE)
+    B=B[,-ncol(B)]
+    T=T[,-ncol(T)]
+    BT=crossprod(B,T)
+    A=crossprod(T)-crossprod( BT,(crossprod(solve(crossprod(B)),BT)))
+    deff=det(A)**(1/nrow(A))/det(crossprod(T))**(1/nrow(A))
+    V=cbind(solve(A),rep(0,nrow(A)))
+    V0=cbind(solve(crossprod(T)),rep(0,nrow(A)))  
+    V=rbind(V,rep(0,ncol(V)))
+    V0=rbind(V0,rep(0,ncol(V0)))  
+    bV= tcrossprod( rep(1,nrow(V)) ,diag(V)) +  tcrossprod( diag(V), rep(1,nrow(V))) - 2*V		
+    tV= tcrossprod( rep(1,nrow(V0)) ,diag(V0)) +  tcrossprod( diag(V0), rep(1,nrow(V0))) - 2*V0	
+    bV[upper.tri(bV,diag=TRUE)] = NA
+    tV[upper.tri(tV,diag=TRUE)] = NA
+    c(deff,mean(tV,na.rm=TRUE)/mean(bV,na.rm=TRUE))
+  }
+  
+  # ******************************************************************************************************************************************************** 
+  # Calculates D and A-efficiency factors for treatment factor TF assuming block factor BF
+  # ********************************************************************************************************************************************************
   optEffics=function(TF,BF) { 
-    ntrts=nlevels(TF)
-    nblks=nlevels(BF)
-    if (ntrts<=nblks) {
-      e=eigen( (diag(ntrts)-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)]     
-   } else {     
-      e=c(rep(1,(ntrts-nblks)),
-          eigen((diag(nblks)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nblks-1)])  
-   }
-    round(c(exp(sum(log(e))/(ntrts-1)),1/mean(1/e)),6)
+    r=nlevels(TF)
+    k=nlevels(BF)
+    if (r<=k) {
+      e=eigen( (diag(r)-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(r-1)]     
+    } else {     
+      e=c(rep(1,(r-k)),
+          eigen((diag(k)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(k-1)])  
+    }
+    round(c(exp(sum(log(e))/(nlevels(TF)-1)),1/mean(1/e)),6)
   }
 # ******************************************************************************************************************************************************** 
 # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
@@ -432,7 +459,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    TF 
   }
 # ******************************************************************************************************************************************************** 
-# Finds A-efficiency factors for the blocks in each stratum of a design 
+# Finds efficiency factors for the blocks in each stratum of a design 
 # ********************************************************************************************************************************************************     
   A_Efficiencies=function(Design,treatments,replicates)  {
     strata=ncol(Design)-2
