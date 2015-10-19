@@ -35,9 +35,6 @@ a data frame of the allocation of treatments to plots for each block in the desi
 blocks-by-treatments incidence matrices for each stratum in the design and an A-efficiency factor for each stratum in the design,
 together with an efficiency upper bound, where available.
 
-The secondary function \code{\link[blocksdesign]{efficiencies}} takes the design output from the \code{blocks}
-function and uses it to construct tables of efficiency factors for each pairwise treatment difference in each stratum, as required.
-
 The subsidiary function \code{\link[blocksdesign]{upper_bounds}} estimates
 A-efficiency upper bounds for regular block designs with equally replicated treatments and equal block sizes.
 

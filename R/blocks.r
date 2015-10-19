@@ -103,7 +103,7 @@
 #' 
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments, replicates, blocklevels=HCF(replicates), covars=NULL, searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
+blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
 # ******************************************************************************************************************************************************** 
 #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
 # ********************************************************************************************************************************************************
