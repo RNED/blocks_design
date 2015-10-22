@@ -182,7 +182,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   }  
 
   # ******************************************************************************************************************************************************** 
-  # Calculates D and A-efficiency empirical efficiency factors for checking optEffics (not used live)
+  # Calculates D and A-efficiency empirical efficiency factors for checking optEffics (not used in production)
   # ********************************************************************************************************************************************************
   empiricOptEffics=function(TF,BF) { 
     B=matrix(0,nrow=length(BF),ncol=nlevels(BF))
@@ -233,10 +233,10 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     improved=FALSE
     for (k in 1:nlevels(MF)) {
       S=sort(sample((1:length(TF))[MF==k],nSamp[k])) 
-      TT=2*MTT[TF[S],TF[S],drop=FALSE]-tcrossprod(MTT[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MTT[cbind(TF[S],TF[S])]) + 1
-      BB=2*MBB[BF[S],BF[S],drop=FALSE]-tcrossprod(MBB[cbind(BF[S],BF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MBB[cbind(BF[S],BF[S])]) + 1
       TB=MTB[TF[S],BF[S],drop=FALSE]-tcrossprod(MTB[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
-      dMat=(TB+t(TB)+1)**2-TT*BB
+      dMat=(TB+t(TB)+1)**2-
+        (2*MTT[TF[S],TF[S],drop=FALSE]-tcrossprod(MTT[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MTT[cbind(TF[S],TF[S])]) + 1)*
+            (2*MBB[BF[S],BF[S],drop=FALSE]-tcrossprod(MBB[cbind(BF[S],BF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MBB[cbind(BF[S],BF[S])]) + 1)
       sampn=which.max(dMat) 
       i=1+(sampn-1)%%nSamp[k]
       j=1+(sampn-1)%/%nSamp[k]
@@ -317,7 +317,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       } else { 
          s1=pivot[length(pivot)]
       }
-      candidates=TF[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+      candidates= rep(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
       if ( length(candidates)>1 ) {
         s2=sample(candidates,1) 
         } else if ( length(candidates)==1 ) { 
@@ -326,7 +326,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
             s2=NA
           }
         if (!is.na(s2)) break
-      }
+     }
     s=c(s1,s2)
   }
   # ******************************************************************************************************************************************************** 
@@ -400,14 +400,16 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     TF=as.factor( TF[rand][order(MB[rand])] )
     firstPass=TRUE
     v=sqrt(ntrts)  
-    for (i in 1 : length(blocklevels)) { 
-      if ( identical( hcf %% prod(blocklevels[1:i]), 0)) next
-        nblocks=prod(blocklevels[1:i])
+    
+    for (stratum in 1 : length(blocklevels)) { 
+      if ( identical( hcf %% prod(blocklevels[1:stratum]), 0)) next
+        nblocks=prod(blocklevels[1:stratum])
         w=sqrt(nblocks)
         regular=firstPass && identical(max(replevs),min(replevs)) && nunits%%nblocks==0
         firstPass=FALSE
         sqrLattice  =regular && identical( nunits,nblocks*v) 
         rectLattice =regular && identical(replevs[1], w) && (nunits< (nblocks*replevs[1]) )
+        
         if (sqrLattice  && replevs[1]<4) {
             t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
             if (replevs[1]>2)
@@ -450,7 +452,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
                   for (k in 1: (nunits/nblocks))
                     TF=c(TF,mols[i,j,k]+(k-1)*w)
         } else {
-          TF=GenOpt(TF,Design,searches,jumps,i,blocklevels,hcf,cycles)
+          TF=GenOpt(TF,Design,searches,jumps,stratum,blocklevels,hcf,cycles)
         }
         if (is.null(TF)) break
         TF=as.factor(TF)
