@@ -103,7 +103,7 @@
 #' 
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
+blocks = function(treatments, replicates, blocklevels=HCF(replicates),rho=0, searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
 # ******************************************************************************************************************************************************** 
 #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
 # ********************************************************************************************************************************************************
@@ -310,24 +310,34 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   # ******************************************************************************************************************************************************** 
   # Random swaps
   # ********************************************************************************************************************************************************    
-  Swaps=function(TF,MF,BF,pivot,rank) { 
+  Swaps=function(TF,MF,BF,pivot,rank) {
+    n=length(TF)
      repeat {
-       if ( (1+rank)<length(pivot)) {
-        s1=sample(pivot[(1+rank):length(pivot)],1)
-      } else { 
-         s1=pivot[length(pivot)]
-      }
-      candidates= rep(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
-      if ( length(candidates)>1 ) {
-        s2=sample(candidates,1) 
+       if ( rank<(n-1) ) s1=sample(pivot[(1+rank):n],1) else s1=pivot[n]
+        candidates= rep(1:n)[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+        if ( length(candidates)>1 ) {
+          s2=sample(candidates,1) 
+          break 
         } else if ( length(candidates)==1 ) { 
           s2=candidates[1] 
-          } else { 
-            s2=NA
-          }
-        if (!is.na(s2)) break
+          break
+          } 
      }
     s=c(s1,s2)
+  }
+  # ******************************************************************************************************************************************************** 
+  # TI is the Cholesky factorisation of the inverse of RR 
+  # ********************************************************************************************************************************************************    
+  autocorrChol=function(bsize,rho) {
+  TI=diag(bsize)
+  if (bsize==2) {
+   TI[2,1]=-rho
+  } else if (bsize>2) {
+  diag(TI[-1,-ncol(TI)])=-rho
+  }
+  TI=TI/sqrt(1-rho*rho)
+  TI[1,1]=1
+  t(TI)
   }
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
@@ -520,6 +530,13 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      if ( !all(is.finite(seed)) | !all(!is.nan(seed))) return(" Seed must be a finite integer ") 
      if (seed<1)  return(" Seed must be at least one ")   
    } 
+   
+   if (!is.null(rho)) {
+     if (anyNA(rho) ) return(" NA seed values not allowed") 
+     if ( !all(is.finite(rho)) | !all(!is.nan(rho))) return("Rho must be greater than or equal to zero and less than 1 ") 
+     if (rho<0 ||rho >=1)  return(" Rho must be greater than or equal to zero and less than 1 ")   
+   } 
+   
    if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
      return(paste("The total number of plots is",  sum(treatments*replicates) , 
                   "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments),", which is not feasible. "))  
@@ -615,26 +632,54 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   for ( i in 1 : length(blocksizes)) 
     NestPlots=c(NestPlots,rep(1:blocksizes[i]))
   Design[,ncol(Design)-1]=NestPlots
+  Design[]=lapply(Design, as.factor)
+  
+  if (rho!=0) {
+    minCorrMat=autocorrChol(min(blocksizes),rho) 
+    maxCorrMat=autocorrChol(max(blocksizes),rho)  
+    print(crossprod(solve(minCorrMat)))
+    print(crossprod(solve(maxCorrMat)))
+    BF=Design[,(ncol(Design)-2)]
+    TF=Design[,ncol(Design)]
+   for (i in 1:nlevels(BF)) {
+     TL=TF[BF==i]
+    TM=matrix(0,nrow=length(TL),ncol=nlevels(TF))
+    TM[cbind(1:length(TL),TL)]=1 # factor indicator matrix  
+    TM=scale(TM, center = TRUE, scale = FALSE)[,1:(nlevels(TF)-1),drop=FALSE]
+    print(TM)
+   }
+  }
+  
+  # incidences
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
    Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
   names(Incidences)=stratumnames
-  Design[]=lapply(Design, as.factor)
+  # efficiencies
   Efficiencies=A_Efficiencies(Design,treatments,replicates)
+  # aov
   if (sum(treatments)==1 || sum(blocklevels)==1 ) { 
     AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
     AOV[]=lapply(AOV, as.factor) 
   } else {
     AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]
   }
+  # convert stratum block levels into nested sub-block levels for design output 
   if (strata>1)
   for (r in 2 : strata ) 
     Design[,r]= (  as.numeric(Design[,r])-1 )%%blocklevels[r]+1
   Design[]=lapply(Design, as.factor)
+  
+  # treatment replications
+  Treatments=as.data.frame(table(Design[,"Treatments"]))
+  Treatments[]=lapply(Treatments, as.factor) 
+  colnames(Treatments)=c("Treatments","Replicates")
+  # blocksizes
   BlockSizes=data.frame(Design[Design["Plots"]==1,1:strata,drop=FALSE] ,blocksizes)
   BlockSizes[]=lapply(BlockSizes, as.factor) 
   row.names(BlockSizes)=c(1:nrow(BlockSizes))
   colnames(BlockSizes)=c(stratumnames," Sizes ")  
+  # Plan layout
   plantrts=as.numeric(Design[,"Treatments"])
   if  (!identical(max(blocksizes),min(blocksizes))) {
    index=which(blocksizes==min(blocksizes))*max(blocksizes)
@@ -647,8 +692,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   Plan[is.na(Plan)] = ""
   Plan[]=lapply(Plan,as.factor) 
   row.names(Plan)=c(1:nrow(Plan))
-  Treatments=as.data.frame(table(Design[,"Treatments"]))
-  Treatments[]=lapply(Treatments, as.factor) 
-  colnames(Treatments)=c("Treatments","Replicates")
+ 
  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=Efficiencies,Design=Design,Plan=Plan,AOV=AOV,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 

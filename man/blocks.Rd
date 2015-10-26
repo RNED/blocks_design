@@ -4,7 +4,7 @@
 \alias{blocks}
 \title{Block designs}
 \usage{
-blocks(treatments, replicates, blocklevels = HCF(replicates),
+blocks(treatments, replicates, blocklevels = HCF(replicates), rho = 0,
   searches = max(1, 100 - sum(treatments) - prod(blocklevels)),
   seed = sample(10000, 1), jumps = 1)
 }
