@@ -100,10 +100,9 @@
 #' \dontrun{ d=blocks(1024,2,rep(2,10)) }
 #'          
 #' @export
-#' 
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments, replicates, blocklevels=HCF(replicates),rho=0, searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
+blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
 # ******************************************************************************************************************************************************** 
 #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
 # ********************************************************************************************************************************************************
@@ -326,20 +325,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     s=c(s1,s2)
   }
   # ******************************************************************************************************************************************************** 
-  # TI is the Cholesky factorisation of the inverse of RR 
-  # ********************************************************************************************************************************************************    
-  autocorrChol=function(bsize,rho) {
-  TI=diag(bsize)
-  if (bsize==2) {
-   TI[2,1]=-rho
-  } else if (bsize>2) {
-  diag(TI[-1,-ncol(TI)])=-rho
-  }
-  TI=TI/sqrt(1-rho*rho)
-  TI[1,1]=1
-  t(TI)
-  }
-  # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
   NonSingular=function(TF,MF,BF,cycles) { 
@@ -530,13 +515,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      if ( !all(is.finite(seed)) | !all(!is.nan(seed))) return(" Seed must be a finite integer ") 
      if (seed<1)  return(" Seed must be at least one ")   
    } 
-   
-   if (!is.null(rho)) {
-     if (anyNA(rho) ) return(" NA seed values not allowed") 
-     if ( !all(is.finite(rho)) | !all(!is.nan(rho))) return("Rho must be greater than or equal to zero and less than 1 ") 
-     if (rho<0 ||rho >=1)  return(" Rho must be greater than or equal to zero and less than 1 ")   
-   } 
-   
    if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
      return(paste("The total number of plots is",  sum(treatments*replicates) , 
                   "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments),", which is not feasible. "))  
@@ -633,22 +611,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     NestPlots=c(NestPlots,rep(1:blocksizes[i]))
   Design[,ncol(Design)-1]=NestPlots
   Design[]=lapply(Design, as.factor)
-  
-  if (rho!=0) {
-    minCorrMat=autocorrChol(min(blocksizes),rho) 
-    maxCorrMat=autocorrChol(max(blocksizes),rho)  
-    print(crossprod(solve(minCorrMat)))
-    print(crossprod(solve(maxCorrMat)))
-    BF=Design[,(ncol(Design)-2)]
-    TF=Design[,ncol(Design)]
-   for (i in 1:nlevels(BF)) {
-     TL=TF[BF==i]
-    TM=matrix(0,nrow=length(TL),ncol=nlevels(TF))
-    TM[cbind(1:length(TL),TL)]=1 # factor indicator matrix  
-    TM=scale(TM, center = TRUE, scale = FALSE)[,1:(nlevels(TF)-1),drop=FALSE]
-    print(TM)
-   }
-  }
   
   # incidences
   Incidences=vector(mode = "list", length =strata )

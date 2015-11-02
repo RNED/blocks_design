@@ -25,7 +25,6 @@
 #' upper_bounds(nplots=50,ntrts=10,nblocks=10)
 #'
 #' @export
-#'  
 upper_bounds=function(nplots,ntrts,nblocks) {
   if (nplots%%ntrts != 0 | nplots%%nblocks != 0 | (ntrts+nblocks-1)>nplots ) return(NA) 
   if (nplots%%(nblocks*ntrts) == 0 ) return(1)  
