@@ -400,7 +400,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       if ( identical( hcf %% prod(blocklevels[1:stratum]), 0)) next
         nblocks=prod(blocklevels[1:stratum])
         w=sqrt(nblocks)
-        regular=firstPass && identical(max(replevs),min(replevs)) && nunits%%nblocks==0
+        regular=firstPass && identical(max(replevs),min(replevs)) && identical(nunits%%nblocks,0)
         firstPass=FALSE
         sqrLattice  =regular && identical( nunits,nblocks*v) 
         rectLattice =regular && identical(replevs[1], w) && (nunits< (nblocks*replevs[1]) )

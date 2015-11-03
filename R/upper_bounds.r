@@ -26,13 +26,9 @@
 #'
 #' @export
 upper_bounds=function(n,v,b) {
-  if (n%%v != 0 | n%%b != 0 | (v+b-1)>n ) return(NA) 
+  if ( !identical(n%%v, 0)  |  !identical(n%%b, 0) | (v+b-1)>n ) return(NA) 
   r = n/v #replication
-  print(n)
-  print(v)
-  print(r)
-  print(r%%b)
-  if (r%%b == 0) return(1)  
+  if (identical(r%%b, 0)) return(1)  
   k = n/b #block size	
   dual= (v>b & k <= v) 
   if (dual) {
@@ -46,7 +42,7 @@ upper_bounds=function(n,v,b) {
   bound =  v*(k - 1)/(k*(v - 1))
   lambda = r*(k - 1)/(v - 1)
   # this bound is for binary designs 
-  if    ( k <= v & !isTRUE(all.equal(0,lambda))      ) {
+  if  (k <= v) {
     ebar =  bound
     alpha = lambda - floor(lambda)
     s2=v*(v-1)*alpha*(1-alpha)/(r*k*r*k) # corrected second moment lower bound
@@ -58,8 +54,7 @@ upper_bounds=function(n,v,b) {
       z = (1 - alpha)*(v - (v + 1)*alpha)
     s3J = alpha*v*(v - 1)*z/((r*k)**3)
     U4= ebar - s2*s2/((v - 1)*(s3J+ ebar*s2))	
-    
-    if (lambda<1) 
+    if  (identical(0,floor(lambda)))
       s3P = alpha*v*(v - 1)*(  (v + 1)*alpha*alpha - 3*alpha - k + 2)/((r*k)**3) else s3P=s3J
     U5= ebar - s2*s2/((v - 1)*(s3P+ ebar*s2)) 	
     bound=min(U1,U2,U4,U5,na.rm = TRUE)	
