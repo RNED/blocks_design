@@ -459,14 +459,18 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
 # Finds efficiency factors for the blocks in each stratum of a design 
 # ********************************************************************************************************************************************************     
   A_Efficiencies=function(Design,treatments,replicates)  {
+    hcf=HCF(replicates)
     strata=ncol(Design)-2
     nunits=nrow(Design)
     nblocks=as.numeric(sapply(Design,nlevels)[1:strata])
     effics=matrix(1,nrow=strata,ncol=2)
     bounds=rep(NA,strata) 
     for (i in 1:strata) { 
-      if ( all(treatments==treatments[1]) && identical(nunits%%nblocks[i],0) )
+      if ( all(replicates==replicates[1]) && identical(nunits%%nblocks[i],0) ) {
         bounds[i]=upper_bounds(nunits,sum(treatments),nblocks[i]) 
+      } else if (identical(hcf%%nblocks[i],0)) {
+        bounds[i]=1
+      }
       if ( sum(treatments)>1 && nblocks[i]>1)
         effics[i,]=optEffics(Design$Treatments,Design[,i])  
     }

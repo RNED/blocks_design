@@ -28,6 +28,10 @@
 upper_bounds=function(n,v,b) {
   if (n%%v != 0 | n%%b != 0 | (v+b-1)>n ) return(NA) 
   r = n/v #replication
+  print(n)
+  print(v)
+  print(r)
+  print(r%%b)
   if (r%%b == 0) return(1)  
   k = n/b #block size	
   dual= (v>b & k <= v) 
