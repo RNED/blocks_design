@@ -4,14 +4,14 @@
 \alias{upper_bounds}
 \title{Efficiency bounds}
 \usage{
-upper_bounds(nplots, ntrts, nblocks)
+upper_bounds(n, v, b)
 }
 \arguments{
-\item{nplots}{the total number of plots in the design.}
+\item{n}{the total number of plots in the design.}
 
-\item{ntrts}{the total number of treatments in the design.}
+\item{v}{the total number of treatments in the design.}
 
-\item{nblocks}{the total number of blocks in the design.}
+\item{b}{the total number of blocks in the design.}
 }
 \description{
 Finds upper A-efficiency bounds for regular block designs.
@@ -25,7 +25,7 @@ and equal replication. All other designs return NA.
 \examples{
 
 # 50 plots, 10 treatments and 10 blocks for a design with 5 replicates and blocks of size 5 
-upper_bounds(nplots=50,ntrts=10,nblocks=10)
+upper_bounds(n=50,v=10,b=10)
 
 }
 \references{
