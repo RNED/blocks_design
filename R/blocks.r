@@ -130,7 +130,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
     if (length(replevs)>1) 
       for (i in 2: length(replevs)) {
         v[2]=replevs[i] 
-        while (v[2]%%v[1] != 0) v = c(v[2]%%v[1], v[1]) 
+       while (!identical(v[2]%%v[1] , 0)) v = c(v[2]%%v[1], v[1]) 
       }
     v[1]
   }   
@@ -138,16 +138,15 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
 # Tests a given number for primality and returns TRUE or FALSE
 # ********************************************************************************************************************************************************
   isPrime=function(v) {
-    if (v <= 3)  { 
+    if (v <= 3)   
       return(TRUE)
-    } else if (v %% 2 == 0 | v %% 3 == 0) {
+    else if (  identical(v %% 2 , 0) ||  identical(v %% 3 , 0) ) 
       return(FALSE) 
-    } else if (v<25) {
+    else if (v<25) 
       return(TRUE)
-    } else {
+    else 
       for(i in  6*rep(1:floor((sqrt(v)+1)/6)) )
-        if( v %% (i-1) == 0 | v %% (i+1) == 0) return(FALSE) 
-    }
+        if (  identical(v %% (i-1) , 0) ||   identical(v %% (i+1) , 0) ) return(FALSE) 
     return(TRUE)
   } 
 # ******************************************************************************************************************************************************** 
@@ -188,12 +187,10 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   optEffics=function(TF,BF) { 
     r=nlevels(TF)
     k=nlevels(BF)
-    if (r<=k) {
-      e=eigen( (diag(r)-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(r-1)]     
-    } else {     
+    if (r<=k) 
+      e=eigen( (diag(r)-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(r-1)] else    
       e=c(rep(1,(r-k)),
           eigen((diag(k)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(k-1)])  
-    }
     round(c(exp(sum(log(e))/(nlevels(TF)-1)),1/mean(1/e)),6)
   }
 # ******************************************************************************************************************************************************** 
@@ -254,7 +251,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
         if (!isTRUE(all.equal(newrelD,globrelD)) &&  newrelD>globrelD) {
           globTF=TF
           globrelD=newrelD
-          if ( !is.na(bound) &&  isTRUE( all.equal(bound,  optEffics(globTF,BF)[2])) ) break
+          if ( !is.na(bound) &&  isTRUE( all.equal(bound, optEffics(globTF,BF)[2])) ) break
         }
       }
       if (r==searches) break
@@ -287,17 +284,14 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   # ********************************************************************************************************************************************************    
   Swaps=function(TF,MF,BF,pivot,rank) {
     n=length(TF)
-     repeat {
-       if ( rank<(n-1) ) s1=sample(pivot[(1+rank):n],1) else s1=pivot[n]
-        candidates= rep(1:n)[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
-        if ( length(candidates)>1 ) {
-          s2=sample(candidates,1) 
-          break 
-        } else if ( length(candidates)==1 ) { 
-          s2=candidates[1] 
-          break
-          } 
-     }
+    candidates=NULL
+    while (isTRUE(all.equal(length(candidates),0))) {
+      if (rank<(n-1)) s1=sample(pivot[(1+rank):n],1) else s1=pivot[n]
+      candidates = rep(1:n)[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+    }
+    if ( length(candidates)>1 )
+        s2=sample(candidates,1) else
+        s2=candidates[1] 
     s=c(s1,s2)
   }
   # ******************************************************************************************************************************************************** 
@@ -508,11 +502,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  sets=treatments*replicates>0
  treatments=treatments[sets]
  replicates=replicates[sets]
- if (!all(blocklevels==1)) {
-   blocklevels=blocklevels[blocklevels>1] 
-   } else {
+ if (!all(blocklevels==1)) 
+   blocklevels=blocklevels[blocklevels>1] else 
      blocklevels=1
-   }
   stratumnames="Main" 
  if (length(blocklevels)>1)
    for (i in 2:length(blocklevels))
@@ -556,11 +548,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      TF=as.factor(  c(TF, addTF )  ) 
      reptrts=NULL
      for (i in 1 : length(replicates))
-       if (replicates[i]>1) {
-         reptrts=c(reptrts,rep(FALSE,treatments[i])) 
-         } else {  
+       if (replicates[i]>1)
+         reptrts=c(reptrts,rep(FALSE,treatments[i])) else 
            reptrts=c(reptrts,rep(TRUE,treatments[i]))
-         }
      levels(TF)= (1:sum(treatments*replicates))[order(reptrts)] 
      TF=as.numeric(levels(TF))[TF]
      newblocksizes=Sizes(sum(treatments*replicates),blocklevels)
@@ -588,7 +578,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     NestPlots=c(NestPlots,rep(1:blocksizes[i]))
   Design[,ncol(Design)-1]=NestPlots
   Design[]=lapply(Design, as.factor)
-  
   # incidences
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
