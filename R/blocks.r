@@ -89,6 +89,9 @@
 #' # 64 treatments x 2 replicates with 2 main blocks and five succesively nested 2-level factors
 #' blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2))
 #' 
+#' # 6 replicates of 6 treatments in 4 blocks of size 9 (non-binary block design)
+#' blocks(treatments=6,replicates=6,blocklevels=4)
+#' 
 #' # concurrence matrix of balanced incomplete block design 
 #' crossprod(blocks(13,4,13,searches=100)$Incidences[[1]])
 #' 
@@ -446,9 +449,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
                 for (j in 1: w)
                   for (k in 1: (nunits/nblocks))
                     TF=c(TF,mols[i,j,k]+(k-1)*w)
-        } else {
+        } else 
           TF=GenOpt(TF,Design,searches,jumps,stratum,blocklevels,hcf,cycles)
-        }
+
         if (is.null(TF)) break
         TF=as.factor(TF)
         levels(TF)=sample(1:ntrts)

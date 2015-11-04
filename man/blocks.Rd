@@ -92,6 +92,9 @@ blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
 # 64 treatments x 2 replicates with 2 main blocks and five succesively nested 2-level factors
 blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2))
 
+# 6 replicates of 6 treatments in 4 blocks of size 9 (non-binary block design)
+blocks(treatments=6,replicates=6,blocklevels=4)
+
 # concurrence matrix of balanced incomplete block design 
 crossprod(blocks(13,4,13,searches=100)$Incidences[[1]])
 

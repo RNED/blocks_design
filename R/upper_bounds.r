@@ -26,17 +26,18 @@
 #'
 #' @export
 upper_bounds=function(n,v,b) {
-  if ( !identical(n%%v, 0)  |  !identical(n%%b, 0) | (v+b-1)>n ) return(NA) 
+  if ( !identical(n%%v, 0)  ||  !identical(n%%b, 0) || (v+b-1)>n ) return(NA) 
   r = n/v #replication
   if (identical(r%%b, 0)) return(1)  
   k = n/b #block size	
-  dual= (v>b & k <= v) 
+  dual=v>b 
   if (dual) {
     temp = b
     b = v
     v = temp
-    r = n/v
-    k = n/b
+    temp=r
+    r = k
+    k = temp
   }	
   # average efficiency factor
   bound =  v*(k - 1)/(k*(v - 1))
