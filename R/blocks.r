@@ -105,7 +105,8 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
+blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
+ 
 # ******************************************************************************************************************************************************** 
 #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
 # ********************************************************************************************************************************************************
@@ -123,7 +124,7 @@ blocks = function(treatments, replicates, blocklevels=HCF(replicates), searches=
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values
   # ********************************************************************************************************************************************************
   HCF=function(replevs)  {
-    replevs=replevs[replevs>0]
+    replevs=as.numeric(replevs[replevs>0])
     if (length(replevs)==0) return(1)
     replevs=sort(replevs)
     v=(c(replevs[1],NULL))
