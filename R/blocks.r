@@ -330,7 +330,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     BF=Design[,stratum+1]
     rand=sample(1:length(TF))
     TF=TF[rand]
-    if (isTRUE(all.equal(hcf %% prod(blocklevels[1:stratum]),0))) 
+    if (!isTRUE(all.equal(hcf %% prod(blocklevels[1:stratum]),0))) 
     TF=NonSingular(TF,MF,BF,cycles)
     if (!is.null(TF)) {
     blevels=nlevels(BF)%/%nlevels(MF)
