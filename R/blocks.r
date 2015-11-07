@@ -120,18 +120,18 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=
     }   
     sizes 
   } 
-  # ******************************************************************************************************************************************************** 
-  # Finds the highest common factor (hcf) of a set of numbers omitting any zero values
-  # ********************************************************************************************************************************************************
+# ******************************************************************************************************************************************************** 
+# Finds the highest common factor (hcf) of a set of numbers omitting any zero values
+# ********************************************************************************************************************************************************
   HCF=function(replevs)  {
-    replevs=as.numeric(replevs[replevs>0])
-    if (length(replevs)==0) return(1)
+    replevs=replevs[replevs>0]
+    if (isTRUE(all.equal(length(replevs), 0))) return(1)
     replevs=sort(replevs)
     v=(c(replevs[1],NULL))
     if (length(replevs)>1) 
       for (i in 2: length(replevs)) {
         v[2]=replevs[i] 
-       while (!identical(v[2]%%v[1] , 0)) v = c(v[2]%%v[1], v[1]) 
+        while (!isTRUE(all.equal(v[2]%%v[1],0))) v = c(v[2]%%v[1], v[1])    
       }
     v[1]
   }   
@@ -139,15 +139,12 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=
 # Tests a given number for primality and returns TRUE or FALSE
 # ********************************************************************************************************************************************************
   isPrime=function(v) {
-    if (v <= 3)   
-      return(TRUE)
-    else if (  identical(v %% 2 , 0) ||  identical(v %% 3 , 0) ) 
-      return(FALSE) 
-    else if (v<25) 
-      return(TRUE)
+    if (v <= 3) return(TRUE)
+    else if ( isTRUE(all.equal(v %% 2,0)) ||  isTRUE(all.equal(v %% 3,0)) ) return(FALSE) 
+    else if (v<25) return(TRUE)
     else 
       for(i in  6*rep(1:floor((sqrt(v)+1)/6)) )
-        if (  identical(v %% (i-1) , 0) ||   identical(v %% (i+1) , 0) ) return(FALSE) 
+        if ( isTRUE(all.equal(v %% (i-1) , 0)) ||   isTRUE(all.equal(v %% (i+1) , 0)) ) return(FALSE) 
     return(TRUE)
   } 
 # ******************************************************************************************************************************************************** 
@@ -239,7 +236,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     treps=tabulate(TF)
     breps=tabulate(BF)
     bound=NA
-    if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))) 
+    if (isTRUE(all.equal(max(treps),min(treps)) && isTRUE(all.equal(max(breps),min(breps))))) 
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
     for (r in 1 : searches) {
       dmax=DMax(MTT,MBB,MTB,TF,MF,BF) 
@@ -258,9 +255,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       if (r==searches) break
       for (iswap in 1 : jumps) {
         dswap=0
-        while(isTRUE(all.equal(dswap,0)) | dswap<0) {
+        while(isTRUE(all.equal(dswap,0)) || dswap<0) {
           s1=sample(1:length(TF),1)
-          z=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+          z=(1:length(TF))[MF==MF[s1] && BF!=BF[s1] && TF!=TF[s1]]
           if (length(z)==0) next
           if (length(z)>1) {
             s=c(s1,sample(z,1)) 
@@ -313,7 +310,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
         s=Swaps(TF,MF,BF,pivot,rank)
         TM[c(s[1],s[2]),]=TM[c(s[2],s[1]),]
         newQ=qr(t(cbind(BM,TM)))
-          if ( newQ$rank>=rank) { 
+          if ( isTRUE(all.equal(newQ$rank,rank)) || newQ$rank>rank) { 
             TF[c(s[1],s[2])]=TF[c(s[2],s[1])]
             rank=newQ$rank
             pivot=newQ$pivot
@@ -332,8 +329,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     MF=Design[,stratum]
     BF=Design[,stratum+1]
     rand=sample(1:length(TF))
-    TF=TF[rand][order(MF[rand])]
-    if ( !identical( hcf %% prod(blocklevels[1:stratum]), 0)) 
+    TF=TF[rand]
+    if (isTRUE(all.equal(hcf %% prod(blocklevels[1:stratum]),0))) 
     TF=NonSingular(TF,MF,BF,cycles)
     if (!is.null(TF)) {
     blevels=nlevels(BF)%/%nlevels(MF)
@@ -366,14 +363,16 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     TF=as.factor( TF[rand][order(MB[rand])] )
     firstPass=TRUE
     v=sqrt(ntrts)  
+    regrep=isTRUE(all.equal(max(replevs),min(replevs)))
     for (stratum in 1 : length(blocklevels)) { 
-      if ( identical( hcf %% prod(blocklevels[1:stratum]), 0)) next
-        nblocks=prod(blocklevels[1:stratum])
-        w=sqrt(nblocks)
-        regular=firstPass && identical(max(replevs),min(replevs)) && identical(nunits%%nblocks,0)
+      nblocks=prod(blocklevels[1:stratum])
+      if (isTRUE(all.equal(hcf%%nblocks,0))) next
+        regular=firstPass &&  regrep && isTRUE(all.equal(nunits%%nblocks,0))
         firstPass=FALSE
-        sqrLattice  =regular && identical( nunits,nblocks*v) 
-        rectLattice =regular && identical(replevs[1], w) && (nunits< (nblocks*replevs[1]) )
+        sqrLattice  = regular && isTRUE(all.equal(v,floor(v))) && isTRUE(all.equal(nunits,v*nblocks))
+        w=sqrt(nblocks)
+        s=ntrts/w
+        rectLattice = regular && isTRUE(all.equal(replevs[1],w)) && isTRUE(all.equal(s,floor(s))) && (s<w)
         if (sqrLattice  && replevs[1]<4) {
             t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
             if (replevs[1]>2)
@@ -433,12 +432,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     nblocks=as.numeric(sapply(Design,nlevels)[1:strata])
     effics=matrix(1,nrow=strata,ncol=2)
     bounds=rep(NA,strata) 
+    if (isTRUE(all.equal(max(replicates),min(replicates))))
     for (i in 1:strata) { 
-      if ( all(replicates==replicates[1]) && identical(nunits%%nblocks[i],0) ) {
-        bounds[i]=upper_bounds(nunits,sum(treatments),nblocks[i]) 
-      } else if (identical(hcf%%nblocks[i],0)) {
-        bounds[i]=1
-      }
+      if ( isTRUE(all.equal(nunits%%nblocks[i],0)) ) 
+        bounds[i]=upper_bounds(nunits,sum(treatments),nblocks[i]) else if (hcf%%nblocks[i]==0) 
+      bounds[i]=1
       if ( sum(treatments)>1 && nblocks[i]>1)
         effics[i,]=optEffics(Design$Treatments,Design[,i])  
     }
@@ -457,24 +455,24 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      return(" Treatments or replicates list is empty ")   
    if (anyNA(treatments) | anyNA(replicates) ) 
      return(" NA values not allowed")
-   if (!all(is.finite(treatments)) | !all(is.finite(replicates)) | !all(!is.nan(treatments)) | !all(!is.nan(replicates))) 
+   if (any(!is.finite(treatments)) | any(!is.finite(replicates)) | any(is.nan(treatments)) | any(is.nan(replicates))) 
      return(" Treatments and replicates can contain only finite integers ")
    if ( length(treatments)!=length(replicates) ) 
      return(paste("The number of treatments sets = " , length(treatments) , " does not equal the number of replication sets = " , length(replicates)))
-  if (!all(treatments>=0)) 
+
+  if (any(treatments<1)) 
      return("Treatments must be non-negative integers")
-  if (!all(replicates>=0)) 
+  if (any(replicates<1)) 
     return("Replicates must be non-negative integers")  
-  if (  sum(treatments*replicates) <=0 ) 
-    return("Design cannot be fitted : number of plots must be greater than zero")  
+  
    if (!is.null(blocklevels)) {
      if (anyNA(blocklevels) ) return(" NA blocklevels values not allowed") 
-     if (!all(is.finite(blocklevels)) | !all(!is.nan(blocklevels)) ) return(" Blocklevels can contain only finite integers ")
+     if (any(!is.finite(blocklevels)) | any(is.nan(blocklevels)) ) return(" Blocklevels can contain only finite integers ")
      if (min(blocklevels)<1) return (" Blocklevels must be at least one ")
    }
    if (!is.null(searches)) {
      if (anyNA(searches) ) return(" NA searches values not allowed") 
-     if ( !all(is.finite(searches)) | !all(!is.nan(searches))) return(" Searches must be a finite integer ") 
+     if ( any(!is.finite(searches)) | any(is.nan(searches))) return(" Searches must be a finite integer ") 
      if (searches<1)  return(" Repeats must be at least one ")   
    }  
   if (!is.null(jumps)) {
@@ -484,10 +482,10 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   }    
    if (!is.null(seed)) {
      if (anyNA(seed) ) return(" NA seed values not allowed") 
-     if ( !all(is.finite(seed)) | !all(!is.nan(seed))) return(" Seed must be a finite integer ") 
+     if (any(!is.finite(seed)) | any(is.nan(seed))) return(" Seed must be a finite integer ") 
      if (seed<1)  return(" Seed must be at least one ")   
    } 
-   if (  sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) 
+   if ( isTRUE( sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) )
      return(paste("The total number of plots is",  sum(treatments*replicates) , 
                   "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments),", which is not feasible. "))  
    return(TRUE)
@@ -503,6 +501,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  sets=treatments*replicates>0
  treatments=treatments[sets]
  replicates=replicates[sets]
+ 
  if (!all(blocklevels==1)) 
    blocklevels=blocklevels[blocklevels>1] else 
      blocklevels=1
@@ -511,7 +510,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    for (i in 2:length(blocklevels))
      if (blocklevels[i]>1)
        stratumnames=c(stratumnames,paste0("Sub_",(i-1)))  
- if (max(replicates)==1) {
+  
+  if (isTRUE(all.equal(max(replicates),1))) {
    blocksizes=sum(treatments) 
    strata=1
    Design=data.frame(rep(1,blocksizes))
@@ -533,7 +533,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    colnames(Design)=stratumnames
    TF=NULL
    cycles=1
-   if (sum(treatlevs)==1) {
+   
+   if (isTRUE(all.equal(sum(treatlevs),1))) {
      TF=as.factor(rep(1,replevs))
    } else {
      while (is.null(TF) && cycles<100) {
@@ -587,7 +588,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   # efficiencies
   Efficiencies=A_Efficiencies(Design,treatments,replicates)
   # aov
-  if (sum(treatments)==1 || sum(blocklevels)==1 ) { 
+  
+    if (isTRUE(all.equal(sum(treatments),1)) ||  isTRUE(all.equal(sum(blocklevels),1))) {
     AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
     AOV[]=lapply(AOV, as.factor) 
   } else {
@@ -610,7 +612,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   colnames(BlockSizes)=c(stratumnames," Sizes ")  
   # Plan layout
   plantrts=as.numeric(Design[,"Treatments"])
-  if  (!identical(max(blocksizes),min(blocksizes))) {
+  
+  if (!isTRUE(all.equal(max(blocksizes),min(blocksizes)))) {
    index=which(blocksizes==min(blocksizes))*max(blocksizes)
    for (i in 1 : length(index))
      plantrts=append(plantrts,NA,after=(index[i]-1)) 

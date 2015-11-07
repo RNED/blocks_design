@@ -26,9 +26,12 @@
 #'
 #' @export
 upper_bounds=function(n,v,b) {
-  if ( !identical(n%%v, 0)  ||  !identical(n%%b, 0) || (v+b-1)>n ) return(NA) 
+  n=as.integer(n)
+  v=as.integer(v)
+  b=as.integer(b)
+  if ( !identical(n%%v, as.integer(0))  ||  !identical(n%%b, as.integer(0)) || (v+b-1)>n ) return(NA) 
   r = n/v #replication
-  if (identical(r%%b, 0)) return(1)  
+  if (identical(r%%b, as.integer(0))) return(1)  
   k = n/b #block size	
   dual=v>b 
   if (dual) {
