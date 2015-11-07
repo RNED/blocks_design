@@ -236,7 +236,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     treps=tabulate(TF)
     breps=tabulate(BF)
     bound=NA
-    if (isTRUE(all.equal(max(treps),min(treps)) && isTRUE(all.equal(max(breps),min(breps))))) 
+    if ( isTRUE(all.equal(max(treps),min(treps))) && isTRUE(all.equal(max(breps),min(breps)))       )
         bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
     for (r in 1 : searches) {
       dmax=DMax(MTT,MBB,MTB,TF,MF,BF) 
