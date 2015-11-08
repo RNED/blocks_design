@@ -29,9 +29,9 @@ upper_bounds=function(n,v,b) {
   n=as.integer(n)
   v=as.integer(v)
   b=as.integer(b)
-  if ( !identical(n%%v, as.integer(0))  ||  !identical(n%%b, as.integer(0)) || (v+b-1)>n ) return(NA) 
+  if ( !isTRUE(all.equal(n%%v,0)) ||  !isTRUE(all.equal(n%%b,0)) || (v+b-1)>n ) return(NA) 
   r = n/v #replication
-  if (identical(r%%b, as.integer(0))) return(1)  
+  if (isTRUE(all.equal(r%%b, 0))) return(1) 
   k = n/b #block size	
   dual=v>b 
   if (dual) {
@@ -45,6 +45,7 @@ upper_bounds=function(n,v,b) {
   # average efficiency factor
   bound =  v*(k - 1)/(k*(v - 1))
   lambda = r*(k - 1)/(v - 1)
+  if  (identical(lambda,floor(lambda))) return(bound)
   # this bound is for binary designs 
   if  (k <= v) {
     ebar =  bound
@@ -60,7 +61,7 @@ upper_bounds=function(n,v,b) {
     U4= ebar - s2*s2/((v - 1)*(s3J+ ebar*s2))	
     if  (identical(0,floor(lambda)))
       s3P = alpha*v*(v - 1)*(  (v + 1)*alpha*alpha - 3*alpha - k + 2)/((r*k)**3) else s3P=s3J
-    U5= ebar - s2*s2/((v - 1)*(s3P+ ebar*s2)) 	
+    U5= ebar - s2*s2/((v - 1)*(s3P+ ebar*s2)) 
     bound=min(U1,U2,U4,U5,na.rm = TRUE)	
   }
   # this bound is for non-binary designs - see John and Williams page 44
