@@ -33,6 +33,9 @@ upper_bounds=function(n,v,b) {
   r = n/v #replication
   if (isTRUE(all.equal(r%%b, 0))) return(1) 
   k = n/b #block size	
+  bound =  v*(k - 1)/(k*(v - 1))
+  lambda = r*(k - 1)/(v - 1)
+  if  (identical(lambda,floor(lambda))) return(bound)
   dual=v>b 
   if (dual) {
     temp = b
@@ -41,11 +44,10 @@ upper_bounds=function(n,v,b) {
     temp=r
     r = k
     k = temp
+    bound =  v*(k - 1)/(k*(v - 1))
+    lambda = r*(k - 1)/(v - 1)
   }	
-  # average efficiency factor
-  bound =  v*(k - 1)/(k*(v - 1))
-  lambda = r*(k - 1)/(v - 1)
-  if  (identical(lambda,floor(lambda))) return(bound)
+ 
   # this bound is for binary designs 
   if  (k <= v) {
     ebar =  bound
