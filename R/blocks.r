@@ -258,9 +258,10 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       if (r==searches) break
       for (iswap in 1 : jumps) {
         dswap=0
-        while(isTRUE(all.equal(dswap,0)) || dswap<0) {
+        while(isTRUE(all.equal(dswap,0)) | dswap<0) {     
           s1=sample(1:length(TF),1)
-          z=(1:length(TF))[MF==MF[s1] && BF!=BF[s1] && TF!=TF[s1]]
+          z=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+          if (length(z)==0) print(abc)
           if (length(z)==0) next
           if (length(z)>1) {
             s=c(s1,sample(z,1)) 
@@ -270,6 +271,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
             (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
         }
+        
         newrelD=newrelD*dswap
         up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
         MTT=up$MTT
@@ -324,6 +326,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       if (searches>=(cycles*5)) TF=NULL 
       TF
   }  
+  
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
