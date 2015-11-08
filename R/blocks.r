@@ -221,11 +221,14 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       }
     } 
     if (improved) next
-    if (sum(nSamp) >= min(length(TF),512)) break
+    if (sum(nSamp) < min(length(TF),512))
     nSamp=pmin(mainSizes,2*nSamp)
+    else 
+      break
   }  
   list(MTT=MTT,MBB=MBB,MTB=MTB,TF=TF,relD=relD)
 }  
+
 # ******************************************************************************************************************************************************** 
 #  Number of searches for an optimization with selected number of searches and selected number of junps to escape local optima
 # ********************************************************************************************************************************************************
@@ -329,7 +332,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     MF=Design[,stratum]
     BF=Design[,stratum+1]
     rand=sample(1:length(TF))
-    TF=TF[rand]
+    TF=TF[rand][order(MF[rand])]
     if (!isTRUE(all.equal(hcf %% prod(blocklevels[1:stratum]),0))) 
     TF=NonSingular(TF,MF,BF,cycles)
     if (!is.null(TF)) {
