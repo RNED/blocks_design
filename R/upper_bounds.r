@@ -25,7 +25,7 @@
 #' upper_bounds(n=50,v=10,b=10)
 #'
 #' @export
-upper_bounds=function(n,v,b) {
+  upper_bounds=function(n,v,b) {
   n=as.integer(n)
   v=as.integer(v)
   b=as.integer(b)
@@ -33,9 +33,22 @@ upper_bounds=function(n,v,b) {
   r = n/v #replication
   if (isTRUE(all.equal(r%%b, 0))) return(1) 
   k = n/b #block size	
-  bound =  v*(k - 1)/(k*(v - 1))
-  lambda = r*(k - 1)/(v - 1)
-  if  (identical(lambda,floor(lambda))) return(bound)
+  # this bound is for non-binary designs - see John and Williams page 44
+  if (k > v) {
+    kp=k%%v
+    U0=1 - kp*(v-kp)/(k*k*(v - 1)) 
+    rp=b*kp/v
+    phi=kp/k
+    lambdap = rp*(kp - 1)/(v - 1)
+    alphap = lambdap - floor(lambdap)
+    s2=phi^4*v*(v-1)*alphap*(1-alphap)/((rp*kp)**2) # corrected second moment lower bound
+    S=sqrt(s2/(v-1)/(v-2))
+    U1 = U0 - (v - 2)*S*S/(U0 + (v - 3)*S)
+    U2 = U0 - (1 - U0)*s2/((1 - U0)*(v - 1) - s2)
+    bound=min(U0,U1,U2,na.rm = TRUE)	
+    return(round(bound,6))
+  } 
+  # this bound is for binary designs 
   dual=v>b 
   if (dual) {
     temp = b
@@ -44,13 +57,11 @@ upper_bounds=function(n,v,b) {
     temp=r
     r = k
     k = temp
-    bound =  v*(k - 1)/(k*(v - 1))
-    lambda = r*(k - 1)/(v - 1)
   }	
- 
-  # this bound is for binary designs 
-  if  (k <= v) {
-    ebar =  bound
+  bound =  v*(k - 1)/(k*(v - 1))
+  lambda = r*(k - 1)/(v - 1)
+  if  (!identical(lambda,floor(lambda))) {
+    ebar=bound 
     alpha = lambda - floor(lambda)
     s2=v*(v-1)*alpha*(1-alpha)/(r*k*r*k) # corrected second moment lower bound
     S=sqrt(s2/(v-1)/(v-2))
@@ -66,21 +77,7 @@ upper_bounds=function(n,v,b) {
     U5= ebar - s2*s2/((v - 1)*(s3P+ ebar*s2)) 
     bound=min(U1,U2,U4,U5,na.rm = TRUE)	
   }
-  # this bound is for non-binary designs - see John and Williams page 44
-  if (k > v) {
-    kp=k%%v
-    U0=1 - kp*(v-kp)/k/k/(v - 1) 
-    rp=b*kp/v
-    phi=kp/k
-    lambdap = rp*(kp - 1)/(v - 1)
-    alphap = lambdap - floor(lambdap)
-    s2=phi^4*v*(v-1)*alphap*(1-alphap)/((rp*kp)**2) # corrected second moment lower bound
-    S=sqrt(s2/(v-1)/(v-2))
-    U1= U0 - (v - 2)*S*S/(U0 + (v - 3)*S)
-    U2= U0 - (1 - U0)*s2/((1 - U0)*(v - 1) - s2)
-    bound=min(U0,U1,U2,na.rm = TRUE)	
-  } 
   if (dual) 
     bound = (b - 1)/((b - v) + (v - 1)/bound)
-  round(bound,6)
-}	
+  return(round(bound,6))
+  }	
