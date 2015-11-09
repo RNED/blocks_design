@@ -438,11 +438,12 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     nblocks=as.numeric(sapply(Design,nlevels)[1:strata])
     effics=matrix(1,nrow=strata,ncol=2)
     bounds=rep(NA,strata) 
-    if (isTRUE(all.equal(max(replicates),min(replicates))))
     for (i in 1:strata) { 
-      if ( isTRUE(all.equal(nunits%%nblocks[i],0)) ) 
-        bounds[i]=upper_bounds(nunits,sum(treatments),nblocks[i]) else if (hcf%%nblocks[i]==0) 
-      bounds[i]=1
+      if (isTRUE(all.equal(max(replicates),min(replicates))) ) {
+        if ( isTRUE(all.equal(nunits%%nblocks[i],0))) 
+          bounds[i]=upper_bounds(nunits,sum(treatments),nblocks[i]) else if (hcf%%nblocks[i]==0) 
+          bounds[i]=1
+      }
       if ( sum(treatments)>1 && nblocks[i]>1)
         effics[i,]=optEffics(Design$Treatments,Design[,i])  
     }
@@ -451,6 +452,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     efficiencies[,'Blocks'] = as.factor(efficiencies[,'Blocks'])
     efficiencies
   }
+  
+ 
 # ******************************************************************************************************************************************************** 
 # Carries out some input validation
 # ********************************************************************************************************************************************************     
