@@ -26,9 +26,6 @@
 #'
 #' @export
   upper_bounds=function(n,v,b) {
-  n=as.integer(n)
-  v=as.integer(v)
-  b=as.integer(b)
   if ( !isTRUE(all.equal(n%%v,0)) ||  !isTRUE(all.equal(n%%b,0)) || (v+b-1)>n ) return(NA) 
   r = n/v #replication
   if (isTRUE(all.equal(r%%b, 0))) return(1) 
@@ -46,8 +43,7 @@
     U1 = U0 - (v - 2)*S*S/(U0 + (v - 3)*S)
     U2 = U0 - (1 - U0)*s2/((1 - U0)*(v - 1) - s2)
     bound=min(U0,U1,U2,na.rm = TRUE)	
-    return(round(bound,6))
-  } 
+  } else {
   # this bound is for binary designs 
   dual=v>b 
   if (dual) {
@@ -79,5 +75,6 @@
   }
   if (dual) 
     bound = (b - 1)/((b - v) + (v - 1)/bound)
+  }
   return(round(bound,6))
   }	

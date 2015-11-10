@@ -124,16 +124,10 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=
 # Finds the highest common factor (hcf) of a set of numbers omitting any zero values
 # ********************************************************************************************************************************************************
   HCF=function(replevs)  {
-    replevs=replevs[replevs>0]
-    if (isTRUE(all.equal(length(replevs), 0))) return(1)
-    replevs=sort(replevs)
-    v=(c(replevs[1],NULL))
-    if (length(replevs)>1) 
-      for (i in 2: length(replevs)) {
-        v[2]=replevs[i] 
-        while (!isTRUE(all.equal(v[2]%%v[1],0))) v = c(v[2]%%v[1], v[1])    
-      }
-    v[1]
+    replevs=sort(replevs[replevs>0])
+    for (i in 1: length(replevs))
+      while (!isTRUE(all.equal(replevs[i]%%replevs[1],0))) replevs[c(1,i)] = c(replevs[i]%%replevs[1], replevs[1])
+      replevs[1]
   }   
 # ******************************************************************************************************************************************************** 
 # Tests a given number for primality and returns TRUE or FALSE
