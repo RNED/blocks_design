@@ -261,7 +261,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
         while(isTRUE(all.equal(dswap,0)) | dswap<0) {     
           s1=sample(1:length(TF),1)
           z=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
-          if (length(z)==0) print(abc)
           if (length(z)==0) next
           if (length(z)>1) {
             s=c(s1,sample(z,1)) 
