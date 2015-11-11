@@ -121,7 +121,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=
     sizes 
   } 
 # ******************************************************************************************************************************************************** 
-# Finds the highest common factor (hcf) of a set of numbers omitting any zero values
+# Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)
 # ********************************************************************************************************************************************************
   HCF=function(replevs)  {
     replevs=sort(replevs[replevs>0])
@@ -256,15 +256,12 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           s1=sample(1:length(TF),1)
           z=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
           if (length(z)==0) next
-          if (length(z)>1) {
-            s=c(s1,sample(z,1)) 
-            } else {
+          if (length(z)>1) 
+            s=c(s1,sample(z,1))  else 
               s=c(s1,z[1])
-            }
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
             (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
         }
-        
         newrelD=newrelD*dswap
         up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
         MTT=up$MTT
@@ -306,18 +303,18 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       while (rank<fullrank & searches<(cycles*5)) {
         searches=searches+1
         s=Swaps(TF,MF,BF,pivot,rank)
-        TM[c(s[1],s[2]),]=TM[c(s[2],s[1]),]
-        newQ=qr(t(cbind(BM,TM)))
-          if ( isTRUE(all.equal(newQ$rank,rank)) || newQ$rank>rank) { 
-            TF[c(s[1],s[2])]=TF[c(s[2],s[1])]
-            rank=newQ$rank
-            pivot=newQ$pivot
-          } else {
-            TM[c(s[2],s[1]),]=TM[c(s[1],s[2]),]
-          }
-        }
-      if (searches>=(cycles*5)) TF=NULL 
-      TF
+        rindex=(1:length(TF))
+        rindex[c(s[1],s[2])]=rindex[c(s[2],s[1])]
+        newQ=qr(t(cbind(BM,TM[rindex,])))
+        if (isTRUE(all.equal(newQ$rank,rank)) || newQ$rank>rank) { 
+          TF=TF[rindex]
+          TM=TM[rindex,]
+          rank=newQ$rank
+          pivot=newQ$pivot
+        } 
+      }
+    if (searches>=(cycles*5)) TF=NULL 
+    TF
   }  
   
   # ******************************************************************************************************************************************************** 
