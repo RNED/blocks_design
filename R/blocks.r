@@ -568,7 +568,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   Design[]=lapply(Design, as.factor)
   for (r in 1 : (ncol(Design)-1))
     levels(Design[,r])=order(as.numeric(unique(Design[,r])))
-  for (r in 1 : (ncol(Design)-1))
+  for (r in 1 : (ncol(Design)-1)) 
     Design[,r]=as.numeric(levels(Design[,r]))[Design[,r]] 
   Design[]=lapply(Design, as.factor)
   colnames(Design)=c(stratumnames,"Plots","Treatments")  
@@ -587,7 +587,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   # efficiencies
   Efficiencies=A_Efficiencies(Design,treatments,replicates)
   # aov
-  
     if (isTRUE(all.equal(sum(treatments),1)) ||  isTRUE(all.equal(sum(blocklevels),1))) {
     AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
     AOV[]=lapply(AOV, as.factor) 
