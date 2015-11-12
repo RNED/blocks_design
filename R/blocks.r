@@ -523,16 +523,16 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    if (is.null(searches)) 
      searches=1+2000%/%(sum(treatments)+prod(blocklevels))
    strata=length(blocklevels)
-   blocksizes=Sizes(sum(treatlevs*replevs),blocklevels)
+   cumblocklevs=cumprod(blocklevels)
    facMat= matrix(nrow=prod(blocklevels),ncol=strata)
-   for (r in 1 : strata) 
-     facMat[,r]=gl(prod(blocklevels[1:r]),prod(blocklevels[1:strata])/prod(blocklevels[1:r]))  
+   factlevs <- function(r){ gl(cumblocklevs[r],prod(blocklevels)/cumblocklevs[r]) }
+   facMat=do.call(cbind,lapply(1:strata,factlevs))
+   blocksizes=Sizes(sum(treatlevs*replevs),blocklevels)
    Design=as.data.frame(facMat[rep(1:length(blocksizes),blocksizes),])
    Design[]=lapply(Design, as.factor) 
    colnames(Design)=stratumnames
    TF=NULL
    cycles=1
-   
    if (isTRUE(all.equal(sum(treatlevs),1))) {
      TF=as.factor(rep(1,replevs))
    } else {
