@@ -559,45 +559,32 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
    }
  }
-   # randomization
   Design[,c("Plots","Treatments")]  = c(rep(1:nrow(Design)) ,TF)
   Design[]=lapply(Design, as.factor)
-  for (r in 1 : (ncol(Design)-1)) 
-    Design[,r]=as.numeric( sample(nlevels(Design[,r])) )[Design[,r]] 
-  Design=Design[ do.call(order, Design), ] 
-  Design[]=lapply(Design, as.factor)
-  for (r in 1 : (ncol(Design)-1))
-    levels(Design[,r])=order(as.numeric(unique(Design[,r])))
-  for (r in 1 : (ncol(Design)-1)) 
-    Design[,r]=as.numeric(levels(Design[,r]))[Design[,r]] 
-  Design[]=lapply(Design, as.factor)
+   # randomization
+  Design=as.data.frame(do.call(cbind,lapply(1:ncol(Design), function(r){ sample(nlevels(Design[,r]))[Design[,r]] })))  
+  Design=Design[ do.call(order, Design), ]
+  blocksizes=tabulate(Design[,strata])[unique(Design[,strata])]
+  Design[,c(1:(ncol(Design)-1))]=cbind(facMat[rep(1:length(blocksizes),blocksizes),],rep(1:nrow(Design)))
   colnames(Design)=c(stratumnames,"Plots","Treatments")  
   row.names(Design)=c(1:nrow(Design))
-  blocksizes=tabulate(Design[,strata])
-  NestPlots=NULL
-  for ( i in 1 : length(blocksizes)) 
-    NestPlots=c(NestPlots,rep(1:blocksizes[i]))
-  Design[,ncol(Design)-1]=NestPlots
+  Design[,ncol(Design)-1]=unlist(lapply(1:length(blocksizes),function(r){rep(1:blocksizes[r])}))
   Design[]=lapply(Design, as.factor)
+  print(Design)
   # incidences
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
-   Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
+    Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
   names(Incidences)=stratumnames
   # efficiencies
   Efficiencies=A_Efficiencies(Design,treatments,replicates)
   # aov
-    if (isTRUE(all.equal(sum(treatments),1)) ||  isTRUE(all.equal(sum(blocklevels),1))) {
+  if (isTRUE(all.equal(sum(treatments),1)) ||  isTRUE(all.equal(sum(blocklevels),1))) {
     AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
     AOV[]=lapply(AOV, as.factor) 
   } else {
     AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]
   }
-  # convert stratum block levels into nested sub-block levels for design output 
-  if (strata>1)
-  for (r in 2 : strata ) 
-    Design[,r]= (  as.numeric(Design[,r])-1 )%%blocklevels[r]+1
-  Design[]=lapply(Design, as.factor)
   
   # treatment replications
   Treatments=as.data.frame(table(Design[,"Treatments"]))
