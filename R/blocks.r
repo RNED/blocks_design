@@ -570,7 +570,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   row.names(Design)=c(1:nrow(Design))
   Design[,ncol(Design)-1]=unlist(lapply(1:length(blocksizes),function(r){rep(1:blocksizes[r])}))
   Design[]=lapply(Design, as.factor)
-  print(Design)
   # incidences
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
@@ -585,7 +584,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   } else {
     AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]
   }
-  
   # treatment replications
   Treatments=as.data.frame(table(Design[,"Treatments"]))
   Treatments[]=lapply(Treatments, as.factor) 
@@ -595,20 +593,15 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   BlockSizes[]=lapply(BlockSizes, as.factor) 
   row.names(BlockSizes)=c(1:nrow(BlockSizes))
   colnames(BlockSizes)=c(stratumnames," Sizes ")  
-  # Plan layout
-  plantrts=as.numeric(Design[,"Treatments"])
-  
-  if (!isTRUE(all.equal(max(blocksizes),min(blocksizes)))) {
-   index=which(blocksizes==min(blocksizes))*max(blocksizes)
-   for (i in 1 : length(index))
-     plantrts=append(plantrts,NA,after=(index[i]-1)) 
-  }
-  Plots=rep(NA,length(blocksizes))
-  Plan=data.frame(Design[Design["Plots"]==1,rep(1:strata),drop=FALSE] ,Plots ,matrix(plantrts,nrow=length(blocksizes),ncol=max(blocksizes),byrow=TRUE))
+  # convert block levels to nested levels
+  Design[,c(1:strata)] = do.call(cbind,lapply(1:strata, function(r){ (as.numeric(Design[,r])-1)%%blocklevels[r]+1 }))
+  Design[]=lapply(Design, as.factor)
+  # plan
+  Plots=t(sapply(split(Design[,"Treatments"],rep(1:length(blocksizes),blocksizes)), '[', 1:max(blocksizes) ))
+  Plots[is.na(Plots)] = ""
+  Plan=data.frame(Design[Design["Plots"]==1,rep(1:strata),drop=FALSE] ,rep("",nrow(Plots)) ,Plots)
   colnames(Plan)=c(stratumnames,"Plots:",rep(1:max(blocksizes)))
-  Plan[is.na(Plan)] = ""
   Plan[]=lapply(Plan,as.factor) 
   row.names(Plan)=c(1:nrow(Plan))
- 
  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=Efficiencies,Design=Design,Plan=Plan,AOV=AOV,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
