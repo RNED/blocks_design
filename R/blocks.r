@@ -542,6 +542,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      }
    }
    if (cycles>=100) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure")  
+   
+   
    #add back single rep treatments
    if ( min(replicates)==1 && max(replicates)>1 ) {
      addTF=((sum(treatlevs)+1) :sum(treatments))
@@ -557,14 +559,18 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
      newblocksizes=Sizes(sum(treatments*replicates),blocklevels)
      Design=as.data.frame(facMat[rep(1:length(newblocksizes),newblocksizes),])
      TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
+     blocksizes=newblocksizes
    }
  }
   Design[,c("Plots","Treatments")]  = c(rep(1:nrow(Design)) ,TF)
   Design[]=lapply(Design, as.factor)
-   # randomization
-  Design=as.data.frame(do.call(cbind,lapply(1:ncol(Design), function(r){ sample(nlevels(Design[,r]))[Design[,r]] })))  
+  # randomization
+  Design=data.frame(do.call(cbind,lapply(1:(strata+1), function(r){ sample(nlevels(Design[,r]))[Design[,r]] })) ,Design[,strata+2])
   Design=Design[ do.call(order, Design), ]
-  blocksizes=tabulate(Design[,strata])[unique(Design[,strata])]
+  # blocksizes for re-labelled block factor levels
+  t=tabulate(Design[,strata])
+  blocksizes=t[unique(Design[,strata])]
+  # re-labelled block factor levels for re-ordered blocks
   Design[,c(1:(ncol(Design)-1))]=cbind(facMat[rep(1:length(blocksizes),blocksizes),],rep(1:nrow(Design)))
   colnames(Design)=c(stratumnames,"Plots","Treatments")  
   row.names(Design)=c(1:nrow(Design))
