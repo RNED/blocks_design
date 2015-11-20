@@ -105,8 +105,8 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=max(1,100-sum(treatments)-prod(blocklevels)),seed=sample(10000,1),jumps=1) { 
- 
+blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=(1+2000%/%(sum(treatments)+prod(blocklevels))),seed=sample(10000,1),jumps=1) { 
+  
 # ******************************************************************************************************************************************************** 
 #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
 # ********************************************************************************************************************************************************
@@ -183,7 +183,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=
       e=eigen( (diag(r)-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(r-1)] else    
       e=c(rep(1,(r-k)),
           eigen((diag(k)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(k-1)])  
-    round(c(exp(sum(log(e))/(nlevels(TF)-1)),1/mean(1/e)),6)
+    round(c(mean(e)*prod(e/mean(e))^(1/length(e)),1/mean(1/e)),6)
   }
 # ******************************************************************************************************************************************************** 
 # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
@@ -227,32 +227,31 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
 #  Number of searches for an optimization with selected number of searches and selected number of junps to escape local optima
 # ********************************************************************************************************************************************************
   Optimise=function(TF,BF,MF,MTT,MBB,MTB,searches,jumps)  {
-    newrelD=1
     globrelD=0
+    relD=1
     globTF=TF
     treps=tabulate(TF)
     breps=tabulate(BF)
-    bound=NA
-    if ( isTRUE(all.equal(max(treps),min(treps))) && isTRUE(all.equal(max(breps),min(breps)))       )
-        bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) 
+    if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  )
+      bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) else bound=NA
     for (r in 1 : searches) {
       dmax=DMax(MTT,MBB,MTB,TF,MF,BF) 
-      if (!isTRUE(all.equal(dmax$relD,1)) &&  dmax$relD>1) {
-        newrelD=newrelD*dmax$relD 
+      if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
+        relD=relD*dmax$relD
         TF=dmax$TF
         MTT=dmax$MTT
         MBB=dmax$MBB
         MTB=dmax$MTB 
-        if (!isTRUE(all.equal(newrelD,globrelD)) &&  newrelD>globrelD) {
+        if (!isTRUE(all.equal(relD,globrelD)) && relD>globrelD) {
           globTF=TF
-          globrelD=newrelD
-          if ( !is.na(bound) &&  isTRUE( all.equal(bound, optEffics(globTF,BF)[2])) ) break
+          globrelD=relD
+          if ( !is.na(bound) &&  isTRUE( all.equal(bound,  optEffics(globTF,BF)[2])) ) break
         }
       }
       if (r==searches) break
       for (iswap in 1 : jumps) {
         dswap=0
-        while(isTRUE(all.equal(dswap,0)) | dswap<0) {     
+        while(dswap<.5) {     
           s1=sample(1:length(TF),1)
           z=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
           if (length(z)==0) next
@@ -262,7 +261,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
             (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
         }
-        newrelD=newrelD*dswap
+        relD=relD*dswap
         up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
         MTT=up$MTT
         MBB=up$MBB
@@ -290,7 +289,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
-  NonSingular=function(TF,MF,BF,cycles) { 
+  NonSingular=function(TF,MF,BF) { 
       BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
       BM[cbind(1:length(BF),BF)]=1
       fullrank=nlevels(TF)+nlevels(BF)-1
@@ -299,9 +298,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       Q=qr(t(cbind(BM,TM)))
       rank=Q$rank
       pivot=Q$pivot
-      searches=0
-      while (rank<fullrank & searches<(cycles*5)) {
-        searches=searches+1
+      times=0
+      while (rank<fullrank & times<100) {
+        times=times+1
         s=Swaps(TF,MF,BF,pivot,rank)
         rindex=(1:length(TF))
         rindex[c(s[1],s[2])]=rindex[c(s[2],s[1])]
@@ -313,22 +312,21 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           pivot=newQ$pivot
         } 
       }
-    if (searches>=(cycles*5)) TF=NULL 
+    if (times>99) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure") 
     TF
   }  
   
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
-  GenOpt=function(TF,Design,searches,jumps,stratum,blocklevels,hcf,cycles) { 
+  GenOpt=function(TF,Design,searches,jumps,stratum,blocklevels,hcf) { 
     Design=cbind(as.factor(rep(1,nrow(Design))),Design)
     MF=Design[,stratum]
     BF=Design[,stratum+1]
     rand=sample(1:length(TF))
     TF=TF[rand][order(MF[rand])]
     if (!isTRUE(all.equal(hcf %% prod(blocklevels[1:stratum]),0))) 
-    TF=NonSingular(TF,MF,BF,cycles)
-    if (!is.null(TF)) {
+    TF=NonSingular(TF,MF,BF)
     blevels=nlevels(BF)%/%nlevels(MF)
     BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
     TM=Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE] 
@@ -343,13 +341,12 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
     TF=Optimise(TF,BF,MF,MTT,MBB,MTB,searches,jumps)
-    }
     TF
   }  
 # ******************************************************************************************************************************************************** 
 # Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm as appropriate
 # ********************************************************************************************************************************************************     
-    optTF=function(Design,treatlevs,replevs,blocklevels,searches,jumps,cycles) {
+    optTF=function(Design,treatlevs,replevs,blocklevels,searches,jumps) {
     nunits=sum(treatlevs*replevs)
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
@@ -360,6 +357,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     firstPass=TRUE
     v=sqrt(ntrts)  
     regrep=isTRUE(all.equal(max(replevs),min(replevs)))
+  
     for (stratum in 1 : length(blocklevels)) { 
       nblocks=prod(blocklevels[1:stratum])
       if (isTRUE(all.equal(hcf%%nblocks,0))) next
@@ -411,12 +409,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
                   for (k in 1: (nunits/nblocks))
                     TF=c(TF,mols[i,j,k]+(k-1)*w)
         } else 
-          TF=GenOpt(TF,Design,searches,jumps,stratum,blocklevels,hcf,cycles)
-        if (is.null(TF)) break
-        TF=as.factor(TF)
-        levels(TF)=sample(1:ntrts)
-    }
-   TF 
+          TF=GenOpt(TF,Design,searches,jumps,stratum,blocklevels,hcf)
+      }
+  TF=as.factor(TF)
+  levels(TF)=sample(1:ntrts)
+  TF 
   }
 # ******************************************************************************************************************************************************** 
 # Finds efficiency factors for the blocks in each stratum of a design 
@@ -442,8 +439,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     efficiencies[,'Blocks'] = as.factor(efficiencies[,'Blocks'])
     efficiencies
   }
-  
- 
 # ******************************************************************************************************************************************************** 
 # Carries out some input validation
 # ********************************************************************************************************************************************************     
@@ -500,35 +495,26 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  testout=testInputs(treatments,replicates,blocklevels,searches,seed,jumps) 
  if (!isTRUE(testout)) stop(testout)
  set.seed(seed)
- sets=treatments*replicates>0
- treatments=treatments[sets]
- replicates=replicates[sets]
  blocklevels=blocklevels[blocklevels>1]
- if (isTRUE(all.equal(length(blocklevels),0)))   blocklevels=1
- stratumnames="Main" 
- searches=1+2000%/%(sum(treatments)+prod(blocklevels))
- if (!isTRUE(all.equal(length(blocklevels),1)))  
-   for (i in 2:length(blocklevels))
-       stratumnames=c(stratumnames,paste0("Sub_",(i-1)))  
+ if (isTRUE(all.equal(length(blocklevels),0))) blocklevels=1
  strata=length(blocklevels)
- if (max(replicates)==1) blocksizes=sum(treatments) else
- blocksizes=Sizes( sum(treatments[replicates>1]*replicates[replicates>1])  , blocklevels)
  cumblocklevs=cumprod(blocklevels)
+ if (max(replicates)==1) blocksizes=sum(treatments) else
+ blocksizes=Sizes(sum(treatments[replicates>1]*replicates[replicates>1])  , blocklevels)
+ stratumnames="Main" 
+ if (!isTRUE(all.equal(strata,1)))  
+   stratumnames=c( stratumnames,sapply(2:strata, function(i) { paste0("Sub_",(i-1)) }))
  facMat= matrix(nrow=prod(blocklevels),ncol=strata)
  factlevs <- function(r){ gl(cumblocklevs[r],prod(blocklevels)/cumblocklevs[r]) }
  facMat=do.call(cbind,lapply(1:strata,factlevs))
+ 
  Design=data.frame(facMat[rep(1:length(blocksizes),blocksizes),])
  Design[]=lapply(Design, as.factor) 
- TF=sample(rep(treatments[replicates>1],replicates[replicates>1]))
- if (!isTRUE(all.equal(max(replicates),1)) &&! isTRUE(all.equal(sum(treatments[replicates>1]),1)) ) {
-    TF=NULL
-    cycles=1
-    while (is.null(TF) && cycles<100) {
-      TF=optTF(Design,treatments[replicates>1],replicates[replicates>1],blocklevels,searches,jumps,cycles)
-      cycles=cycles+1
-      if (cycles>=100) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure")  
-    }
-  }
+
+ if (!isTRUE(all.equal(max(replicates),1)) && !isTRUE(all.equal(sum(treatments[replicates>1]),1)) )
+      TF=optTF(Design,treatments[replicates>1],replicates[replicates>1],blocklevels,searches,jumps) else
+       TF=sample(rep(treatments[replicates>1],replicates[replicates>1])) 
+    
  #add back single rep treatments
  if ( min(replicates)==1 && max(replicates)>1 ) {
    addTF=((sum(treatments[replicates>1])+1) :sum(treatments))

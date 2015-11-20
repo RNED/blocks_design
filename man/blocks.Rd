@@ -4,9 +4,9 @@
 \alias{blocks}
 \title{Block designs}
 \usage{
-blocks(treatments, replicates, blocklevels = HCF(replicates),
-  searches = max(1, 100 - sum(treatments) - prod(blocklevels)),
-  seed = sample(10000, 1), jumps = 1)
+blocks(treatments, replicates, blocklevels = HCF(replicates), searches = (1
+  + 2000\%/\%(sum(treatments) + prod(blocklevels))), seed = sample(10000, 1),
+  jumps = 1)
 }
 \arguments{
 \item{treatments}{treatment numbers that provide a partition of the total required number of treatments into sets of equally replicated treatments.}
