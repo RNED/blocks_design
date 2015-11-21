@@ -297,7 +297,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       rank=Q$rank
       pivot=Q$pivot
       times=0
-      while (rank<fullrank & times<10000) {
+      while (rank<fullrank & times<1000) {
         times=times+1
         s=Swaps(TF,MF,BF,pivot,rank)
         rindex=(1:length(TF))
@@ -310,7 +310,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           pivot=newQ$pivot
         } 
       }
-    if (times>9999) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure") 
+    if (times>999) TF=NULL
     TF
   }  
   
@@ -325,6 +325,8 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     TF=TF[rand][order(MF[rand])]
     if (!isTRUE(all.equal(hcf %% prod(blocklevels[1:stratum]),0))) 
     TF=NonSingular(TF,MF,BF)
+    if (is.null(TF)) return(TF)
+    
     blevels=nlevels(BF)%/%nlevels(MF)
     BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
     TM=Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE] 
@@ -348,16 +350,18 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     nunits=sum(treatlevs*replevs)
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
-    TF=rep( rep(1:ntrts,rep(replevs%/%hcf,treatlevs)), hcf)
     MB=rep(1:hcf,each=(nunits%/%hcf))
-    rand=sample(nunits)
-    TF=as.factor( TF[rand][order(MB[rand])] )
-    firstPass=TRUE
-    v=sqrt(ntrts)  
-    regrep=isTRUE(all.equal(max(replevs),min(replevs)))
-    for (stratum in 1 : length(blocklevels)) { 
-      nblocks=prod(blocklevels[1:stratum])
-      if (isTRUE(all.equal(hcf%%nblocks,0))) next
+    TF=as.factor(NULL)
+    while (length(TF)==0) {
+      TF=rep( rep(1:ntrts,rep(replevs%/%hcf,treatlevs)), hcf)
+      rand=sample(nunits)
+      TF=as.factor( TF[rand][order(MB[rand])] )
+      firstPass=TRUE
+      v=sqrt(ntrts)  
+      regrep=isTRUE(all.equal(max(replevs),min(replevs)))
+      for (stratum in 1 : length(blocklevels)) { 
+        nblocks=prod(blocklevels[1:stratum])
+        if (isTRUE(all.equal(hcf%%nblocks,0))) next
         regular=firstPass &&  regrep && isTRUE(all.equal(nunits%%nblocks,0))
         firstPass=FALSE
         sqrLattice  = regular && isTRUE(all.equal(v,floor(v))) && isTRUE(all.equal(nunits,v*nblocks))
@@ -405,11 +409,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
                 for (j in 1: w)
                   for (k in 1: (nunits/nblocks))
                     TF=c(TF,mols[i,j,k]+(k-1)*w)
-        } else 
-          TF=GenOpt(TF,Design,searches,jumps,stratum,blocklevels,hcf)
+        } else TF=GenOpt(TF,Design,searches,jumps,stratum,blocklevels,hcf)
         TF=as.factor(TF) 
       }
-  levels(TF)=sample(1:ntrts)
+    levels(TF)=sample(1:ntrts)
+    }
   TF
   }
 # ******************************************************************************************************************************************************** 
@@ -508,6 +512,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  Design=data.frame(facMat[rep(1:length(blocksizes),blocksizes),])
  Design[]=lapply(Design, as.factor) 
 
+ 
  if (!isTRUE(all.equal(max(replicates),1)) && !isTRUE(all.equal(sum(treatments[replicates>1]),1)) )
       TF=optTF(Design,treatments[replicates>1],replicates[replicates>1],blocklevels,searches,jumps) else
        TF=sample(rep(treatments[replicates>1],replicates[replicates>1])) 
