@@ -106,7 +106,7 @@
 #' @importFrom stats anova lm
 #' 
 blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=(1+2000%/%(sum(treatments)+prod(blocklevels))),seed=sample(10000,1),jumps=1) { 
-  
+ 
 # ******************************************************************************************************************************************************** 
 #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
 # ********************************************************************************************************************************************************
@@ -245,21 +245,19 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
         if (!isTRUE(all.equal(relD,globrelD)) && relD>globrelD) {
           globTF=TF
           globrelD=relD
-          if ( !is.na(bound) &&  isTRUE( all.equal(bound,  optEffics(globTF,BF)[2])) ) break
+          if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF,BF)[2]))) break
         }
       }
       if (r==searches) break
       for (iswap in 1 : jumps) {
-        dswap=0
-        while(dswap<.5) {     
+        repeat {     
           s1=sample(1:length(TF),1)
           z=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
           if (length(z)==0) next
-          if (length(z)>1) 
-            s=c(s1,sample(z,1))  else 
-              s=c(s1,z[1])
+          if (length(z)>1) s=c(s1,sample(z,1))  else s=c(s1,z[1])
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
             (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
+          if (dswap>.5) break
         }
         relD=relD*dswap
         up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
@@ -357,7 +355,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     firstPass=TRUE
     v=sqrt(ntrts)  
     regrep=isTRUE(all.equal(max(replevs),min(replevs)))
-  
     for (stratum in 1 : length(blocklevels)) { 
       nblocks=prod(blocklevels[1:stratum])
       if (isTRUE(all.equal(hcf%%nblocks,0))) next
@@ -410,10 +407,10 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
                     TF=c(TF,mols[i,j,k]+(k-1)*w)
         } else 
           TF=GenOpt(TF,Design,searches,jumps,stratum,blocklevels,hcf)
+        TF=as.factor(TF) 
       }
-  TF=as.factor(TF)
   levels(TF)=sample(1:ntrts)
-  TF 
+  TF
   }
 # ******************************************************************************************************************************************************** 
 # Finds efficiency factors for the blocks in each stratum of a design 
@@ -555,12 +552,15 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   # efficiencies
   Efficiencies=A_Efficiencies(Design,treatments,replicates)
   # aov
-  if (isTRUE(all.equal(sum(treatments),1)) ||  isTRUE(all.equal(sum(blocklevels),1))) {
-    AOV= data.frame(Df=c((sum(treatments)-1),(sum(treatments*replicates)-sum(treatments))),row.names=c("Treatments","Residuals")) 
-    AOV[]=lapply(AOV, as.factor) 
-  } else {
-    AOV= anova(lm(rnorm(nrow(Design)) ~ ., data = Design[-(ncol(Design)-1)] ))[,1,drop=FALSE]
-  }
+    DF=blocklevels-1
+    if (strata>1) 
+      DF[2:strata]=DF[2:strata]*cumblocklevs[1:(strata-1)]
+    DF=c(DF,sum(treatments)-1)
+    DF=c(DF,nrow(Design)-sum(DF)-1)
+    AOV=data.frame(DF)
+    colnames(AOV)="DF"
+    rownames(AOV)=c(stratumnames,"Treatments","Residual")
+
   # treatment replications
   Treatments=data.frame(table(Design[,"Treatments"]))
   Treatments[]=lapply(Treatments, as.factor) 
