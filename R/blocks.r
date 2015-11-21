@@ -297,7 +297,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       rank=Q$rank
       pivot=Q$pivot
       times=0
-      while (rank<fullrank & times<100) {
+      while (rank<fullrank & times<10000) {
         times=times+1
         s=Swaps(TF,MF,BF,pivot,rank)
         rindex=(1:length(TF))
@@ -310,7 +310,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           pivot=newQ$pivot
         } 
       }
-    if (times>99) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure") 
+    if (times>9999) stop("Cannot find a non-singular starting design for every blocks stratum - please try a simpler design structure") 
     TF
   }  
   
