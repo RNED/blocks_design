@@ -310,7 +310,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           pivot=newQ$pivot
         } 
       }
-    if (times>999) TF=NULL
+    if (times>999) TF=as.factor(NULL)
     TF
   }  
   
@@ -325,8 +325,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     TF=TF[rand][order(MF[rand])]
     if (!isTRUE(all.equal(hcf %% prod(blocklevels[1:stratum]),0))) 
     TF=NonSingular(TF,MF,BF)
-    if (is.null(TF)) return(TF)
-    
+    if (length(TF)==0) return(TF)
     blevels=nlevels(BF)%/%nlevels(MF)
     BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
     TM=Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE] 
@@ -373,21 +372,22 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
             if (replevs[1]>2)
             for (i in 0: (v-1)) 
               t=c(t,(rep(0:(v-1))+i)%%v + 2*v)
-            TF=rep(1:(v*v),replevs[1])[order(t)]
+            TF=as.factor(rep(1:(v*v),replevs[1])[order(t)])
         } else if (sqrLattice  &&  replevs[1]<(v+2)  && isPrime(v) ) {
             t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
             for (z in 1: (replevs[1]-2))
               for (j in 0: (v-1)) 
                 t=c(t,(rep(0:(v-1))*z +j)%%v + v*(z+1) )
-              TF=rep(1:(v*v),replevs[1])[order(t)]
+              TF=as.factor(rep(1:(v*v),replevs[1])[order(t)])
         } else if (sqrLattice  && replevs[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
               index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
               mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
               TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
               for (i in 1: (replevs[1]-2))
-                TF=c(TF, rep(1:ntrts)[order(    as.numeric(mols[,,i]) ) ]) 
+                TF=c(TF, rep(1:ntrts)[order(as.numeric(mols[,,i]) ) ]) 
+              TF=as.factor(TF)
         } else if (sqrLattice  && v==10  && replevs[1]==4) {
-          TF=c(
+          TF=as.factor(c(
             rep(1:100), rep(1:100)[order(rep(0:9,10))],
             rep(1:100)[order(c(
               1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
@@ -395,12 +395,13 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
             rep(1:100)[order(c(
               1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
               6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]
-          ) 
+          )) 
         } else if (rectLattice  && isPrime(w) ) {
               for (z in 1:(nunits/nblocks))
                 for (j in 0: (w-1)) 
                   for (k in 0: (w-1)) 
                     TF[ (k + j*w)*nunits/nblocks + z]=(j+k*z)%%w + (z-1)*w +1
+                  TF=as.factor(TF)
         } else if (rectLattice &&  nblocks%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
               index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==nblocks)
               mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])		
@@ -409,11 +410,11 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
                 for (j in 1: w)
                   for (k in 1: (nunits/nblocks))
                     TF=c(TF,mols[i,j,k]+(k-1)*w)
+              TF=as.factor(TF)
         } else TF=GenOpt(TF,Design,searches,jumps,stratum,blocklevels,hcf)
-        TF=as.factor(TF) 
       }
-    levels(TF)=sample(1:ntrts)
     }
+  levels(TF)=sample(1:ntrts) 
   TF
   }
 # ******************************************************************************************************************************************************** 
