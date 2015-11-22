@@ -133,12 +133,11 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=
 # Tests a given number for primality and returns TRUE or FALSE
 # ********************************************************************************************************************************************************
   isPrime=function(v) {
-    if (v <= 3) return(TRUE)
-    else if ( isTRUE(all.equal(v %% 2,0)) ||  isTRUE(all.equal(v %% 3,0)) ) return(FALSE) 
-    else if (v<25) return(TRUE)
-    else 
-      for(i in  6*rep(1:floor((sqrt(v)+1)/6)) )
-        if ( isTRUE(all.equal(v %% (i-1) , 0)) ||   isTRUE(all.equal(v %% (i+1) , 0)) ) return(FALSE) 
+    if (v < 4) return(TRUE) 
+    if ( isTRUE(all.equal(v %% 2,0)) ||  isTRUE(all.equal(v %% 3,0)) ) return(FALSE) 
+    if (v<25) return(TRUE)
+    for(i in  6*rep(1:floor((sqrt(v)+1)/6)) )
+      if ( isTRUE(all.equal(v %% (i-1) , 0)) ||   isTRUE(all.equal(v %% (i+1) , 0)) ) return(FALSE) 
     return(TRUE)
   } 
 # ******************************************************************************************************************************************************** 
@@ -215,10 +214,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       }
     } 
     if (improved) next
-    if (sum(nSamp) < min(length(TF),512))
-    nSamp=pmin(mainSizes,2*nSamp)
-    else 
-      break
+    if (sum(nSamp) < min(length(TF),512)) nSamp=pmin(mainSizes,2*nSamp) else break
   }  
   list(MTT=MTT,MBB=MBB,MTB=MTB,TF=TF,relD=relD)
 }  
@@ -257,7 +253,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
           if (length(z)>1) s=c(s1,sample(z,1))  else s=c(s1,z[1])
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
             (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
-          if (dswap>.5) break
+          if (dswap>.1) break
         }
         relD=relD*dswap
         up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
@@ -280,8 +276,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       candidates = rep(1:n)[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
     }
     if ( length(candidates)>1 )
-        s2=sample(candidates,1) else
-        s2=candidates[1] 
+        s2=sample(candidates,1) else s2=candidates[1] 
     s=c(s1,s2)
   }
   # ******************************************************************************************************************************************************** 
@@ -350,8 +345,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
     MB=rep(1:hcf,each=(nunits%/%hcf))
-    TF=as.factor(NULL)
-    while (length(TF)==0) {
+      repeat{
       TF=rep( rep(1:ntrts,rep(replevs%/%hcf,treatlevs)), hcf)
       rand=sample(nunits)
       TF=as.factor( TF[rand][order(MB[rand])] )
@@ -413,6 +407,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
               TF=as.factor(TF)
         } else TF=GenOpt(TF,Design,searches,jumps,stratum,blocklevels,hcf)
       }
+      if (length(TF)>0) break
     }
   levels(TF)=sample(1:ntrts) 
   TF
@@ -509,11 +504,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
  facMat= matrix(nrow=prod(blocklevels),ncol=strata)
  factlevs <- function(r){ gl(cumblocklevs[r],prod(blocklevels)/cumblocklevs[r]) }
  facMat=do.call(cbind,lapply(1:strata,factlevs))
- 
  Design=data.frame(facMat[rep(1:length(blocksizes),blocksizes),])
  Design[]=lapply(Design, as.factor) 
 
- 
  if (!isTRUE(all.equal(max(replicates),1)) && !isTRUE(all.equal(sum(treatments[replicates>1]),1)) )
       TF=optTF(Design,treatments[replicates>1],replicates[replicates>1],blocklevels,searches,jumps) else
        TF=sample(rep(treatments[replicates>1],replicates[replicates>1])) 
@@ -549,7 +542,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   row.names(Design)=c(1:nrow(Design))
   Design[,ncol(Design)-1]=unlist(lapply(1:length(blocksizes),function(r){rep(1:blocksizes[r])}))
   Design[]=lapply(Design, as.factor)
-
   # incidences
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
@@ -566,7 +558,6 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     AOV=data.frame(DF)
     colnames(AOV)="DF"
     rownames(AOV)=c(stratumnames,"Treatments","Residual")
-
   # treatment replications
   Treatments=data.frame(table(Design[,"Treatments"]))
   Treatments[]=lapply(Treatments, as.factor) 
