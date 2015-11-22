@@ -12,8 +12,8 @@ treatment sets with arbitrary levels of replication and arbitrary depth of nesti
 \details{
 Block designs group experimental units into homogeneous blocks to provide maximum precision for treatment comparisons. 
 The most basic type of block design is the complete randomized blocks design where each block contains one or more complete
-sets of treatments. Complete randomized blocks must contain numbers of treatment plots proportional to 
-the treatment replication so the maximum possible number of complete randomized blocks is the highest common factor (hcf) of the replication numbers.
+sets of treatments. Complete randomized blocks must contain numbers of treatment plots proportional to the treatment replication 
+so the maximum possible number of complete randomized blocks is the highest common factor (hcf) of the replication numbers.
 
 Complete randomized block designs give fully efficient 'within-blocks' treatment estimates and are usually the best choice for small experiments.
 For larger experiments, however, the average variability within blocks may be too large for good precision of estimation and then it may 
@@ -24,18 +24,17 @@ a practicable incomplete block designs. Nowadays, however, the availability of m
 package (Bates et al 2014) have largely eliminated such restrictions and the analysis of nested block designs with any feasible depth of
 nesting is now routine. 
 
-The \code{blocksdesign} package  provides for the construction of general block designs where treatments can have any feasible number 
+The \code{blocksdesign} package provides for the construction of general block designs where treatments can have any feasible number 
 of levels of replication and blocks can be nested repeatedly to any feasible depth of nesting. The advantage of block designs with more 
 than a single level of nesting is that random variability can be controlled by a range of block sizes that provide for the control of 
-positional effects or correlated plot effects over a range of different size scales. The design algorithm optimizes the nested blocks 
-strata hierarchically with each successive set of nested blocks optimized within the blocks of the preceding stratum. 
-Block sizes within each stratum are as equal as possible and never differ by more than a single plot.
+positional effects or correlated plot effects at different scales of variability. The design algorithm optimizes the nested blocks of each
+stratum hierarchically with each successive set of nested blocks optimized within the blocks of the preceding stratum. Block sizes within 
+each stratum are as equal as possible and never differ by more than a single plot.
 
 The main design function is \code{\link[blocksdesign]{blocks}} which is used to generate the actual required design. The output from 
-\code{blocks} includes a data frame of the block and treatment factors for each plot, 
-a data frame of the allocation of treatments to plots for each block in the design,
-blocks-by-treatments incidence matrices for each stratum in the design and an A-efficiency factor for each stratum in the design,
-together with an efficiency upper bound, where available.
+\code{blocks} includes a data frame of the block and treatment factors for each plot, a data frame of the allocation of treatments to 
+plots for each block, an analysis of degrees of freedom, blocks-by-treatments incidence matrices for each stratum in the design
+and an A-efficiency factor for each stratum in the design together with an efficiency upper bound, where available.
  
 The subsidiary function \code{\link[blocksdesign]{upper_bounds}} estimates A-efficiency upper bounds for regular block designs with equally replicated 
 treatments and equal block sizes. 
