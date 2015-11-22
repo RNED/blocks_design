@@ -7,27 +7,27 @@
 #' 
 #' @details
 #' 
-#' The \code{treatments} and \code{replicates} parameters partition the treatments design into sets of equally replicated treatments where 
+#' The \code{treatments} and \code{replicates} parameters partition the total number of treatments into sets of equally replicated treatments where 
 #' \code{treatments} contains the set sizes and \code{replicates} contains the set replication numbers. 
 #' The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
-#' is the total number of plots. Treatments are numbered consecutively according to the treatments in the consecutive treatment sets. 
+#' is the total number of plots. Treatments are numbered consecutively according to the ordering of the consecutive treatment sets. 
 #' 
-#' The \code{blocklevels} parameter contains the numbers of nested blocks in the individual strata taken in order from the highest to the lowest stratum.
-#' The first block number is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any, 
+#' The \code{blocklevels} parameter contains the nested blocks for each individual stratum taken in order from the highest to the lowest.
+#' The first number is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any, 
 #' is the number of sub-sub-blocks nested in each sub-block,and so on for all the reqired strata. If left blank, the default block design is a 
 #'  maximal set of orthogonal main blocks, where the maximal number of of orthogonal main blocks is the highest common factor of the replication numbers. 
 #'
-#' Whatever the block and treatment design, the block sizes in each stratum are always as equal as possible and never differ by more than a single unit
-#' in any particular stratum. If the number of nested blocks in any particular stratum exactly divdes the number of units, the block sizes in that
-#' stratum will be exactly equal; otherwise the blocks will differ by a single unit only.
+#' The block sizes in each blocks stratum are always as equal as possible and never differ by more than a single unit. If the number of nested blocks 
+#' in a particular stratum exactly divdes the number of units, the block sizes in that stratum will be exactly equal; otherwise the block sizes in that stratum
+#' will differ by at most one unit.
 #' 
 #'  Special square and rectangular lattice designs are constructed algebraically and include all designs that can be constructed from 
-#'  any single latin square, from any complete sets of prime or prime-power orthogonal latin squares or from a pair of orthogonal 10 x 10 Latin squares. 
+#'  a single latin square, from a complete sets of prime or prime-power orthogonal latin squares or from a pair of orthogonal 10 x 10 Latin squares. 
 #'  All other non-orthogonal block designs are constructed by a D-optimality swapping algorithm that makes improving swaps between 
-#'  blocks until a local optima is atttained. The swapping algorithm works from the top stratum downwards and
-#'  is always constrained to make improving swaps within the levels of any existing blocks. The whole process will be repeated according to the 
-#'  number of searches defined by the search parameter and the design returned will be the design with the best overall stratum efficiencies in top-down 
-#'  order.
+#'  blocks within the same stratum until a local optima is atttained. The swapping algorithm works from the top stratum downwards and
+#'  is always constrained to make improving swaps within the levels of any existing blocks. The whole process is repeated according to the 
+#'  number of searches defined by the search parameter and the design returned will be the design with the best overall stratum efficiencies in each stratum 
+#'  taken in top-down order.
 #'  
 #'  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 #' 
@@ -45,14 +45,14 @@
 #' 
 #' @param treatments treatment numbers giving a partition of the total required number of treatments into sets of equally replicated treatments.
 #' 
-#' @param replicates replication numbers giving the replictaion for each set of equally replicated treatments defined by the \code{treatments} list.
+#' @param replicates replication numbers giving the replictaion for each set of equally replicated treatments defined by the \code{treatments} partition.
 #' 
 #' @param blocklevels factor levels that define the number of nested blocks in each succesive blocks stratum taken in order from the highest to the lowest. 
 #' The default is the hcf of the replication numbers.
 #' 
 #' @param seed integer initializing the random number generator. The default is a random seed.
 #' 
-#' @param searches maximum number of local optima searched for a design optimization. The default is the maximum of 1 or (100 - total model terms). 
+#' @param searches maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 2000 divided by the number of model parameters.
 #' 
 #' @param jumps number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.
 #' 
