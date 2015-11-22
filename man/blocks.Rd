@@ -48,7 +48,7 @@ is the number of sub-sub-blocks nested in each sub-block,and so on for all the r
  maximal set of orthogonal main blocks, where the maximal number of of orthogonal main blocks is the highest common factor of the replication numbers. 
 
 The block sizes in each blocks stratum are always as equal as possible and never differ by more than a single unit. If the number of nested blocks 
-in a particular stratum exactly divdes the number of units, the block sizes in that stratum will be exactly equal; otherwise the block sizes in that stratum
+in a particular stratum exactly divdes the number of units, the block sizes in that stratum will be exactly equal; otherwise the block sizes
 will differ by at most one unit.
 
  Special square and rectangular lattice designs are constructed algebraically and include all designs that can be constructed from 
