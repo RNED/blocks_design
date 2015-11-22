@@ -43,9 +43,9 @@
 #' Very occasionally, the algorithm may fail to converge due to a near-singular design with a large number of single plot blocks.
 #' In that case, it may be best to build a simpler design with larger blocks and then to add the extra block constraints by hand using ad hoc or heuristic methods.     
 #' 
-#' @param treatments treatment numbers that provide a partition of the total required number of treatments into sets of equally replicated treatments.
+#' @param treatments treatment numbers giving a partition of the total required number of treatments into sets of equally replicated treatments.
 #' 
-#' @param replicates replication numbers that provide the replictaion for each set of equally replicated treatments defined by the \code{treatments} list.
+#' @param replicates replication numbers giving the replictaion for each set of equally replicated treatments defined by the \code{treatments} list.
 #' 
 #' @param blocklevels factor levels that define the number of nested blocks in each succesive blocks stratum taken in order from the highest to the lowest. 
 #' The default is the hcf of the replication numbers.

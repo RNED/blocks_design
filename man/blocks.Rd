@@ -9,9 +9,9 @@ blocks(treatments, replicates, blocklevels = HCF(replicates), searches = (1
   jumps = 1)
 }
 \arguments{
-\item{treatments}{treatment numbers that provide a partition of the total required number of treatments into sets of equally replicated treatments.}
+\item{treatments}{treatment numbers giving a partition of the total required number of treatments into sets of equally replicated treatments.}
 
-\item{replicates}{replication numbers that provide the replictaion for each set of equally replicated treatments defined by the \code{treatments} list.}
+\item{replicates}{replication numbers giving the replictaion for each set of equally replicated treatments defined by the \code{treatments} list.}
 
 \item{blocklevels}{factor levels that define the number of nested blocks in each succesive blocks stratum taken in order from the highest to the lowest. 
 The default is the hcf of the replication numbers.}
