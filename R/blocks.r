@@ -105,7 +105,7 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=(1+2000%/%(sum(treatments)+prod(blocklevels))),seed=sample(10000,1),jumps=1) { 
+blocks = function( treatments, replicates, blocklevels=HCF(replicates),rowcol=FALSE,searches=(1+2000%/%(sum(treatments)+prod(blocklevels))),seed=sample(10000,1),jumps=1) { 
  
 # ******************************************************************************************************************************************************** 
 #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
@@ -188,14 +188,14 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),searches=
 # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
 # Sampling is used initially when many feasible swaps are available but later a full search is used to ensure steepest ascent optimization.
 # ********************************************************************************************************************************************************
-DMax=function(MTT,MBB,MTB,TF,MF,BF) {   
+DMax=function(MTT,MBB,MTB,TF,BF,Restrict){   
   relD=1
-  mainSizes=tabulate(MF)
-  nSamp=pmin(rep(8,nlevels(MF)),mainSizes)
+  mainSizes=tabulate(Restrict)
+  nSamp=pmin(rep(8,nlevels(Restrict)),mainSizes)
   repeat {
     improved=FALSE
-    for (k in 1:nlevels(MF)) {
-      S=sort(sample((1:length(TF))[MF==k],nSamp[k])) 
+    for (k in 1:nlevels(Restrict)) {
+      S=sort(sample((1:length(TF))[Restrict==k],nSamp[k])) 
       TB=MTB[TF[S],BF[S],drop=FALSE]-tcrossprod(MTB[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
       dMat=(TB+t(TB)+1)**2-
         (2*MTT[TF[S],TF[S],drop=FALSE]-tcrossprod(MTT[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MTT[cbind(TF[S],TF[S])]) + 1)*
@@ -222,7 +222,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
 # ******************************************************************************************************************************************************** 
 #  Number of searches for an optimization with selected number of searches and selected number of junps to escape local optima
 # ********************************************************************************************************************************************************
-  Optimise=function(TF,BF,MF,MTT,MBB,MTB,searches,jumps)  {
+  Optimise=function(TF,BF,MTT,MBB,MTB,searches,jumps,Restrict)  {
     globrelD=0
     relD=1
     globTF=TF
@@ -231,7 +231,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  )
       bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) else bound=NA
     for (r in 1 : searches) {
-      dmax=DMax(MTT,MBB,MTB,TF,MF,BF) 
+      dmax=DMax(MTT,MBB,MTB,TF,BF,Restrict)
       if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
         relD=relD*dmax$relD
         TF=dmax$TF
@@ -248,7 +248,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
       for (iswap in 1 : jumps) {
         repeat {     
           s1=sample(1:length(TF),1)
-          z=(1:length(TF))[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+          z=(1:length(TF))[Restrict==Restrict[s1] & BF!=BF[s1] & TF!=TF[s1]]
           if (length(z)==0) next
           if (length(z)>1) s=c(s1,sample(z,1))  else s=c(s1,z[1])
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
@@ -334,9 +334,31 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
     perm=order(order( (1:nlevels(BF))%%blevels ==0  ))  
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
-    TF=Optimise(TF,BF,MF,MTT,MBB,MTB,searches,jumps)
+    TF=Optimise(TF,BF,MTT,MBB,MTB,searches,jumps,MF)
     TF
   }  
+  
+  # ******************************************************************************************************************************************************** 
+  # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
+  # ********************************************************************************************************************************************************    
+  RC_Opt=function(Design,searches,jumps) { 
+    MF=as.factor(Design[,ncol(Design)-2])
+    BF=as.factor(Design[,ncol(Design)-1])
+    TF=as.factor(Design[,ncol(Design)])
+    
+    BM=Contrasts(rep(1,length(TF)),BF)[,-nlevels(BF),drop=FALSE] 
+    TM=Contrasts(rep(1,length(TF)),TF)[,-nlevels(TF),drop=FALSE] 
+    V=chol2inv(chol(crossprod(cbind(BM,TM))))
+    MBB=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+    MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
+    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
+    MBB[1:(nlevels(BF)-1), 1:(nlevels(BF)-1)]=V[1:(nlevels(BF)-1),1:(nlevels(BF)-1),drop=FALSE]
+    MTT[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[(nlevels(BF)):ncol(V),(nlevels(BF)):ncol(V), drop=FALSE]
+    MTB[1:(nlevels(TF)-1),  1:(nlevels(BF)-1) ]=V[(nlevels(BF)):ncol(V),1:(nlevels(BF)-1),drop=FALSE]
+    TF=Optimise(TF,BF,MTT,MBB,MTB,searches,jumps,MF)
+    TF
+  }  
+  
 # ******************************************************************************************************************************************************** 
 # Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm as appropriate
 # ********************************************************************************************************************************************************     
@@ -479,6 +501,10 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
    if ( isTRUE( sum(treatments) < 2 ) )
      return(paste("The number of treatments must be at least two "))  
    
+   if ( isTRUE( sum(treatments*replicates) < (prod(blocklevels)*2) ) )
+     return(paste("There must be at least two plots in each block : the total number of plots is",  sum(treatments*replicates) , 
+                  "while the total required number of blocks is", prod(blocklevels),", which is not feasible. "))  
+   
    if ( isTRUE( sum(treatments*replicates) < (prod(blocklevels) + sum(treatments)-1) ) )
      return(paste("The total number of plots is",  sum(treatments*replicates) , 
                   "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments),", which is not feasible. "))  
@@ -542,6 +568,9 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   row.names(Design)=c(1:nrow(Design))
   Design[,ncol(Design)-1]=unlist(lapply(1:length(blocksizes),function(r){rep(1:blocksizes[r])}))
   Design[]=lapply(Design, as.factor)
+  rowcol=rowcol & nrow(Design)%%cumblocklevs[strata]==0
+  
+  if (rowcol==TRUE) Design[,ncol(Design)]=as.factor(RC_Opt(Design,searches,jumps))
   # incidences
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
@@ -562,14 +591,17 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   Treatments=data.frame(table(Design[,"Treatments"]))
   Treatments[]=lapply(Treatments, as.factor) 
   colnames(Treatments)=c("Treatments","Replicates")
+  
   # blocksizes
   BlockSizes=data.frame(Design[Design["Plots"]==1,1:strata,drop=FALSE] ,blocksizes)
   BlockSizes[]=lapply(BlockSizes, as.factor) 
   row.names(BlockSizes)=c(1:nrow(BlockSizes))
   colnames(BlockSizes)=c(stratumnames," Sizes ")  
   # convert block levels to nested levels
+
   Design[,c(1:strata)] = do.call(cbind,lapply(1:strata, function(r){ (as.numeric(Design[,r])-1)%%blocklevels[r]+1 }))
   Design[]=lapply(Design, as.factor)
+
   # plan
   Plots=t(sapply(split(Design[,"Treatments"],rep(1:length(blocksizes),blocksizes)), '[', 1:max(blocksizes) ))
   Plots[is.na(Plots)] = ""
@@ -577,5 +609,7 @@ DMax=function(MTT,MBB,MTB,TF,MF,BF) {
   colnames(Plan)=c(stratumnames,"Plots:",rep(1:max(blocksizes)))
   Plan[]=lapply(Plan,as.factor) 
   row.names(Plan)=c(1:nrow(Plan))
+  
+  
  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=Efficiencies,Design=Design,Plan=Plan,AOV=AOV,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
