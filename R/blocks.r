@@ -461,23 +461,18 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
       if ( sum(treatments)>1 && cumblocklevs[i]>1)
         effics[i,]=optEffics(Design$Treatments,Design[,i])  
     }
-    
-print(bounds)   
-print(effics)
-    
+    rownames=names(Design)[1:strata]
    if (rowcol) {
     cols= Design[,ncol(Design)-1]
     cblocks=nlevels(cols)
     if (length(cumblocklevs)>1) cols=as.factor(as.numeric(cols) +  cblocks*(as.numeric(Design[,ncol(Design)-3])-1))
-    bounds=c(bounds,upper_bounds(nunits,sum(treatments),nlevels(cols)         ) )
-    
+    bounds=c(bounds,upper_bounds(nunits,sum(treatments),nlevels(cols)   ) )
     effics=rbind(effics,optEffics(Design$Treatments,cols)) 
- 
+    cumblocklevs=c(cumblocklevs,nlevels(cols))
+    rownames[length(rownames)]="Rows"
+    rownames=c(rownames,"Columns")
    }
-print(bounds)
-   print(effics) 
-    
-    efficiencies=data.frame(cbind( names(Design)[1:strata] ,cumblocklevs, effics, bounds))  
+    efficiencies=data.frame(cbind( rownames,cumblocklevs, effics, bounds))  
     colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies[,'Blocks'] = as.factor(efficiencies[,'Blocks'])
     
@@ -636,18 +631,34 @@ print(bounds)
   Design[]=lapply(Design, as.factor)
 
   # plan
+  
+  index=rep(1:length(blocksizes),blocksizes)
+  plots=vector(length=length(blocksizes))
+  for (i in 1: length(blocksizes)) {
+  l=as.numeric(Design[,"Treatments"])
+  l=formatC(l,width=nchar(max(l)))
+  plots[i]=paste(l[index==i],collapse=" ")
+  plots[i]=paste(" "," ",plots[i])
+  }
+
   Plots=t(sapply(split(Design[,"Treatments"],rep(1:length(blocksizes),blocksizes)), '[', 1:max(blocksizes) ))
   Plots[is.na(Plots)] = ""
-  Plan=data.frame(Design[Design[,ncol(Design)-1]==1,rep(1:strata),drop=FALSE] ,rep("",nrow(Plots)) ,Plots)
+
+
 
   if (rowcol==TRUE) {
     stratumnames[length(stratumnames)]="Rows"
     colnames(Plan)=c(stratumnames,"Columns:",rep(1:max(blocksizes))) 
-  } else colnames(Plan)=c(stratumnames,"Plots:",rep(1:max(blocksizes))) 
+  } else {
+    Plan=data.frame(Design[Design[,ncol(Design)-1]==1,rep(1:strata),drop=FALSE],rep(1:nrow(Plots)),plots)
     
+    colnames(Plan)=c(stratumnames,"Blocks","Treatments")
+  }
+ 
   Plan[]=lapply(Plan,as.factor) 
   row.names(Plan)=c(1:nrow(Plan))
-  
-  
+  #Plan=split(Plan,Plan[1:strata])
+  #print(Plan)
  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=Efficiencies,Design=Design,Plan=Plan,AOV=AOV,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
+
