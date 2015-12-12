@@ -218,7 +218,6 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
   }  
   list(MTT=MTT,MBB=MBB,MTB=MTB,TF=TF,relD=relD)
 }  
-
 # ******************************************************************************************************************************************************** 
 #  Number of searches for an optimization with selected number of searches and selected number of junps to escape local optima
 # ********************************************************************************************************************************************************
@@ -246,15 +245,18 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
       }
       if (r==searches) break
       for (iswap in 1 : jumps) {
-        repeat {     
+        counter=0
+        repeat { 
+          counter=counter+1
           s1=sample(1:length(TF),1)
           z=(1:length(TF))[Restrict==Restrict[s1] & BF!=BF[s1] & TF!=TF[s1]]
           if (length(z)==0) next
           if (length(z)>1) s=c(s1,sample(z,1))  else s=c(s1,z[1])
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
             (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
-          if (dswap>.1) break
+          if (dswap>.1 | counter>1000) break
         }
+        if (counter>500) return(globTF) # no non-singular swaps
         relD=relD*dswap
         up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
         MTT=up$MTT
@@ -306,7 +308,7 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
         } 
       }
     if (times>999) TF=as.factor(NULL)
-    TF
+    return(TF)
   }  
   
   # ******************************************************************************************************************************************************** 
@@ -337,7 +339,6 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
     TF=Optimise(TF,BF,MTT,MBB,MTB,searches,jumps,MF)
     TF
   }  
-
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
@@ -346,26 +347,25 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
     Design=cbind(as.factor(rep(1,nrow(Design))),Design)
     MF=Design[,stratum]
     Rows=Design[,stratum+1]
-    BF=Design[,stratum+2]
-    BF=as.factor(as.numeric(BF)+(as.numeric(MF)-1)*nlevels(BF))
-    TF=NonSingular(TF,Rows,BF)
-    blevels=nlevels(BF)%/%nlevels(MF)
-    BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
+    Cols=Design[,stratum+2]
+    Cols=as.factor(as.numeric(Cols)+(as.numeric(MF)-1)*nlevels(Cols))
+    TF=NonSingular(TF,Rows,Cols)
+    blevels=nlevels(Cols)%/%nlevels(MF)
     TM=Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE] 
+    BM=Contrasts(MF,Cols)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
     V=chol2inv(chol(crossprod(cbind(BM,TM))))
-    MBB=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+    MBB=matrix(0,nrow=nlevels(Cols),ncol=nlevels(Cols))
     MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
-    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
-    MBB[1:(nlevels(BF)-nlevels(MF)), 1:(nlevels(BF)-nlevels(MF))]=V[1:(nlevels(BF)-nlevels(MF)),1:(nlevels(BF)-nlevels(MF)),drop=FALSE]
-    MTT[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[(nlevels(BF)-nlevels(MF)+1):ncol(V),(nlevels(BF)-nlevels(MF)+1):ncol(V), drop=FALSE]
-    MTB[1:(nlevels(TF)-1),  1:(nlevels(BF)-nlevels(MF)) ]=V[(nlevels(BF)-nlevels(MF)+1):ncol(V),1:(nlevels(BF)-nlevels(MF)),drop=FALSE]
-    perm=order(order( (1:nlevels(BF))%%blevels ==0  ))  
+    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Cols))
+    MBB[1:(nlevels(Cols)-nlevels(MF)), 1:(nlevels(Cols)-nlevels(MF))]=V[1:(nlevels(Cols)-nlevels(MF)),1:(nlevels(Cols)-nlevels(MF)),drop=FALSE]
+    MTT[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[(nlevels(Cols)-nlevels(MF)+1):ncol(V),(nlevels(Cols)-nlevels(MF)+1):ncol(V), drop=FALSE]
+    MTB[1:(nlevels(TF)-1),  1:(nlevels(Cols)-nlevels(MF)) ]=V[(nlevels(Cols)-nlevels(MF)+1):ncol(V),1:(nlevels(Cols)-nlevels(MF)),drop=FALSE]
+    perm=order(order((1:nlevels(Cols))%%blevels ==0))  
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
-    TF=Optimise(TF,BF,MTT,MBB,MTB,searches,jumps,Rows)
+    TF=Optimise(TF,Cols,MTT,MBB,MTB,searches,jumps,Rows)
     TF
   }  
-
 # ******************************************************************************************************************************************************** 
 # Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm as appropriate
 # ********************************************************************************************************************************************************     
@@ -529,10 +529,7 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
      return(paste("The total number of plots is",  sum(treatments*replicates) , 
                   "whereas the total required number of model parameters is", prod(blocklevels) + sum(treatments),", which is not feasible. "))  
    
-  if (rowcol==TRUE & sum(treatments*replicates)%%prod(blocklevels)!=0) 
-    return(paste("The total number of units is ",  sum(treatments*replicates) , 
-                 "and the total number of sub-blocks is", prod(blocklevels), ", which means that the bottom stratum block sizes are unequal.
-                 This means that a row-and-column block design is not feasible for this design."))  
+  
    return(TRUE)
  }
  
@@ -595,18 +592,29 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
   Design[]=lapply(Design, as.factor)
  
   if (rowcol==TRUE) {
-    Design[,ncol(Design)]=as.factor(RC_Opt(Design,searches,jumps,strata,blocklevels,hcf)) 
-  names(Design)[ncol(Design)-2] <- "Rows"
-  names(Design)[ncol(Design)-1] <- "Columns"
+    cols=min(blocksizes)
+    if (max(blocksizes)>cols) {
+      index=which(blocksizes>cols)
+      resize=1+rep(0:(length(index)-1))%%cols
+      cumblocksizes=cumsum(blocksizes)
+      for (i in 1:length(index)) 
+          Design[,strata+1][c((cumblocksizes[index[i]]-blocksizes[index[i]]+1):cumblocksizes[index[i]])] =c(1:resize[i],resize[i]:cols)
+      }
+   Design[,ncol(Design)]=as.factor(RC_Opt(Design,searches,jumps,strata,blocklevels,hcf)) 
+   names(Design)[ncol(Design)-2] <- "Rows"
+   names(Design)[ncol(Design)-1] <- "Columns"
   }
   # incidences
+
   Incidences=vector(mode = "list", length =strata )
   for (i in 1:strata)
     Incidences[[i]]=table( Design[,i] ,Design[,strata+2])  
   names(Incidences)=stratumnames
   # efficiencies
+
   Efficiencies=A_Efficiencies(Design,treatments,replicates,rowcol,cumblocklevs)
   # aov
+
     DF=blocklevels-1
     if (strata>1) 
       DF[2:strata]=DF[2:strata]*cumblocklevs[1:(strata-1)]
@@ -616,49 +624,61 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
     colnames(AOV)="DF"
     rownames(AOV)=c(stratumnames,"Treatments","Residual")
   # treatment replications
+
   Treatments=data.frame(table(Design[,"Treatments"]))
   Treatments[]=lapply(Treatments, as.factor) 
   colnames(Treatments)=c("Treatments","Replicates")
-  
-  # blocksizes
-  BlockSizes=data.frame(Design[Design[,ncol(Design)-1]==1,1:strata,drop=FALSE] ,blocksizes)
-  BlockSizes[]=lapply(BlockSizes, as.factor) 
-  row.names(BlockSizes)=c(1:nrow(BlockSizes))
-  colnames(BlockSizes)=c(stratumnames," Sizes ")  
-  # convert block levels to nested levels
 
+  # blocksizes
+  BlockSizes=data.frame( facMat ,blocksizes)
+  BlockSizes[]=lapply(BlockSizes, as.factor) 
+  if (rowcol==TRUE) stratumnames[length(stratumnames)]="Rows"
+  colnames(BlockSizes)=c(stratumnames," Sizes ")  
+
+    
+  # convert block levels to nested levels
   Design[,c(1:strata)] = do.call(cbind,lapply(1:strata, function(r){ (as.numeric(Design[,r])-1)%%blocklevels[r]+1 }))
   Design[]=lapply(Design, as.factor)
-
-  # plan
   
+  # plan
   index=rep(1:length(blocksizes),blocksizes)
   plots=vector(length=length(blocksizes))
-  for (i in 1: length(blocksizes)) {
   l=as.numeric(Design[,"Treatments"])
   l=formatC(l,width=nchar(max(l)))
+  for (i in 1: length(blocksizes)) 
   plots[i]=paste(l[index==i],collapse=" ")
-  plots[i]=paste(" "," ",plots[i])
-  }
-
-  Plots=t(sapply(split(Design[,"Treatments"],rep(1:length(blocksizes),blocksizes)), '[', 1:max(blocksizes) ))
-  Plots[is.na(Plots)] = ""
-
-
 
   if (rowcol==TRUE) {
-    stratumnames[length(stratumnames)]="Rows"
-    colnames(Plan)=c(stratumnames,"Columns:",rep(1:max(blocksizes))) 
+    cols=min(blocksizes)
+    rows=length(blocksizes)
+    indicate=c(diff(    as.numeric(Design[,(ncol(Design)-1)])   ,1)==0,FALSE)
+    trts=vector( length=rows*cols)
+    y=Design[,ncol(Design)]
+    index=1
+    for (i in 1:length(trts)) {
+      if (indicate[index]==TRUE) {
+        trts[i]=paste(y[index],y[index+1])
+        index=index+2
+      } else {
+        trts[i]=y[index]
+        index=index+1
+      }
+    }
+    rc=matrix(trts,nrow=rows,ncol=cols,byrow=TRUE)
+    colnames=vector(length=cols)
+    for (i in 1:cols)
+    colnames[i]=paste("Column",i,sep=" ")
+
+    Plan=data.frame(facMat ,rep("",rows),rc)
+    colnames(Plan)=c(stratumnames,"Columns",colnames) 
   } else {
-    Plan=data.frame(Design[Design[,ncol(Design)-1]==1,rep(1:strata),drop=FALSE],rep(1:nrow(Plots)),plots)
-    
-    colnames(Plan)=c(stratumnames,"Blocks","Treatments")
+    Plan=data.frame(facMat ,plots)
+    colnames(Plan)=c(stratumnames,"Treatments")
   }
- 
   Plan[]=lapply(Plan,as.factor) 
   row.names(Plan)=c(1:nrow(Plan))
-  #Plan=split(Plan,Plan[1:strata])
-  #print(Plan)
+  
+  if (rowcol==TRUE & strata>1) Plan=split(Plan,Plan[1:(strata-1)])
  list(Treatments=Treatments,BlockSizes=BlockSizes,Efficiencies=Efficiencies,Design=Design,Plan=Plan,AOV=AOV,Incidences=Incidences,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
 
