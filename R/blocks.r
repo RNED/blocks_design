@@ -490,13 +490,10 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
 # ********************************************************************************************************************************************************     
   A_Efficiencies=function(Design,treatments,replicates,rowLevels,colLevels,NestInt)     {
     strata=length(rowLevels)
-    print(Design)
-    print(NestInt)
     for (i in 1:strata)
       for (j in 1:2)
         Design[,2*(i-1)+j] =(as.numeric(NestInt[,i])-1)*nlevels(Design[,2*(i-1)+j]) + as.numeric(Design[,2*(i-1)+j])
     Design[]=lapply(Design, as.factor)
-    print(Design)
     nestLevels=rowLevels*colLevels
     cumnestLevs=c(1,cumprod(nestLevels))
     hcf=HCF(replicates)
@@ -522,13 +519,14 @@ DMax=function(MTT,MBB,MTB,TF,BF,Restrict){
           bounds[i]=1
         }
       }
-      
         effics[2*i-1,]=optEffics(Design$Treatments,Design[,2*i-1])
         effics[2*i,]=optEffics(Design$Treatments,Design[,2*i])
     }
-    cumrowLevels=cumprod(rowLevels)
-    cumcolLevels=cumprod(colLevels)
-    blocks=as.numeric(rbind(cumrowLevels,cumcolLevels))
+
+    blocks=NULL
+    for (i in 1:strata)
+    blocks=c(blocks, rbind(    nlevels(Design[,2*i-1]) , nlevels(Design[,2*i])            )              )
+
     rows=NULL
     for (i in 1:strata) rows=c(rows,paste0("Rows_",i))
     cols=NULL
@@ -729,7 +727,7 @@ colnames(Design)=c(colnames,"Treatments")
     #l=formatC(l,width=nchar(max(l)))
     #for (i in 1: length(blocksizes)) 
     #  plots[i]=paste(l[index==i],collapse=" ")
-    Plan=data.frame(facMat,rep("",length(blocksizes)) ,plots)
+    Plan=data.frame(factMat,rep("",length(blocksizes)) ,plots)
     Plan[is.na(Plan)] = ""
     Plan[]=lapply(Plan,factor) 
     colnames(Plan)=c(stratumnames,"Plots",1:max(blocksizes))
