@@ -105,7 +105,7 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=1,searches=(1+2000%/%(sum(treatments)+prod(blocklevels))),seed=sample(10000,1),jumps=1) { 
+blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=FALSE,searches=(1+2000%/%(sum(treatments)+prod(blocklevels))),seed=sample(10000,1),jumps=1) { 
   
   # ******************************************************************************************************************************************************** 
   #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
@@ -451,9 +451,9 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=1
     nunits=nrow(Design)
     ntrts=nlevels(Design[,ncol(Design)])
     nblocks=as.numeric(sapply(Design,nlevels)[1:strata])
-    if (crossed>1) nblocks=c(nblocks,nlevels(Design[,strata+1]))
-    if (crossed==1) effics=matrix(1,nrow=strata,ncol=2) else effics=matrix(1,nrow=(strata+1),ncol=2)
-    if (crossed==1) bounds=rep(NA,strata) else bounds=rep(NA,(strata+1))
+    if (crossed) nblocks=c(nblocks,nlevels(Design[,strata+1]))
+    if (!crossed) effics=matrix(1,nrow=strata,ncol=2) else effics=matrix(1,nrow=(strata+1),ncol=2)
+    if (!crossed) bounds=rep(NA,strata) else bounds=rep(NA,(strata+1))
     for (i in 1:strata) { 
       if (isTRUE(all.equal(max(replicates),min(replicates))) ) {
         if ( isTRUE(all.equal(nunits%%nblocks[i],0))) 
@@ -463,12 +463,12 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=1
       if ( sum(treatments)>1 && nblocks[i]>1)
         effics[i,]=optEffics(Design$Treatments,Design[,i],ntrts,nblocks[i])  
     }
-    if (crossed>1){
+    if (crossed){
       bounds[strata+1]=upper_bounds(nunits,sum(treatments),nblocks[strata+1]) 
       effics[strata+1,]=optEffics(Design$Treatments,Design[,strata+1],ntrts,nblocks[strata+1]) 
     }
     names=names(Design)[1:strata]
-    if (crossed>1) names=c(names,"Columns")
+    if (crossed) names=c(names,"Columns")
     efficiencies=data.frame(cbind(names,nblocks, effics, bounds)) 
     
     colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
@@ -528,16 +528,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=1
   # Main body of blocks design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
-  #strsplit ("8 * 5",split = "[+]") 
   
-  treats="8*2+3*3"
-  x=unlist(strsplit (treats,split = "[+]"))
-  sets=length(x)
-  for (i in 1:sets) {
-    z=unlist(strsplit (x[i],split = "[*]"))
-   # print(z)
-  }
- 
   testout=testInputs(treatments,replicates,blocklevels,searches,seed,jumps) 
   if (!isTRUE(testout)) stop(testout)
   set.seed(seed)
@@ -550,7 +541,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=1
   stratumnames="Main" 
   if (!isTRUE(all.equal(strata,1)))  
     stratumnames=c( stratumnames,sapply(2:strata, function(i) { paste0("Sub",(i-1)) }))
-  if (crossed>1) stratumnames[strata]="Rows"
+  if (crossed) stratumnames[strata]="Rows"
   
   # nested factorial matrix
   facMat= matrix(nrow=prod(blocklevels),ncol=strata)
@@ -603,25 +594,18 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=1
 
  # arrange row blocks of randomized design as list of vectors containing a set of column blocks possibly with unequal block sizes allocated as equally as possble
   rowsizes=tabulate(Design[,ncol(Design)-2])
-  if (crossed>1 ) {
-    if (crossed>min(rowsizes))  stop("Number of column blocks is greater than the size of the individual row blocks ") 
- # columns=lapply(1:length(rowsizes), function(r){1:crossed}) 
-    # assuming rowsizes exactly divisible by crossed
-    colblocks=rep( rep(1:crossed,each=min(rowsizes)/crossed),length(rowsizes))
-    if (strata>1) colblocks=(as.numeric(Design[,strata-1])-1)*crossed + colblocks 
-  
-  
- # if (min(rowsizes)<max(rowsizes)) {
- #   addplot=1
-  #  basesize=rowsizes==min(rowsizes)
-  #  for (i in 1:length(columns)) {
-  #    if (basesize[i]) next
-   #   columns[[i]]=append(columns[[i]],(addplot-1)%%min(rowsizes)+1,(addplot-1)%%min(rowsizes)+1)
-  #    addplot=addplot+1
-   #   }
-  #  }
-  #Design[,ncol(Design)-1]=as.factor(unlist(columns))
-    Design[,ncol(Design)-1]=as.factor(colblocks) 
+  if (crossed ) {
+  rowblocks=lapply(1:length(rowsizes), function(r){1:min(rowsizes)}) 
+  if (min(rowsizes)<max(rowsizes)) {
+    addplot=1
+    basesize=rowsizes==min(rowsizes)
+    for (i in 1:length(rowblocks)) {
+      if (basesize[i]) next
+      rowblocks[[i]]=append(rowblocks[[i]],(addplot-1)%%min(rowsizes)+1,(addplot-1)%%min(rowsizes)+1)
+      addplot=addplot+1
+      }
+    }
+  Design[,ncol(Design)-1]=as.factor(unlist(rowblocks))
   colnames(Design)=c(stratumnames,"Columns","Treatments") 
   # optimize columns design
   Design=rcOpt(Design)
@@ -649,12 +633,12 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=1
   Design[]=lapply(Design, as.factor)
 
  # Plan layout with rows or blocks arranged vertically and plots or columns arranged horizontally 
-  if (crossed>1) {
+  if (crossed) {
   if (min(rowsizes)<max(rowsizes)) {
     rc = matrix("",nrow=cumblocklevs[strata],ncol=min(rowsizes),byrow=TRUE)
     plot = 1
     for ( i in 1:nrow(rc)) {
-      for (icol in columns[[i]]) {
+      for (icol in rowblocks[[i]]) {
         rc[i,icol]=paste(rc[i,icol],formatC(as.numeric( Design[plot,ncol(Design)],width=nchar(sum(treatments)))))
         plot=plot+1
       }
@@ -662,7 +646,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=1
   } else 
     rc=matrix( formatC(as.numeric(Design[,ncol(Design)]) ,width=nchar(sum(treatments))),nrow=cumblocklevs[strata],ncol=min(rowsizes),byrow=TRUE)
   }
-  if (crossed==1) {
+  if (!crossed) {
     if (min(rowsizes)<max(rowsizes)) {
       rc = matrix(formatC("-",width=nchar(sum(treatments))),nrow=cumblocklevs[strata],ncol=max(rowsizes),byrow=TRUE)
       plot = 1
