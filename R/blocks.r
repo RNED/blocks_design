@@ -349,7 +349,8 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
     Rows=Design[,stratum]
     BF=Design[,stratum+1]
     TF=Design[,stratum+2]
-    blevels=nlevels(BF)%/%nlevels(MF)
+    blevels=nlevels(BF)
+    BF=as.factor((as.numeric(MF)-1)*nlevels(BF)+as.numeric(BF))
     BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
     TM=Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE] 
     V=chol2inv(chol(crossprod(cbind(BM,TM))))
@@ -446,12 +447,14 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
   # Finds efficiency factors for the blocks in each stratum of a design 
   # ********************************************************************************************************************************************************     
   A_Efficiencies=function(Design,treatments,replicates,crossed) {
-    hcf=HCF(replicates)
     strata=ncol(Design)-2
+    Columns= Design[,strata+1]
+    if (strata>1) Columns = as.factor((as.numeric(Design[,strata-1])-1)*nlevels(Columns) +  as.numeric(Columns))
+    hcf=HCF(replicates)
     nunits=nrow(Design)
-    ntrts=nlevels(Design[,ncol(Design)])
+    ntrts=nlevels(Design[,strata+2])
     nblocks=as.numeric(sapply(Design,nlevels)[1:strata])
-    if (crossed) nblocks=c(nblocks,nlevels(Design[,strata+1]))
+    if (crossed) nblocks=c(nblocks,nlevels(Columns))
     if (!crossed) effics=matrix(1,nrow=strata,ncol=2) else effics=matrix(1,nrow=(strata+1),ncol=2)
     if (!crossed) bounds=rep(NA,strata) else bounds=rep(NA,(strata+1))
     for (i in 1:strata) { 
@@ -465,12 +468,11 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
     }
     if (crossed){
       bounds[strata+1]=upper_bounds(nunits,sum(treatments),nblocks[strata+1]) 
-      effics[strata+1,]=optEffics(Design$Treatments,Design[,strata+1],ntrts,nblocks[strata+1]) 
+      effics[strata+1,]=optEffics(Design$Treatments,Columns,ntrts,nblocks[strata+1]) 
     }
     names=names(Design)[1:strata]
     if (crossed) names=c(names,"Columns")
     efficiencies=data.frame(cbind(names,nblocks, effics, bounds)) 
-    
     colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies[,'Blocks'] = as.factor(efficiencies[,'Blocks'])
     efficiencies
@@ -661,12 +663,12 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
   }
   facMat[,c(1:strata)] = do.call(cbind,lapply(1:strata, function(r){ (as.numeric(facMat[,r])-1)%%blocklevels[r]+1 }))
   Plan=data.frame( cbind(facMat, rep("",nrow(rc)), rc))
-  if (crossed>1) colnames(Plan)=c(stratumnames,"Columns",1:ncol(rc))
-  if (crossed==1) colnames(Plan)=c(stratumnames,"Plots",1:ncol(rc))
+  if (crossed) colnames(Plan)=c(stratumnames,"Columns",1:ncol(rc))
+  if (!crossed) colnames(Plan)=c(stratumnames,"Plots",1:ncol(rc))
   Plan[]=lapply(Plan,as.factor) 
-  if (strata>1 & crossed>1)
+  if (strata>1 & crossed)
    Plan=split(Plan,Plan[1:(strata-1)]) 
-  else if (strata>1 & crossed==1)
+  else if (strata>1 & !crossed)
     Plan=split(Plan,Plan[1:(strata)])
   
   list(Treatments=Treatments,Efficiencies=Efficiencies,Design=Design,Plan=Plan,AOV=AOV,Seed=seed,Searches=searches,Jumps=jumps) 
