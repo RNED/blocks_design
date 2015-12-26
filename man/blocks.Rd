@@ -4,23 +4,22 @@
 \alias{blocks}
 \title{Block designs}
 \usage{
-blocks(treatments, replicates, blocklevels = HCF(replicates),
-  crossed = FALSE, searches = (1 + 2000\%/\%(sum(treatments) +
+blocks(model, crossed = FALSE, searches = (1 + 2000\%/\%(sum(treatments) +
   prod(blocklevels))), seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
+\item{searches}{maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 2000 divided by the number of model parameters.}
+
+\item{seed}{integer initializing the random number generator. The default is a random seed.}
+
+\item{jumps}{number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.}
+
 \item{treatments}{treatment numbers giving a partition of the total required number of treatments into sets of equally replicated treatments.}
 
 \item{replicates}{replication numbers giving the replictaion for each set of equally replicated treatments defined by the \code{treatments} partition.}
 
 \item{blocklevels}{factor levels that define the number of nested blocks in each succesive blocks stratum taken in order from the highest to the lowest. 
 The default is the hcf of the replication numbers.}
-
-\item{searches}{maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 2000 divided by the number of model parameters.}
-
-\item{seed}{integer initializing the random number generator. The default is a random seed.}
-
-\item{jumps}{number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.}
 }
 \value{
 \item{Design}{Data frame giving the optimized block and treatment factors in plot order}

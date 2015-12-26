@@ -105,8 +105,8 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=FALSE,searches=(1+2000%/%(sum(treatments)+prod(blocklevels))),seed=sample(10000,1),jumps=1) { 
-  
+blocks = function( model, crossed=FALSE,searches=(1+2000%/%(sum(treatments)+prod(blocklevels))),seed=sample(10000,1),jumps=1) { 
+ 
   # ******************************************************************************************************************************************************** 
   #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
   # ********************************************************************************************************************************************************
@@ -220,7 +220,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
   # ******************************************************************************************************************************************************** 
   #  Number of searches for an optimization with selected number of searches and selected number of junps to escape local optima
   # ********************************************************************************************************************************************************
-  Optimise=function(TF,BF,MTT,MBB,MTB,searches,jumps,Restrict)  {
+  Optimise=function(TF,BF,MTT,MBB,MTB,Restrict)  {
     globrelD=0
     relD=1
     globTF=TF
@@ -230,7 +230,6 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
       bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) else bound=NA
     for (r in 1 : searches) {
       dmax=DMax(MTT,MBB,MTB,TF,BF,Restrict)
-      #dmax=DMax(MTT,MBB,MTB,TF,MF,BF) 
       if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
         relD=relD*dmax$relD
         TF=dmax$TF
@@ -315,7 +314,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
-  GenOpt=function(TF,Design,searches,jumps,stratum,blocklevels,hcf) { 
+  GenOpt=function(TF,Design,stratum,blocklevels,hcf) { 
     Design=cbind(as.factor(rep(1,nrow(Design))),Design)
     MF=Design[,stratum]
     BF=Design[,stratum+1]
@@ -337,7 +336,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
     perm=order(order( (1:nlevels(BF))%%blevels ==0  ))  
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
-    TF=Optimise(TF,BF,MTT,MBB,MTB,searches,jumps,MF)
+    TF=Optimise(TF,BF,MTT,MBB,MTB,MF)
     TF
   }  
   # ******************************************************************************************************************************************************** 
@@ -363,7 +362,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
     perm=order(order( (1:nlevels(BF))%%blevels ==0  ))  
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
-    TF=Optimise(TF,BF,MTT,MBB,MTB,searches,jumps,Rows)
+    TF=Optimise(TF,BF,MTT,MBB,MTB,Rows)
     Design[,stratum+2]=TF
     Design
   }  
@@ -371,7 +370,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
   # ******************************************************************************************************************************************************** 
   # Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm as appropriate
   # ********************************************************************************************************************************************************     
-  optTF=function(Design,treatlevs,replevs,blocklevels,searches,jumps) {
+  optTF=function(Design,treatlevs,replevs,blocklevels) {
     nunits=sum(treatlevs*replevs)
     ntrts=sum(treatlevs)
     hcf=HCF(replevs)
@@ -436,7 +435,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
               for (k in 1: (nunits/nblocks))
                 TF=c(TF,mols[i,j,k]+(k-1)*w)
           TF=as.factor(TF)
-        } else TF=GenOpt(TF,Design,searches,jumps,stratum,blocklevels,hcf)
+        } else TF=GenOpt(TF,Design,stratum,blocklevels,hcf)
       }
       if (length(TF)>0) break
     }
@@ -480,7 +479,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
   # ******************************************************************************************************************************************************** 
   # Carries out some input validation
   # ********************************************************************************************************************************************************     
-  testInputs=function(treatments,replicates,blocklevels,searches,seed,jumps) {  
+  testInputs=function(treatments,replicates,blocklevels,seed) {  
     if (missing(treatments) | missing(replicates) )  
       return(" Treatments or replicates not defined ")   
     if (is.null(treatments) | is.null(replicates))  
@@ -530,8 +529,25 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
   # Main body of blocks design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
+  if (!exists("model")) stop("model formula must be a string wrapped in quotation marks" )
+  if (is.numeric(model)) stop("model formula must be a string wrapped in quotation marks" )
+
+  treatments=NULL
+  replicates=NULL
+  components=unlist(strsplit(model, "[,]"))
+  treatslist=unlist (strsplit(components[1], "[+]"))
+  for (i in 1:length(treatslist)) {
+    sets=unlist (strsplit(treatslist[i], "[*]"))
+    treatments=c(treatments,as.numeric(sets[1]))
+    replicates=c(replicates,as.numeric(sets[2]))
+  }
   
-  testout=testInputs(treatments,replicates,blocklevels,searches,seed,jumps) 
+  if (length(components)==1) blocklevels=HCF(replicates) else
+    blocklevels= as.numeric(unlist(strsplit(components[2],"[/]")))
+  print(treatments)
+  print(replicates)
+  print(blocklevels)
+  testout=testInputs(treatments,replicates,blocklevels,seed) 
   if (!isTRUE(testout)) stop(testout)
   set.seed(seed)
   blocklevels=blocklevels[blocklevels>1]
@@ -554,7 +570,7 @@ blocks = function( treatments, replicates, blocklevels=HCF(replicates),crossed=F
   
   # optimization
   if (!isTRUE(all.equal(max(replicates),1)) && !isTRUE(all.equal(sum(treatments[replicates>1]),1)) )
-    TF=optTF(Design,treatments[replicates>1],replicates[replicates>1],blocklevels,searches,jumps) else
+    TF=optTF(Design,treatments[replicates>1],replicates[replicates>1],blocklevels) else
       TF=sample(rep(treatments[replicates>1],replicates[replicates>1])) 
   
   #add back single rep treatments
