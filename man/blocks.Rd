@@ -4,22 +4,23 @@
 \alias{blocks}
 \title{Block designs}
 \usage{
-blocks(model, crossed = FALSE, searches = (1 + 2000\%/\%(sum(treatments) +
-  prod(blocklevels))), seed = sample(10000, 1), jumps = 1)
+blocks(treatments, replicates, rowblocks = HCF(replicates),
+  colblocks = NULL, searches = (1 + 2000\%/\%(sum(treatments) +
+  prod(rowblocks))), seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
+\item{treatments}{treatment numbers giving a partition of the total required number of treatments into sets of equally replicated treatments.}
+
+\item{replicates}{replication numbers giving the replictaion for each set of equally replicated treatments defined by the \code{treatments} partition.}
+
+\item{rowblocks}{factor levels that define the number of nested blocks in each succesive blocks stratum taken in order from the highest to the lowest. 
+The default is the hcf of the replication numbers.}
+
 \item{searches}{maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 2000 divided by the number of model parameters.}
 
 \item{seed}{integer initializing the random number generator. The default is a random seed.}
 
 \item{jumps}{number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.}
-
-\item{treatments}{treatment numbers giving a partition of the total required number of treatments into sets of equally replicated treatments.}
-
-\item{replicates}{replication numbers giving the replictaion for each set of equally replicated treatments defined by the \code{treatments} partition.}
-
-\item{blocklevels}{factor levels that define the number of nested blocks in each succesive blocks stratum taken in order from the highest to the lowest. 
-The default is the hcf of the replication numbers.}
 }
 \value{
 \item{Design}{Data frame giving the optimized block and treatment factors in plot order}
@@ -41,7 +42,7 @@ The \code{treatments} and \code{replicates} parameters partition the total numbe
 The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
 is the total number of plots. Treatments are numbered consecutively according to the ordering of the consecutive treatment sets. 
 
-The \code{blocklevels} parameter contains the nested blocks for each individual stratum taken in order from the highest to the lowest.
+The \code{rowblocks} parameter contains the nested blocks for each individual stratum taken in order from the highest to the lowest.
 The first number is the number of main blocks, the second, if any, is the number of sub-blocks nested in each main block, the third, if any, 
 is the number of sub-sub-blocks nested in each sub-block,and so on for all the reqired strata. If left blank, the default block design is a 
  maximal set of orthogonal main blocks, where the maximal number of of orthogonal main blocks is the highest common factor of the replication numbers. 
@@ -82,17 +83,17 @@ blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 blocks(treatments=4,replicates=4,blocklevel=2)
 
 # 50 treatments x 4 replicates with 4 main blocks and 5 nested sub-blocks in each main block 
-blocks(treatments=50,replicates=4,blocklevels=c(4,5))
+blocks(treatments=50,replicates=4,rowblocks=c(4,5))
 
 # as above but with 20 additional single replicate treatments 
 # giving exactly one single replicate treatment per sub-block
-blocks(treatments=c(50,20),replicates=c(4,1),blocklevels=c(4,5))
+blocks(treatments=c(50,20),replicates=c(4,1),rowblocks=c(4,5))
 
 # 64 treatments x 2 replicates with 2 main blocks and five succesively nested 2-level factors
-blocks(treatments=64,replicates=2,blocklevels=c(2,2,2,2,2,2))
+blocks(treatments=64,replicates=2,rowblocks=c(2,2,2,2,2,2))
 
 # 6 replicates of 6 treatments in 4 blocks of size 9 (non-binary block design)
-blocks(treatments=6,replicates=6,blocklevels=4)
+blocks(treatments=6,replicates=6,rowblocks=4)
 
 # concurrence matrix of balanced incomplete block design 
 crossprod(blocks(13,4,13,searches=100)$Incidences[[1]])
