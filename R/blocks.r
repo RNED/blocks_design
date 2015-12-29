@@ -110,16 +110,17 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   # ******************************************************************************************************************************************************** 
   #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
   # ********************************************************************************************************************************************************
-  Sizes=function(sizes,rowblocks) { 
-    for  (i in 1:length(rowblocks)) {    
-      newsizes=NULL
-      for (z in 1: length(sizes)) 
-        newsizes=c(newsizes, rep(sizes[z] %/% rowblocks[i], rowblocks[i]) + 
-                     c( rep(1, sizes[z] %% rowblocks[i]), rep(0,(rowblocks[i]-sizes[z] %% rowblocks[i])))) 
-      sizes=newsizes
-    }   
-    sizes 
-  } 
+  Sizes=function(blocksizes,rowblocks) { 
+    subsizes=NULL
+    for (main in blocksizes) {
+      sizes=rep(floor(main/rowblocks),rowblocks)
+      resid=main-sum(sizes)
+      if (resid>0)
+        sizes[1:resid]=sizes[1:resid]+1
+      subsizes=c(subsizes,sizes)
+    }
+    subsizes
+  }
   # ******************************************************************************************************************************************************** 
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)
   # ********************************************************************************************************************************************************
@@ -542,8 +543,10 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   strata=length(rowblocks)
   cumrowlevs=cumprod(rowblocks)
   cumcollevs=cumprod(colblocks)
-  if (max(replicates)==1) blocksizes=sum(treatments) else
-    blocksizes=Sizes(sum(treatments[replicates>1]*replicates[replicates>1])  , rowblocks)
+  blocksizes=sum(treatments[replicates>1]*replicates[replicates>1]) 
+  
+  blocksizes=Sizes(blocksizes,rowblocks)
+
   stratumnames="Main" 
   if (!isTRUE(all.equal(strata,1)))  
     stratumnames=c( stratumnames,sapply(2:strata, function(i) { paste0("Sub",(i-1)) }))
