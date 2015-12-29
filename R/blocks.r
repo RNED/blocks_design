@@ -543,86 +543,68 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   strata=length(rowblocks)
   cumrowlevs=cumprod(rowblocks)
   cumcollevs=cumprod(colblocks)
-  blocksizes=sum(treatments[replicates>1]*replicates[replicates>1]) 
+  rowblocksizes=sum(treatments[replicates>1]*replicates[replicates>1]) 
+  stratumnames=sapply(1:strata, function(i) { paste("Rows",i,"*","Columns", i) })
   
-  blocksizes=Sizes(blocksizes,rowblocks)
+  rowfacMat= matrix(nrow=prod(rowblocks),ncol=strata)
+  rowfactlevs = function(r){ gl(cumrowlevs[r],prod(rowblocks)/cumrowlevs[r]) }
+  rowfacMat=do.call(cbind,lapply(1:strata,rowfactlevs))
+  
+  for ( i in 1: strata) {
+    rowblocksizes=Sizes(rowblocksizes,rowblocks[i])
+    # nested factorial matrix
+    rowfacMat= matrix(nrow=prod(rowblocks[i]),ncol=strata)
+    rowfactlevs = function(r){ gl(cumrowlevs[r],prod(rowblocks[i])/cumrowlevs[r]) }
+    rowfacMat=do.call(cbind,lapply(1:strata,rowfactlevs))
+    Design=data.frame(rowfacMat[rep(1:length(rowblocksizes),rowblocksizes),])
+    Design[]=lapply(Design, as.factor) 
+  
+    # optimization
+    if (!isTRUE(all.equal(max(replicates),1)) && !isTRUE(all.equal(sum(treatments[replicates>1]),1)) )
+      TF=optTF(Design,treatments[replicates>1],replicates[replicates>1],rowblocks[i]) else
+    TF=sample(rep(treatments[replicates>1],replicates[replicates>1])) 
+  
+    Design[,c("Plots","Treatments")]  = c(rep(1:nrow(Design)) ,TF)
+    Design[]=lapply(Design, as.factor)
+    # randomization
+    Design=data.frame(do.call(cbind,lapply(1:(strata+1), function(r){ sample(nlevels(Design[,r]))[Design[,r]] })) ,Design[,strata+2])
+    Design=Design[ do.call(order, Design), ]
 
-  stratumnames="Main" 
-  if (!isTRUE(all.equal(strata,1)))  
-    stratumnames=c( stratumnames,sapply(2:strata, function(i) { paste0("Sub",(i-1)) }))
-  if (colblocks[strata]>1) stratumnames[strata]="Rows"
+    # rowblocksizes for randomized design
+    t=tabulate(Design[,strata])
+    rowblocksizes=t[unique(Design[,strata])]
   
-  # nested factorial matrix
-  facMat= matrix(nrow=prod(rowblocks),ncol=strata)
-  factlevs = function(r){ gl(cumrowlevs[r],prod(rowblocks)/cumrowlevs[r]) }
-  facMat=do.call(cbind,lapply(1:strata,factlevs))
-  Design=data.frame(facMat[rep(1:length(blocksizes),blocksizes),])
-  Design[]=lapply(Design, as.factor) 
-  
-  # optimization
-  if (!isTRUE(all.equal(max(replicates),1)) && !isTRUE(all.equal(sum(treatments[replicates>1]),1)) )
-    TF=optTF(Design,treatments[replicates>1],replicates[replicates>1],rowblocks) else
-      TF=sample(rep(treatments[replicates>1],replicates[replicates>1])) 
-  
-  #add back single rep treatments
-  if ( min(replicates)==1 && max(replicates)>1 ) {
-    addTF=((sum(treatments[replicates>1])+1) :sum(treatments))
-    if (length(addTF)>1) addTF=sample(addTF)
-    TF=as.factor(  c(TF, addTF )  ) 
-    reptrts=NULL
-    for (i in 1 : length(replicates))
-      if (replicates[i]>1)
-        reptrts=c(reptrts,rep(FALSE,treatments[i])) else 
-          reptrts=c(reptrts,rep(TRUE,treatments[i]))
-    
-    levels(TF)= (1:sum(treatments*replicates))[order(reptrts)] 
-    TF=as.numeric(levels(TF))[TF]
-    newblocksizes=Sizes(sum(treatments*replicates),rowblocks)
-    Design=data.frame(facMat[rep(1:length(newblocksizes),newblocksizes),])
-    TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
-    blocksizes=newblocksizes
-  }
-  
-  Design[,c("Plots","Treatments")]  = c(rep(1:nrow(Design)) ,TF)
-  Design[]=lapply(Design, as.factor)
-  # randomization
-  Design=data.frame(do.call(cbind,lapply(1:(strata+1), function(r){ sample(nlevels(Design[,r]))[Design[,r]] })) ,Design[,strata+2])
-  Design=Design[ do.call(order, Design), ]
+    # Design matrix for new randomized design
+    Design[,c(1:(ncol(Design)-1))]=
+    cbind( rowfacMat[rep(1:length(rowblocksizes),rowblocksizes),], unlist(lapply(1:length(rowblocksizes), function(r){rep(1:rowblocksizes[r])})) )
+    colnames(Design)=c(stratumnames,"Plots","Treatments")  
+    row.names(Design)=c(1:nrow(Design))
+    Design[]=lapply(Design, as.factor)
+    rowsizes=tabulate(Design[,ncol(Design)-2])
 
-  # blocksizes for randomized design
-  t=tabulate(Design[,strata])
-  blocksizes=t[unique(Design[,strata])]
-  
-  # Design matrix for new randomized design
-  Design[,c(1:(ncol(Design)-1))]=
-    cbind( facMat[rep(1:length(blocksizes),blocksizes),], unlist(lapply(1:length(blocksizes), function(r){rep(1:blocksizes[r])})) )
-  colnames(Design)=c(stratumnames,"Plots","Treatments")  
-  row.names(Design)=c(1:nrow(Design))
-  Design[]=lapply(Design, as.factor)
-  rowsizes=tabulate(Design[,ncol(Design)-2])
+    if (colblocks[strata]>1) {
+    # arrange row blocks of randomized design as list of vectors containing a set of column blocks possibly with unequal block sizes allocated as equally as possble
 
-  if (colblocks[strata]>1) {
-  # arrange row blocks of randomized design as list of vectors containing a set of column blocks possibly with unequal block sizes allocated as equally as possble
-
-  v=vector(mode = "list", length =length(rowsizes))
-  shift=0
-  for (i in 1:length(rowsizes)) {
-    colsbase=floor(rowsizes[i]/colblocks[strata])
-    resid=rowsizes[i]-colblocks[strata]*colsbase
-    if (resid>0) {
-      v[[i]]=sort((c(rep(0:(resid-1),each=colsbase+1),rep(resid:(colblocks[strata]-1),each=colsbase))+shift)%%colblocks[strata])+1
-      shift=shift+resid
-    } else v[[i]]=rep(0:(colblocks[strata]-1),each=colsbase) +1
-  }
-  plan=sapply(v, tabulate)
+    v=vector(mode = "list", length =length(rowsizes))
+    shift=0
+    for (i in 1:length(rowsizes)) {
+      colsbase=floor(rowsizes[i]/colblocks[strata])
+      resid=rowsizes[i]-colblocks[strata]*colsbase
+      if (resid>0) {
+        v[[i]]=sort((c(rep(0:(resid-1),each=colsbase+1),rep(resid:(colblocks[strata]-1),each=colsbase))+shift)%%colblocks[strata])+1
+        shift=shift+resid
+      } else v[[i]]=rep(0:(colblocks[strata]-1),each=colsbase) +1
+    }
+    plan=sapply(v, tabulate)
   
-  print(plan)
-  Design[,ncol(Design)-1]=as.factor(unlist(v))
+    print(plan)
+    Design[,ncol(Design)-1]=as.factor(unlist(v))
   
-  colnames(Design)=c(stratumnames,"Columns","Treatments") 
+    colnames(Design)=c(stratumnames,"Columns","Treatments") 
 
     #optimize columns design
-  Design=rcOpt(Design)
+    Design=rcOpt(Design)
+    }
   }
   
   # efficiencies
@@ -673,8 +655,8 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
     } else 
       rc=matrix( formatC(as.numeric(Design[,ncol(Design)] ,width=nchar(sum(treatments)))),nrow=cumrowlevs[strata],ncol=min(rowsizes),byrow=TRUE)
   }
-  facMat[,c(1:strata)] = do.call(cbind,lapply(1:strata, function(r){ (as.numeric(facMat[,r])-1)%%rowblocks[r]+1 }))
-  Plan=data.frame( cbind(facMat, rep("",nrow(rc)), rc))
+  rowfacMat[,c(1:strata)] = do.call(cbind,lapply(1:strata, function(r){ (as.numeric(rowfacMat[,r])-1)%%rowblocks[r]+1 }))
+  Plan=data.frame( cbind(rowfacMat, rep("",nrow(rc)), rc))
   if (colblocks[strata]>1) colnames(Plan)=c(stratumnames,"Columns",1:ncol(rc))
   if (colblocks[strata]==1) colnames(Plan)=c(stratumnames,"Plots",1:ncol(rc))
   Plan[]=lapply(Plan,as.factor) 
