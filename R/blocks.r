@@ -539,8 +539,9 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   colfacMat=do.call(cbind,lapply(1:strata,colfactlevs))
   
 
-  blocksizes=sum(treatments*replicates) 
-  
+  blocks=rep(1,blocksizes)
+  strata=length(rowblocks)
+  cumblocks=c(1,cumprod(rowblocks*colblocks))
   design=matrix(nrow=blocksizes,ncol=2*strata)
   for (i in 1 :strata) {
     v=vector(mode = "list", length =length(blocksizes))
@@ -552,25 +553,27 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
     }
     rowsizes=unlist(v)
     rows=rep(1:length(rowsizes),rowsizes)
-    v=vector(mode = "list", length =length(rowsizes))
+    w=vector(mode = "list", length =length(rowsizes))
     shift=0
     for (j in 1:length(rowsizes)) {
       colsbase=floor(rowsizes[j]/colblocks[i])
       resid=rowsizes[j]-colblocks[i]*colsbase
+      w[[j]]=rep(colsbase,colblocks[i])
       if (resid>0) {
-        v[[j]]=sort((c(rep(0:(resid-1),each=colsbase+1),rep(resid:(colblocks[i]-1),each=colsbase))+shift)%%colblocks[i])+1
+        w[[j]][(shift:(shift+resid-1))%%colblocks[i]+1]=colsbase+1
         shift=shift+resid
-      } else v[[j]]=rep(0:(colblocks[i]-1),each=colsbase) + 1
+      } 
     }
-    cols=unlist(v)
-    newblocks=(rows-1)*colblocks[i]+cols
-    cols=(blocks-1)*colblocks[i]+cols
-    blocks=newblocks
-    m=(cbind(rows,cols,blocks))
-    blocksizes=tabulate(blocks)
-    design[,(2*i-1)]=rows
-    design[,2*i]=cols
+    blocksizes=unlist(w)
+    rowfactlevs = rep(rep(1:rowblocks[i],each=colblocks[i]),cumblocks[i])
+    colfactlevs = rep(rep(1:colblocks[i],rowblocks[i]),cumblocks[i])
+    blocklevels=  rep(1:cumblocks[i],each=colblocks[i]*rowblocks[i])
+    rowfactlevs=(blocklevels-1)*rowblocks[i] + rowfactlevs
+    colfactlevs=(blocklevels-1)*colblocks[i] + colfactlevs
+    # print(cbind(blocklevels,rowfactlevs,colfactlevs,blocksizes))
   }
+  
+  
   Design=as.data.frame(design)
   Design[]=lapply(Design, as.factor) 
   
