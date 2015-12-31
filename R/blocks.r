@@ -107,20 +107,7 @@
 #' 
 blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NULL,searches=(1+2000%/%(sum(treatments)+prod(rowblocks))),seed=sample(10000,1),jumps=1) { 
  
-  # ******************************************************************************************************************************************************** 
-  #  Generates a vector of block sizes for a particular stratum where all blocks are as equal as possible and never differ by more than a single unit
-  # ********************************************************************************************************************************************************
-  Sizes=function(blocksizes,rowblocks) { 
-    subsizes=NULL
-    for (main in blocksizes) {
-      sizes=rep(floor(main/rowblocks),rowblocks)
-      resid=main-sum(sizes)
-      if (resid>0)
-        sizes[1:resid]=sizes[1:resid]+1
-      subsizes=c(subsizes,sizes)
-    }
-    subsizes
-  }
+ 
   # ******************************************************************************************************************************************************** 
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)
   # ********************************************************************************************************************************************************
@@ -315,14 +302,10 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
-  GenOpt=function(TF,Design,stratum,rowblocks,hcf) { 
-    Design=cbind(as.factor(rep(1,nrow(Design))),Design)
-    MF=Design[,stratum]
-    BF=Design[,stratum+1]
+  rowsOpt=function(TF,MF,BF) { 
     rand=sample(1:length(TF))
     TF=TF[rand][order(MF[rand])]
-    if (!isTRUE(all.equal(hcf %% prod(rowblocks[1:stratum]),0))) 
-      TF=NonSingular(TF,MF,BF)
+    TF=NonSingular(TF,MF,BF)
     if (length(TF)==0) return(TF)
     blevels=nlevels(BF)%/%nlevels(MF)
     BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
@@ -343,46 +326,36 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
-  rcOpt=function(Design) { 
-    stratum=ncol(Design)-2
-    if (stratum>1) MF=Design[,stratum-1] else MF=as.factor(rep(1,nrow(Design))) 
-    Rows=Design[,stratum]
-    BF=Design[,stratum+1]
-    TF=Design[,stratum+2]
-    blevels=nlevels(BF)
-    BF=as.factor((as.numeric(MF)-1)*nlevels(BF)+as.numeric(BF))
-    BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
-    TM=Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE] 
+  colsOpt=function(TF,Main,Cols,Rows) { 
+    blevels=nlevels(Cols)
+    Cols=as.factor((as.numeric(Main)-1)*nlevels(Cols)+as.numeric(Cols))
+    BM=Contrasts(Main,Cols)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(Main)),drop=FALSE]
+    TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] 
     V=chol2inv(chol(crossprod(cbind(BM,TM))))
-    MBB=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+    MBB=matrix(0,nrow=nlevels(Cols),ncol=nlevels(Cols))
     MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
-    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
-    MBB[1:(nlevels(BF)-nlevels(MF)), 1:(nlevels(BF)-nlevels(MF))]=V[1:(nlevels(BF)-nlevels(MF)),1:(nlevels(BF)-nlevels(MF)),drop=FALSE]
-    MTT[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[(nlevels(BF)-nlevels(MF)+1):ncol(V),(nlevels(BF)-nlevels(MF)+1):ncol(V), drop=FALSE]
-    MTB[1:(nlevels(TF)-1),  1:(nlevels(BF)-nlevels(MF)) ]=V[(nlevels(BF)-nlevels(MF)+1):ncol(V),1:(nlevels(BF)-nlevels(MF)),drop=FALSE]
-    perm=order(order( (1:nlevels(BF))%%blevels ==0  ))  
+    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Cols))
+    MBB[1:(nlevels(Cols)-nlevels(Main)), 1:(nlevels(Cols)-nlevels(Main))]=V[1:(nlevels(Cols)-nlevels(Main)),1:(nlevels(Cols)-nlevels(Main)),drop=FALSE]
+    MTT[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[(nlevels(Cols)-nlevels(Main)+1):ncol(V),(nlevels(Cols)-nlevels(Main)+1):ncol(V), drop=FALSE]
+    MTB[1:(nlevels(TF)-1),  1:(nlevels(Cols)-nlevels(Main)) ]=V[(nlevels(Cols)-nlevels(Main)+1):ncol(V),1:(nlevels(Cols)-nlevels(Main)),drop=FALSE]
+    perm=order(order( (1:nlevels(Cols))%%blevels ==0  ))  
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
-    TF=Optimise(TF,BF,MTT,MBB,MTB,Rows)
-    Design[,stratum+2]=TF
-    Design
+    TF=Optimise(TF,Cols,MTT,MBB,MTB,Rows)
+    TF
   }  
   
   # ******************************************************************************************************************************************************** 
   # Generates an initial orthogonal design then builds algebraic lattice blocks or calls the general block design algorithm as appropriate
   # ********************************************************************************************************************************************************     
-  optTF=function(Design,treatlevs,replevs,rowblocks) {
-    nunits=sum(treatlevs*replevs)
-    ntrts=sum(treatlevs)
-    hcf=HCF(replevs)
-    MB=rep(1:hcf,each=(nunits%/%hcf))
-    repeat{
-      TF=rep( rep(1:ntrts,rep(replevs%/%hcf,treatlevs)), hcf)
-      rand=sample(nunits)
-      TF=as.factor( TF[rand][order(MB[rand])] )
-      firstPass=TRUE
-      v=sqrt(ntrts)  
+  initializeTF=function(treatlevs,replevs) {
+    
+    
+    # special balanced designs 
+    
+    v=sqrt(ntrts)  
       regrep=isTRUE(all.equal(max(replevs),min(replevs)))
+      
       for (stratum in 1 : length(rowblocks)) { 
         nblocks=prod(rowblocks[1:stratum])
         if (isTRUE(all.equal(hcf%%nblocks,0))) next
@@ -436,13 +409,14 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
               for (k in 1: (nunits/nblocks))
                 TF=c(TF,mols[i,j,k]+(k-1)*w)
           TF=as.factor(TF)
-        } else TF=GenOpt(TF,Design,stratum,rowblocks,hcf)
+        } else TF=rowsOpt(TF,Design,stratum,rowblocks,hcf)
       }
-      if (length(TF)>0) break
-    }
+     
     levels(TF)=sample(1:ntrts) 
     TF
   }
+  
+  
   # ******************************************************************************************************************************************************** 
   # Finds efficiency factors for the blocks in each stratum of a design 
   # ********************************************************************************************************************************************************     
@@ -530,83 +504,100 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   # Main body of blocks design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
-  
+
   testout=testInputs(treatments,replicates,rowblocks,seed) 
   if (!isTRUE(testout)) stop(testout)
-
   set.seed(seed)
   if (isTRUE(all.equal(length(rowblocks),0))) rowblocks=1
   if (isTRUE(all.equal(length(colblocks),0))) colblocks=rep(1,length(rowblocks))
   if (!isTRUE(all.equal(length(colblocks),length(rowblocks)))) stop("The number of row blocks strata and the number of column blocks strata must be equal")
-  colblocks=colblocks[rowblocks>1]
-  rowblocks=rowblocks[rowblocks>1]
+  fulltreatments=treatments
+  fullreplicates=replicates
+  treatments=treatments[replicates>1]
+  replicates=replicates[replicates>1]
+  hcf=HCF(replicates)
+  MB=rep(1:hcf,each=(sum(treatments*replicates)/hcf) )
+  TF=rep( rep(1:sum(treatments),rep(replicates/hcf,treatments)), hcf)
+  rand=sample(sum(treatments*replicates))
+  TF=as.factor( TF[rand][order(MB[rand])] )
+  #colblocks=colblocks[rowblocks>1]
+  #rowblocks=rowblocks[rowblocks>1]
   strata=length(rowblocks)
   cumrowlevs=cumprod(rowblocks)
   cumcollevs=cumprod(colblocks)
-  rowblocksizes=sum(treatments[replicates>1]*replicates[replicates>1]) 
+
   stratumnames=sapply(1:strata, function(i) { paste("Rows",i,"*","Columns", i) })
   
-  rowfacMat= matrix(nrow=prod(rowblocks),ncol=strata)
-  rowfactlevs = function(r){ gl(cumrowlevs[r],prod(rowblocks)/cumrowlevs[r]) }
+  
+
+  rowfacMat= matrix(nrow=prod(rowblocks[1:strata]),ncol=strata)
+  rowfactlevs = function(r){ gl(cumrowlevs[r],prod(rowblocks[1:strata])/cumrowlevs[r]) }
   rowfacMat=do.call(cbind,lapply(1:strata,rowfactlevs))
   
-  for ( i in 1: strata) {
-    rowblocksizes=Sizes(rowblocksizes,rowblocks[i])
-    # nested factorial matrix
-    rowfacMat= matrix(nrow=prod(rowblocks[i]),ncol=strata)
-    rowfactlevs = function(r){ gl(cumrowlevs[r],prod(rowblocks[i])/cumrowlevs[r]) }
-    rowfacMat=do.call(cbind,lapply(1:strata,rowfactlevs))
-    Design=data.frame(rowfacMat[rep(1:length(rowblocksizes),rowblocksizes),])
-    Design[]=lapply(Design, as.factor) 
+  colfacMat= matrix(nrow=prod(colblocks[1:strata]),ncol=strata)
+  colfactlevs = function(r){ gl(cumcollevs[r],prod(colblocks[1:strata])/cumcollevs[r]) }
+  colfacMat=do.call(cbind,lapply(1:strata,colfactlevs))
   
-    # optimization
-    if (!isTRUE(all.equal(max(replicates),1)) && !isTRUE(all.equal(sum(treatments[replicates>1]),1)) )
-      TF=optTF(Design,treatments[replicates>1],replicates[replicates>1],rowblocks[i]) else
-    TF=sample(rep(treatments[replicates>1],replicates[replicates>1])) 
+
+  blocksizes=sum(treatments*replicates) 
   
-    Design[,c("Plots","Treatments")]  = c(rep(1:nrow(Design)) ,TF)
-    Design[]=lapply(Design, as.factor)
-    # randomization
-    Design=data.frame(do.call(cbind,lapply(1:(strata+1), function(r){ sample(nlevels(Design[,r]))[Design[,r]] })) ,Design[,strata+2])
-    Design=Design[ do.call(order, Design), ]
-
-    # rowblocksizes for randomized design
-    t=tabulate(Design[,strata])
-    rowblocksizes=t[unique(Design[,strata])]
-  
-    # Design matrix for new randomized design
-    Design[,c(1:(ncol(Design)-1))]=
-    cbind( rowfacMat[rep(1:length(rowblocksizes),rowblocksizes),], unlist(lapply(1:length(rowblocksizes), function(r){rep(1:rowblocksizes[r])})) )
-    colnames(Design)=c(stratumnames,"Plots","Treatments")  
-    row.names(Design)=c(1:nrow(Design))
-    Design[]=lapply(Design, as.factor)
-    rowsizes=tabulate(Design[,ncol(Design)-2])
-
-    if (colblocks[strata]>1) {
-    # arrange row blocks of randomized design as list of vectors containing a set of column blocks possibly with unequal block sizes allocated as equally as possble
-
+  design=matrix(nrow=blocksizes,ncol=2*strata)
+  for (i in 1 :strata) {
+    v=vector(mode = "list", length =length(blocksizes))
+    for (j in 1:length(blocksizes)) { 
+      v[[j]]=rep(floor(blocksizes[j]/rowblocks[i]),rowblocks[i])
+      resid=blocksizes[j]-sum(v[[j]])
+      if (resid>0)
+        v[[j]][1:resid]=v[[j]][1:resid]+1
+    }
+    rowsizes=unlist(v)
+    rows=rep(1:length(rowsizes),rowsizes)
     v=vector(mode = "list", length =length(rowsizes))
     shift=0
-    for (i in 1:length(rowsizes)) {
-      colsbase=floor(rowsizes[i]/colblocks[strata])
-      resid=rowsizes[i]-colblocks[strata]*colsbase
+    for (j in 1:length(rowsizes)) {
+      colsbase=floor(rowsizes[j]/colblocks[i])
+      resid=rowsizes[j]-colblocks[i]*colsbase
       if (resid>0) {
-        v[[i]]=sort((c(rep(0:(resid-1),each=colsbase+1),rep(resid:(colblocks[strata]-1),each=colsbase))+shift)%%colblocks[strata])+1
+        v[[j]]=sort((c(rep(0:(resid-1),each=colsbase+1),rep(resid:(colblocks[i]-1),each=colsbase))+shift)%%colblocks[i])+1
         shift=shift+resid
-      } else v[[i]]=rep(0:(colblocks[strata]-1),each=colsbase) +1
+      } else v[[j]]=rep(0:(colblocks[i]-1),each=colsbase) + 1
     }
-    plan=sapply(v, tabulate)
-  
-    print(plan)
-    Design[,ncol(Design)-1]=as.factor(unlist(v))
-  
-    colnames(Design)=c(stratumnames,"Columns","Treatments") 
-
-    #optimize columns design
-    Design=rcOpt(Design)
-    }
+    cols=unlist(v)
+    newblocks=(rows-1)*colblocks[i]+cols
+    cols=(blocks-1)*colblocks[i]+cols
+    blocks=newblocks
+    m=(cbind(rows,cols,blocks))
+    blocksizes=tabulate(blocks)
+    design[,(2*i-1)]=rows
+    design[,2*i]=cols
   }
+  Design=as.data.frame(design)
+  Design[]=lapply(Design, as.factor) 
   
+
+  for ( i in 1: strata) {
+ 
+    
+    TF=rowsOpt(TF,Main,Rows)
+    TF=colsOpt(TF,Main,Cols,Rows)
+  }
+    
+    
+ 
+
+
+
+  #  Design[,ncol(Design)-1]=as.factor(unlist(v))
+   # colnames(Design)=c(stratumnames,"Columns","Treatments") 
+    #optimize columns design
+   # Design=colsOpt(Design)
+  #  TF=colsOpt(TF,Main,Cols,Rows)
+ # }
+  
+  
+  
+  #plan=sapply(v, tabulate)
+  #print(plan)
   # efficiencies
   Efficiencies=A_Efficiencies(Design,treatments,replicates,colblocks[strata])
   
@@ -630,7 +621,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   Design[]=lapply(Design, as.factor)
 
  # Plan layout with rows or blocks arranged vertically and plots or columns arranged horizontally 
-  print(v)
+  #print(v)
   
   if (colblocks[strata]>1) {
     rc = matrix("",nrow=cumrowlevs[strata],ncol=colblocks[strata],byrow=TRUE)
