@@ -523,26 +523,12 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   #colblocks=colblocks[rowblocks>1]
   #rowblocks=rowblocks[rowblocks>1]
   strata=length(rowblocks)
-  cumrowlevs=cumprod(rowblocks)
-  cumcollevs=cumprod(colblocks)
-
+  
   stratumnames=sapply(1:strata, function(i) { paste("Rows",i,"*","Columns", i) })
-  
-  
-
-  rowfacMat= matrix(nrow=prod(rowblocks[1:strata]),ncol=strata)
-  rowfactlevs = function(r){ gl(cumrowlevs[r],prod(rowblocks[1:strata])/cumrowlevs[r]) }
-  rowfacMat=do.call(cbind,lapply(1:strata,rowfactlevs))
-  
-  colfacMat= matrix(nrow=prod(colblocks[1:strata]),ncol=strata)
-  colfactlevs = function(r){ gl(cumcollevs[r],prod(colblocks[1:strata])/cumcollevs[r]) }
-  colfacMat=do.call(cbind,lapply(1:strata,colfactlevs))
-  
-
-  blocks=rep(1,blocksizes)
-  strata=length(rowblocks)
+  blocksizes=sum(treatments*replicates)
   cumblocks=c(1,cumprod(rowblocks*colblocks))
   design=matrix(nrow=blocksizes,ncol=2*strata)
+ 
   for (i in 1 :strata) {
     v=vector(mode = "list", length =length(blocksizes))
     for (j in 1:length(blocksizes)) { 
@@ -570,13 +556,21 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
     blocklevels=  rep(1:cumblocks[i],each=colblocks[i]*rowblocks[i])
     rowfactlevs=(blocklevels-1)*rowblocks[i] + rowfactlevs
     colfactlevs=(blocklevels-1)*colblocks[i] + colfactlevs
+    rows=rep(rowfactlevs,blocksizes)
+    cols=rep(colfactlevs,blocksizes)
+    design[,(2*i-1)]=rows
+    design[,(2*i)]=cols
     # print(cbind(blocklevels,rowfactlevs,colfactlevs,blocksizes))
   }
   
   
+  
+  
+  
+  
   Design=as.data.frame(design)
   Design[]=lapply(Design, as.factor) 
-  
+print(Design)
 
   for ( i in 1: strata) {
  
