@@ -561,6 +561,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
     Rows=Design[,2*i+1]
     Cols=Design[,2*i+2]
     TF=rowsOpt(TF,Main,Rows)
+    if (nlevels(Cols)>1) 
     TF=colsOpt(TF,Main,Cols,Rows)
   }
   Design=cbind(Design[,c(3:ncol(Design))],TF)
@@ -593,7 +594,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   print(Plan)
   # efficiencies
   Efficiencies=A_Efficiencies(Design,treatments,replicates)
-
+print(Efficiencies)
   # treatment replications
   Treatments=data.frame(table(Design[,"Treatments"]))
   Treatments[]=lapply(Treatments, as.factor) 
@@ -602,18 +603,6 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   # Factorial block levels
   Design[,c(1:strata)] = do.call(cbind,lapply(1:strata, function(r){ (as.numeric(Design[,r])-1)%%rowblocks[r]+1 }))
   Design[]=lapply(Design, as.factor)
-
- # Plan layout with rows or blocks arranged vertically and plots or columns arranged horizontally 
-
-  #rowfacMat[,c(1:strata)] = do.call(cbind,lapply(1:strata, function(r){ (as.numeric(rowfacMat[,r])-1)%%rowblocks[r]+1 }))
-  #Plan=data.frame( cbind(rowfacMat, rep("",nrow(rc)), rc))
-  
-  #colnames(Plan)=c(stratumnames,"Columns",1:ncol(rc))
-  #Plan[]=lapply(Plan,as.factor) 
-  #if (strata>1 & colblocks[strata]>1)
-  # Plan=split(Plan,Plan[1:(strata-1)]) 
-  #else if (strata>1 & colblocks[strata]==1)
-  #  Plan=split(Plan,Plan[1:(strata)])
   
   list(Treatments=Treatments,Efficiencies=Efficiencies,Design=Design,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
