@@ -181,7 +181,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
     repeat {
       improved=FALSE
       for (k in 1:nlevels(Restrict)) {
-        S=sort(sample((1:length(TF))[Restrict==k],nSamp[k])) 
+        S=sort(sample( (1:length(TF))[Restrict==k], nSamp[k])) 
         TB=MTB[TF[S],BF[S],drop=FALSE]-tcrossprod(MTB[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
         dMat=(TB+t(TB)+1)**2-
           (2*MTT[TF[S],TF[S],drop=FALSE]-tcrossprod(MTT[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MTT[cbind(TF[S],TF[S])]) + 1)*
@@ -201,7 +201,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
       } 
       if (improved) next
       if (sum(nSamp) < min(length(TF),512)) nSamp=pmin(mainSizes,2*nSamp) else break
-    }  
+    }
     list(MTT=MTT,MBB=MBB,MTB=MTB,TF=TF,relD=relD)
   }  
   
@@ -257,11 +257,11 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   # ******************************************************************************************************************************************************** 
   # Random swaps
   # ********************************************************************************************************************************************************    
-  Swaps=function(TF,MF,BF,pivot,rank,n) {
+  Swaps=function(TF,MF,BF,pivot,rank,n,Restrict) {
     candidates=NULL
     while (isTRUE(all.equal(length(candidates),0))) {
       if (rank<(n-1)) s1=sample(pivot[(1+rank):n],1) else s1=pivot[n]
-      candidates = rep(1:n)[MF==MF[s1] & BF!=BF[s1] & TF!=TF[s1]]
+      candidates = rep(1:n)[MF==MF[s1] & Restrict==Restrict[s1] & BF!=BF[s1] & TF!=TF[s1]]
     }
     if ( length(candidates)>1 )
       s2=sample(candidates,1) else s2=candidates[1] 
@@ -270,7 +270,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
-  NonSingular=function(TF,MF,BF) { 
+  NonSingular=function(TF,MF,BF,Restrict) { 
     BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
     BM[cbind(1:length(BF),BF)]=1
     fullrank=nlevels(TF)+nlevels(BF)-1
@@ -283,7 +283,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
     n=length(TF)
     while (rank<fullrank & times<100) {
       times=times+1
-      s=Swaps(TF,MF,BF,pivot,rank,n)
+      s=Swaps(TF,MF,BF,pivot,rank,n,Restrict)
       rindex=(1:length(TF))
       rindex[c(s[1],s[2])]=rindex[c(s[2],s[1])]
       newQ=qr(t(cbind(BM,TM[rindex,])))
@@ -301,30 +301,30 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
-  # ********************************************************************************************************************************************************    
-  rowsOpt=function(TF,MF,BF) { 
-    TF=NonSingular(TF,MF,BF)
-    if (length(TF)==0) return(TF)
-    blevels=nlevels(BF)%/%nlevels(MF)
-    BM=Contrasts(MF,BF)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(MF)),drop=FALSE]
-    TM=Contrasts(MF,TF)[,-nlevels(TF),drop=FALSE] 
+  # ******************************************************************************************************************************************************** 
+  rowsOpt=function(TF,Main,Rows) { 
+    TF=NonSingular(TF,Main,Rows,rep(1,length(TF)))
+    blevels=nlevels(Rows)%/%nlevels(Main)
+    BM=Contrasts(Main,Rows)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(Main)),drop=FALSE]
+    TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] 
     V=chol2inv(chol(crossprod(cbind(BM,TM))))
-    MBB=matrix(0,nrow=nlevels(BF),ncol=nlevels(BF))
+    MBB=matrix(0,nrow=nlevels(Rows),ncol=nlevels(Rows))
     MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
-    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(BF))
-    MBB[1:(nlevels(BF)-nlevels(MF)), 1:(nlevels(BF)-nlevels(MF))]=V[1:(nlevels(BF)-nlevels(MF)),1:(nlevels(BF)-nlevels(MF)),drop=FALSE]
-    MTT[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[(nlevels(BF)-nlevels(MF)+1):ncol(V),(nlevels(BF)-nlevels(MF)+1):ncol(V), drop=FALSE]
-    MTB[1:(nlevels(TF)-1),  1:(nlevels(BF)-nlevels(MF)) ]=V[(nlevels(BF)-nlevels(MF)+1):ncol(V),1:(nlevels(BF)-nlevels(MF)),drop=FALSE]
-    perm=order(order( (1:nlevels(BF))%%blevels ==0  ))  
+    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Rows))
+    MBB[1:(nlevels(Rows)-nlevels(Main)), 1:(nlevels(Rows)-nlevels(Main))]=V[1:(nlevels(Rows)-nlevels(Main)),1:(nlevels(Rows)-nlevels(Main)),drop=FALSE]
+    MTT[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[(nlevels(Rows)-nlevels(Main)+1):ncol(V),(nlevels(Rows)-nlevels(Main)+1):ncol(V), drop=FALSE]
+    MTB[1:(nlevels(TF)-1),  1:(nlevels(Rows)-nlevels(Main)) ]=V[(nlevels(Rows)-nlevels(Main)+1):ncol(V),1:(nlevels(Rows)-nlevels(Main)),drop=FALSE]
+    perm=order(order( (1:nlevels(Rows))%%blevels ==0  ))  
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
-    TF=Optimise(TF,BF,MTT,MBB,MTB,MF)
+    TF=Optimise(TF,Rows,MTT,MBB,MTB,Main)
     TF
   }  
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
   colsOpt=function(TF,Main,Cols,Rows) { 
+    TF=NonSingular(TF,Main,Cols,Rows)
     blevels=nlevels(Cols)%/%nlevels(Main)
     BM=Contrasts(Main,Cols)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(Main)),drop=FALSE]
     TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] 
@@ -522,7 +522,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   cumblocks=c(1,cumprod(rowblocks*colblocks))
   cumrowlevs=cumprod(rowblocks)
   design=matrix(nrow=blocksizes,ncol=2*strata)
- 
+  blocks=matrix(nrow=blocksizes,ncol=strata)
   for (i in 1 :strata) {
     v=vector(mode = "list", length =length(blocksizes))
     for (j in 1:length(blocksizes)) { 
@@ -551,13 +551,16 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
     colfactlevs=(blocklevels-1)*colblocks[i] + colfactlevs
     rows=rep(rowfactlevs,blocksizes)
     cols=rep(colfactlevs,blocksizes)
+    blocks[,i]=rep(blocklevels,blocksizes)
     design[,c(2*i-1,2*i)]=c(rows,cols)
   }
+  Blocks=as.data.frame(blocks)
+  Blocks[]=lapply(Blocks,as.factor) 
   Design=as.data.frame(design)
   Design=cbind(rep(1,nrow(Design)),rep(1,nrow(Design)),Design)
   Design[]=lapply(Design, as.factor) 
   for ( i in 1: strata) {
-    Main=as.factor( (as.numeric(Design[,2*i-1])-1)*nlevels(Design[,2*i]) + as.numeric(Design[,2*i]))
+    Main=Blocks[,i]
     Rows=Design[,2*i+1]
     Cols=Design[,2*i+2]
     TF=rowsOpt(TF,Main,Rows)
@@ -566,7 +569,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   }
   Design=cbind(Design[,c(3:ncol(Design))],TF)
   colnames(Design)=c(stratumnames,"Treatments")
-  print(Design)
+
   z=as.numeric(rbind(rowblocks,colblocks))
   factlevs <- function(r){ gl(z[r],prod(z)/prod(z[1:r])) }
   factMat=do.call(cbind,lapply(1:(2*strata),factlevs))
@@ -591,7 +594,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   Plan=(as.data.frame(planmat))
   colnames(Plan)=colhead
   rownames(Plan)=rowhead
-  print(Plan)
+
   # efficiencies
   Efficiencies=A_Efficiencies(Design,treatments,replicates)
 print(Efficiencies)
@@ -604,5 +607,5 @@ print(Efficiencies)
   Design[,c(1:strata)] = do.call(cbind,lapply(1:strata, function(r){ (as.numeric(Design[,r])-1)%%rowblocks[r]+1 }))
   Design[]=lapply(Design, as.factor)
   
-  list(Treatments=Treatments,Efficiencies=Efficiencies,Design=Design,Seed=seed,Searches=searches,Jumps=jumps) 
+  list(Treatments=Treatments,Efficiencies=Efficiencies,Plan=Plan,Design=Design,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
