@@ -521,6 +521,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   blocksizes=sum(treatments*replicates)
   cumblocks=c(1,cumprod(rowblocks*colblocks))
   cumrowlevs=cumprod(rowblocks)
+  cumcollevs=cumprod(colblocks)
   design=matrix(nrow=blocksizes,ncol=2*strata)
   blocks=matrix(nrow=blocksizes,ncol=strata)
   for (i in 1 :strata) {
@@ -592,8 +593,16 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   colhead=paste("Column",colhead)
   planmat=matrix(df,nrow=prod(rowblocks),ncol=prod(colblocks),byrow=TRUE)
   Plan=(as.data.frame(planmat))
+
   colnames(Plan)=colhead
   rownames(Plan)=rowhead
+  
+  rowSplit=gl(cumrowlevs[strata-1],rowblocks[strata])
+  colSplit=gl(cumcollevs[strata-1],colblocks[strata])
+  print(Plan)
+ # print( split(Plan,rowSplit) )
+  for (i in 1:nlevels(colSplit) ) 
+    print(split(Plan[,c(colSplit==i)],rowSplit))
 
   # efficiencies
   Efficiencies=A_Efficiencies(Design,treatments,replicates)
