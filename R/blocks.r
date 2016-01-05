@@ -599,8 +599,7 @@ blocks = function( treatments,replicates, rowblocks=HCF(replicates),colblocks=NU
   
   rowSplit=gl(cumrowlevs[strata-1],rowblocks[strata])
   colSplit=gl(cumcollevs[strata-1],colblocks[strata])
-  print(Plan)
- # print( split(Plan,rowSplit) )
+
   for (i in 1:nlevels(colSplit) ) 
     print(split(Plan[,c(colSplit==i)],rowSplit))
 
