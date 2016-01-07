@@ -289,7 +289,7 @@ blocks = function( treatments,replicates, blocks=HCF(replicates),columns=NULL,se
     pivot=Q$pivot
     times=0
     n=length(TF)
-    while (rank<fullrank & times<100) {
+    while (rank<fullrank & times<1000) {
       times=times+1
       s=Swaps(TF,MF,BF,pivot,rank,n,Restrict)
       rindex=(1:length(TF))
@@ -303,7 +303,7 @@ blocks = function( treatments,replicates, blocks=HCF(replicates),columns=NULL,se
       } 
     }
     if (times>999)  
-      stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design") 
+      stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
     return(TF)
   }  
   
@@ -311,9 +311,7 @@ blocks = function( treatments,replicates, blocks=HCF(replicates),columns=NULL,se
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ******************************************************************************************************************************************************** 
   rowsOpt=function(TF,Main,Blocks) { 
- 
     TF=NonSingular(TF,Main,Blocks,rep(1,length(TF)))
-  
     blevels=nlevels(Blocks)%/%nlevels(Main)
     BM=Contrasts(Main,Blocks)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(Main)),drop=FALSE]
     TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] 
@@ -573,6 +571,31 @@ blocks = function( treatments,replicates, blocks=HCF(replicates),columns=NULL,se
     if (columns[i]>1) 
       TF=colsOpt(TF,Blocks[,i],Design[,2*i+2],Design[,2*i+1])
   }
+  
+  
+  
+  #add back single rep treatments
+ # if ( min(replicates)==1 && max(replicates)>1 ) {
+  #  addTF=((sum(treatments[replicates>1])+1) :sum(treatments))
+ #   if (length(addTF)>1) addTF=sample(addTF)
+  #  TF=as.factor(  c(TF, addTF )  ) 
+ #  reptrts=NULL
+  #  for (i in 1 : length(replicates))
+ #    if (replicates[i]>1)
+  #      reptrts=c(reptrts,rep(FALSE,treatments[i])) else 
+   #       reptrts=c(reptrts,rep(TRUE,treatments[i]))
+    
+  #  levels(TF)= (1:sum(treatments*replicates))[order(reptrts)] 
+  #  TF=as.numeric(levels(TF))[TF]
+  #  newblocksizes=Sizes(sum(treatments*replicates),rowblocks)
+  #  Design=data.frame(facMat[rep(1:length(newblocksizes),newblocksizes),])
+  #  TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
+   # blocksizes=newblocksizes
+  #}
+  
+  
+  
+  
   #Plan
   Design=cbind(Design[,c(3:ncol(Design))],TF)
   colnames(Design)=c(stratumnames,"Treatments")
