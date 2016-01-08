@@ -451,6 +451,34 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     efficiencies[,'Blocks'] = as.factor(efficiencies[,'Blocks'])
     efficiencies
   }
+  
+  
+  # ******************************************************************************************************************************************************** 
+  # Finds efficiency factors for the rows in each stratum of a design 
+  # ********************************************************************************************************************************************************     
+  Sizes=function(blocksizes,i) {
+    v=vector(mode = "list", length =length(blocksizes))
+    for (j in 1:length(blocksizes)) { 
+      v[[j]]=rep(floor(blocksizes[j]/rows[i]),rows[i])
+      resid=blocksizes[j]-sum(v[[j]])
+      if (resid>0)
+        v[[j]][1:resid]=v[[j]][1:resid]+1
+    }
+    rowsizes=unlist(v)
+    w=vector(mode = "list", length =length(rowsizes))
+    shift=0
+    for (j in 1:length(rowsizes)) {
+      colsbase=floor(rowsizes[j]/columns[i])
+      resid=rowsizes[j]-columns[i]*colsbase
+      w[[j]]=rep(colsbase,columns[i])
+      if (resid>0) {
+        w[[j]][(shift:(shift+resid-1))%%columns[i]+1]=colsbase+1
+        shift=shift+resid
+      } 
+    }
+  blocksizes=unlist(w)
+  }
+  
   # ******************************************************************************************************************************************************** 
   # Carries out some input validation
   # ********************************************************************************************************************************************************     
@@ -523,32 +551,14 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   TF=as.factor( TF[rand][order(rep(1:hcf,each=(sum(treatments*replicates)/hcf) )[rand])] )
   strata=length(rows)
   stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Row_Blocks",i), paste("Col_Blocks", i) )}))
-  blocksizes=sum(treatments*replicates)
+
   cumblocks=c(1,cumprod(rows*columns))
- 
+  blocksizes=sum(treatments*replicates)
   designmat=matrix(nrow=blocksizes,ncol=2*strata)
   blocksmat=matrix(nrow=blocksizes,ncol=strata)
-  for (i in 1 :strata) {
-    v=vector(mode = "list", length =length(blocksizes))
-    for (j in 1:length(blocksizes)) { 
-      v[[j]]=rep(floor(blocksizes[j]/rows[i]),rows[i])
-      resid=blocksizes[j]-sum(v[[j]])
-      if (resid>0)
-        v[[j]][1:resid]=v[[j]][1:resid]+1
-    }
-    rowsizes=unlist(v)
-    w=vector(mode = "list", length =length(rowsizes))
-    shift=0
-    for (j in 1:length(rowsizes)) {
-      colsbase=floor(rowsizes[j]/columns[i])
-      resid=rowsizes[j]-columns[i]*colsbase
-      w[[j]]=rep(colsbase,columns[i])
-      if (resid>0) {
-        w[[j]][(shift:(shift+resid-1))%%columns[i]+1]=colsbase+1
-        shift=shift+resid
-      } 
-    }
-    blocksizes=unlist(w)
+
+  for (i in 1 :strata) { 
+    blocksizes=Sizes(blocksizes,i)
     rowfactlevs = rep(rep(1:rows[i],each=columns[i]),cumblocks[i])
     colfactlevs = rep(rep(1:columns[i],rows[i]),cumblocks[i])
     blocklevels=  rep(1:cumblocks[i],each=columns[i]*rows[i])
@@ -557,11 +567,13 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     blocksmat[,i]=rep(blocklevels,blocksizes)
     designmat[,c(2*i-1,2*i)]=c(rep(rowfactlevs,blocksizes),rep(colfactlevs,blocksizes))
   }
+
   Blocks=as.data.frame(blocksmat)
   Blocks[]=lapply(Blocks,as.factor) 
   Design=as.data.frame(designmat)
   Design=cbind(rep(1,nrow(Design)),rep(1,nrow(Design)),Design)
   Design[]=lapply(Design, as.factor) 
+  
   for ( i in 1: strata) {
     if (rows[i]>1) 
     TF=rowsOpt(TF,Blocks[,i],Design[,2*i+1])
@@ -570,28 +582,42 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   }
   
   #add back single rep treatments
- # if ( min(replicates)==1 && max(replicates)>1 ) {
- #  addTF=((sum(treatments[replicates>1])+1) :sum(treatments))
- #   print(addTF)
- #   if (length(addTF)>1) addTF=sample(addTF)
-  #  TF=as.factor(  c(TF, addTF )  ) 
- #  reptrts=NULL
-  #  for (i in 1 : length(replicates))
- #    if (replicates[i]>1)
-  #      reptrts=c(reptrts,rep(FALSE,treatments[i])) else 
-   #       reptrts=c(reptrts,rep(TRUE,treatments[i]))
-    
-  #  levels(TF)= (1:sum(treatments*replicates))[order(reptrts)] 
-  #  TF=as.numeric(levels(TF))[TF]
-  #  newblocksizes=Sizes(sum(treatments*replicates),rowblocks)
-  #  Design=data.frame(facMat[rep(1:length(newblocksizes),newblocksizes),])
-  #  TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
-   # blocksizes=newblocksizes
- # }
+  if ( min(fullreplicates)==1 && max(fullreplicates)>1 ) {
+   addTF=((sum(treatments)+1) :sum(fulltreatments))
+    if (length(addTF)>1) addTF=sample(addTF)
+    TF=as.factor(  c(TF, addTF )  ) 
+    reptrts=rep(fullreplicates==1,fulltreatments)
+    levels(TF)= (1:sum(fulltreatments*fullreplicates))[order(reptrts)] 
+    TF=as.numeric(levels(TF))[TF]
+    newblocksizes=sum(fulltreatments*fullreplicates)
+    designmat=matrix(nrow=newblocksizes,ncol=2*strata)
+    blocksmat=matrix(nrow=newblocksizes,ncol=strata)
+    for ( i in 1: strata) {
+    newblocksizes=Sizes(newblocksizes,i)
+    rowfactlevs = rep(rep(1:rows[i],each=columns[i]),cumblocks[i])
+    colfactlevs = rep(rep(1:columns[i],rows[i]),cumblocks[i])
+    blocklevels=  rep(1:cumblocks[i],each=columns[i]*rows[i])
+    rowfactlevs=(blocklevels-1)*rows[i] + rowfactlevs
+    colfactlevs=(blocklevels-1)*columns[i] + colfactlevs
+    blocksmat[,i]=rep(blocklevels,newblocksizes)
+    designmat[,c(2*i-1,2*i)]=c(rep(rowfactlevs,newblocksizes),rep(colfactlevs,newblocksizes))
+    }
+    treatments=fulltreatments
+    replicates=fullreplicates
+    TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
+    blocksizes=newblocksizes
+    Blocks=as.data.frame(blocksmat)
+    Blocks[]=lapply(Blocks,as.factor) 
+    Design=as.data.frame(designmat)
+    Design=cbind(rep(1,nrow(Design)),rep(1,nrow(Design)),Design)
+  }
+  
+  # Design 
+  Design=cbind(Design[,c(3:ncol(Design))],TF)
+  Design[]=lapply(Design, as.factor) 
+  colnames(Design)=c(stratumnames,"Treatments")
   
   #Plan
-  Design=cbind(Design[,c(3:ncol(Design))],TF)
-  colnames(Design)=c(stratumnames,"Treatments")
   z=as.numeric(rbind(rows,columns))
   factlevs <- function(r){ gl(z[r],prod(z)/prod(z[1:r])) }
   factMat=do.call(cbind,lapply(1:(2*strata),factlevs))
