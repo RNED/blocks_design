@@ -549,7 +549,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
               }
             }
           }
-          
         }
  
     v=vector(mode = "list", length =length(blocksizes))
@@ -576,7 +575,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     blocksizes
   }
   
-  
   # ******************************************************************************************************************************************************** 
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
@@ -599,6 +597,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   rand=sample(nunits)
   TF=as.factor( TF[rand][order(rep(1:hcf,each=nunits/hcf)[rand])] )
   nblocks=prod(rows)
+  cumblocks=c(1,cumprod(rows*columns))
   if (prod(columns)>1) 
   stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Rows",i), paste("Columns", i) )})) else
     stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Blocks",i), paste("Columns", i) )}))
@@ -606,42 +605,29 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   for (i in 1 :strata)  
     blocksizes=Sizes(blocksizes,i)
   
-  cumblocks=c(1,cumprod(rows*columns))
-  factDesign= matrix(nrow=cumblocks[strata+1],ncol=2*strata)
-  Design= matrix(nrow=cumblocks[strata+1],ncol=2*strata)
-  Blocks= matrix(nrow=cumblocks[strata+1],ncol=strata)
-  for (i in 1:strata) {
-    Blocks[,i]         =  rep(1:cumblocks[i],each=(cumblocks[strata+1]/cumblocks[i])  )
-    factDesign[,2*i-1] = rep(rep(1:rows[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i]),cumblocks[i])
-    factDesign[,2*i]   = rep(rep(1:columns[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i]/columns[i]),rows[i]*cumblocks[i]) 
-    Design[,2*i-1]     = (Blocks[,i]-1)*rows[i]+factDesign[,2*i-1]
-    Design[,2*i]       = (Blocks[,i]-1)*columns[i]+factDesign[,2*i]
-  }
-  factDesign= as.data.frame(factDesign)
-  Design    = as.data.frame(cbind(Design))
-  Blocks    = as.data.frame(Blocks)
-  factDesign[]=lapply(factDesign, as.factor) 
-  Design[]    =lapply(Design, as.factor) 
-  Blocks[]    =lapply(Blocks, as.factor) 
-  # randomize blocks
-  randDesign=data.frame(do.call(cbind,lapply(1:(2*strata), function(r){ sample(nlevels(Design[,r]))[Design[,r]] })))
-  randDesign    = as.data.frame(cbind(randDesign , seq_len(nrow(Design))) )
-  randDesign=randDesign[ do.call(order, randDesign), ]
-  perm=randDesign[,ncol(randDesign)]
-  blocksizes=blocksizes[perm]
-  factDesign=factDesign[perm,]
-  Design=Design[perm,]
-  Blocks=Blocks[perm,]
-  
-  factDesign=as.data.frame(factDesign[rep(seq_len(nrow(factDesign)),  blocksizes ),])
-  Design    =as.data.frame(Design[rep(seq_len(nrow(Design)),  blocksizes ),])  
+  # Design factors
+  Blocks=data.frame(do.call(cbind,lapply(1:strata, function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
+  fDesign=data.frame(do.call(cbind,lapply(1:(2*strata), function(i){
+    if (isTRUE(all.equal(i%%2,1))) (Blocks[,(i+1)/2]-1)*rows[(i+1)/2]+rep(rep(1:rows[(i+1)/2],each=cumblocks[strata+1]/rows[(i+1)/2]/cumblocks[(i+1)/2]),cumblocks[(i+1)/2]) else
+      (Blocks[,i/2]-1)*columns[i/2]+rep(rep(1:columns[i/2],each=cumblocks[strata+1]/rows[i/2]/cumblocks[i/2]/columns[i/2]),rows[i/2]*cumblocks[i/2]) })))
+  fDesign[]  =lapply(fDesign, as.factor) 
+  print(fDesign)
+  #permBlocks will randomise blocks ensuring that block sizes in any one stratum will never differ by more than a single plot
+  tempDesign=data.frame( do.call(cbind,lapply(1:(2*strata), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
+  permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
+
+  # names for plans
+  if (strata>1 & max(columns)>1)  
+    rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste(fDesign[((i-1)*rows[strata]*columns[strata]+1),c(1:(2*(strata-1))) ],collapse= " "))})) 
+  else if (strata==1 & max(columns)>1) rcnames="Rows x Columns"
+  else if (strata>1 & max(columns)==1)  
+    rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste(fDesign[((i-1)*rows[strata]+1),seq(1, 2*(strata-1),by = 2)],collapse= " "))})) 
+  else  rcnames=" "
+  Design    =as.data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
   Blocks    =as.data.frame(Blocks[rep(seq_len(nrow(Blocks)),  blocksizes ),]) 
-  
-  factDesign[]=lapply(factDesign, as.factor) 
-  Design[]=lapply(Design, as.factor) 
-  Blocks[]=lapply(Blocks, as.factor)
-  
-  
+  Design[]  =lapply(Design, as.factor) 
+  Blocks[]  =lapply(Blocks, as.factor) 
+
     if (rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) 
       TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
     if (columns[i]>1) 
@@ -652,54 +638,58 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     addTF=((sum(treatments)+1) :sum(fulltreatments))
     if (length(addTF)>1) addTF=sample(addTF)
     newblocksizes=augmentedBlocks(blocksizes,length(addTF))
- 
     TF=as.factor(  c(TF, addTF )  ) 
     reptrts=rep(fullreplicates==1,fulltreatments)
     levels(TF)= (1:sum(fulltreatments*fullreplicates))[order(reptrts)] 
     TF=as.numeric(levels(TF))[TF]
-    
     nunits=sum(fulltreatments*fullreplicates)
- 
     TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
     blocksizes=newblocksizes
     treatments=fulltreatments
     replicates=fullreplicates
     ntrts=sum(treatments)
   }
-  
-  # Design randomized in bottom stratum
 
-  Design=cbind(Design,sample(1:nrow(Design)),TF)
-  Design=Design[ do.call(order, Design), ]
-  Design=Design[,c( 1:(ncol(Design)-2), ncol(Design))]
-  Design[]=lapply(Design, as.factor) 
+  # Randomize
+  D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
+  D[]=lapply(D, as.factor)
+  D[,1] = factor(D[,1],levels(D[,1])[permBlocks])
+  TF=D[ do.call(order, D),][,ncol(D)]
+  blocksizes=blocksizes[permBlocks]
+
+  Design    =as.data.frame(cbind(  fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),] ,TF) )  
+
+ # Design=cbind(Design,TF)
   colnames(Design)=c(stratumnames,"Treatments")
   rownames(Design)=NULL
-  
+
   #Plan
   V=split(Design[,(2*strata+1)],rep(1:cumblocks[strata+1],blocksizes))
   baseblocks=unlist(lapply( 1:length(V), function(r){ paste( "  ", paste(format(V[[r]], width=nchar(sum(treatments)) ), collapse = " "))}))
-  rc=rows[strata]*columns[strata]
-  Plan=vector(mode="list",length=cumblocks[strata+1]/rc)
+  Plan=vector(mode="list",length=cumblocks[strata+1]/rows[strata]/columns[strata]  )
+  if (columns[strata]>1) {
   colhead="Column 1"
   for (i in 2: columns[strata])
     colhead=c(colhead,paste("Column",i))
   rowhead="Row 1"
+  if (rows[strata]>1)
   for (i in 2: rows[strata])
     rowhead=c(rowhead,paste("Row",i))
-
+  } else {
+    colhead="treatments"
+    rowhead="Blocks 1"
+    if (rows[strata]>1)
+      for (i in 2: rows[strata])
+        rowhead=c(rowhead,paste("Blocks",i))
+  }
+  
   for (i in 1:cumblocks[strata]) {
-    Plan[[i]]=as.data.frame(matrix(  baseblocks[ ((i-1)*rc+1):(i*rc) ] , nrow=rows[strata],ncol=columns[strata],byrow=TRUE))
+    Plan[[i]]=as.data.frame(matrix(baseblocks[((i-1)*rows[strata]*columns[strata]+1):(i*rows[strata]*columns[strata])],nrow=rows[strata],ncol=columns[strata],byrow=TRUE))
     colnames(Plan[[i]])=colhead
     rownames(Plan[[i]])=rowhead
   }
 
-  if (strata>1) 
-    rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste( factDesign[((i-1)*rc +1),c(1:(2*(strata-1))) ],collapse= " "))})) else 
-      rcnames="Rows x Columns"
   names(Plan)=rcnames 
-  
-  
   # efficiencies
   Efficiencies=A_Efficiencies(Design)
   if (prod(columns)==1) 
