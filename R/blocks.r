@@ -523,7 +523,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     for (k in 1:nblocks) {
       v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
       m=matrix(newblocksizes[v],nrow=rows[i],ncol=columns[i],byrow=TRUE ) 
-     # print(m)
+      #print(m)
     }
     newblocksizes
   }
@@ -534,23 +534,52 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   # ******************************************************************************************************************************************************     
   
   augmentedBlocks=function(blocksizes,addplots) {
-        strata=length(rows)
-        if (strata>1) mainblocks=cumprod(rows[1:(strata-1)]*columns[1:(strata-1)]) else mainblocks=1
-        nestrows=rows[strata]
-        nestcols=columns[strata]
-        for (i in 1:mainblocks) {
-          maxb=max( blocksizes[ ((i-1)*nestrows*nestcols+1) : blocksizes(i*nestrows*nestcols) ] )
-          minb=min( blocksizes[ ((i-1)*nestrows*nestcols+1) : blocksizes(i*nestrows*nestcols) ] )
-          for (j in 1:nestrows) {
-            for (k in 1:nestcols) {
-              if (blocksizes[(i-1)*nestrows*nestcols+(j-1)*nestcols+k]==minb) {
-                
-                
-              }
-            }
+    mainblocks=cumblocks[strata]
+    mainsizes=aggregate(blocksizes, by=list(rep(1:mainblocks,each=(length(blocksizes)/mainblocks))),FUN=sum)[,2]
+    mainbase=floor(addplots/length(mainsizes))
+    addmainsizes=rep(mainbase,length(mainsizes))
+    mainresid=addplots-sum(addmainsizes)
+    indic=mainsizes==min(mainsizes)
+    if (mainresid>0) 
+        for (i in 1: length(indic)) 
+          if (indic[i]) {
+            addmainsizes[i]=addmainsizes[i]+1
+            mainresid=mainresid-1
+            if (mainresid==0) break
+          }
+    if (mainresid>0) 
+      for (i in 1: length(indic)) 
+        if (!indic[i]) {
+          addmainsizes[i]=addmainsizes[i]+1
+          mainresid=mainresid-1
+          if (mainresid==0) break
+      }
+    print(mainsizes)
+    print(addmainsizes)
+  }
+  # ******************************************************************************************************************************************************** 
+  # Add back a single replicate treatment to the optimised reduced block design by filling along diagonals where first diagonal is initiated on the
+  # top left block if all blocks are equal otherwise the first sub-maximal block total on the left if present 
+  # ******************************************************************************************************************************************************     
+  
+  oldaugmentedBlocks=function(blocksizes,addplots) {
+    strata=length(rows)
+    if (strata>1) mainblocks=cumprod(rows[1:(strata-1)]*columns[1:(strata-1)]) else mainblocks=1
+    nestrows=rows[strata]
+    nestcols=columns[strata]
+    for (i in 1:mainblocks) {
+      maxb=max( blocksizes[ ((i-1)*nestrows*nestcols+1) : blocksizes(i*nestrows*nestcols) ] )
+      minb=min( blocksizes[ ((i-1)*nestrows*nestcols+1) : blocksizes(i*nestrows*nestcols) ] )
+      for (j in 1:nestrows) {
+        for (k in 1:nestcols) {
+          if (blocksizes[(i-1)*nestrows*nestcols+(j-1)*nestcols+k]==minb) {
+            
+            
           }
         }
- 
+      }
+    }
+    
     v=vector(mode = "list", length =length(blocksizes))
     for (j in 1:length(blocksizes)) { 
       v[[j]]=rep(floor(blocksizes[j]/rows[i]),rows[i])
@@ -559,7 +588,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
         v[[j]][1:resid]=v[[j]][1:resid]+1
     }
     rowsizes=unlist(v)
-
+    
     w=vector(mode = "list", length =length(rowsizes))
     shift=0
     for (j in 1:length(rowsizes)) {
@@ -607,11 +636,11 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   
   # Design factors
   Blocks=data.frame(do.call(cbind,lapply(1:strata, function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
-  fDesign=data.frame(do.call(cbind,lapply(1:(2*strata), function(i){
+  fDesign=data.frame(do.call(cbind,lapply(1:(2*strata), function(i) {
     if (isTRUE(all.equal(i%%2,1))) (Blocks[,(i+1)/2]-1)*rows[(i+1)/2]+rep(rep(1:rows[(i+1)/2],each=cumblocks[strata+1]/rows[(i+1)/2]/cumblocks[(i+1)/2]),cumblocks[(i+1)/2]) else
       (Blocks[,i/2]-1)*columns[i/2]+rep(rep(1:columns[i/2],each=cumblocks[strata+1]/rows[i/2]/cumblocks[i/2]/columns[i/2]),rows[i/2]*cumblocks[i/2]) })))
   fDesign[]  =lapply(fDesign, as.factor) 
-  print(fDesign)
+
   #permBlocks will randomise blocks ensuring that block sizes in any one stratum will never differ by more than a single plot
   tempDesign=data.frame( do.call(cbind,lapply(1:(2*strata), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
   permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
@@ -623,15 +652,19 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   else if (strata>1 & max(columns)==1)  
     rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste(fDesign[((i-1)*rows[strata]+1),seq(1, 2*(strata-1),by = 2)],collapse= " "))})) 
   else  rcnames=" "
-  Design    =as.data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
-  Blocks    =as.data.frame(Blocks[rep(seq_len(nrow(Blocks)),  blocksizes ),]) 
-  Design[]  =lapply(Design, as.factor) 
-  Blocks[]  =lapply(Blocks, as.factor) 
+  
+  Design    = as.data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
+  Blocks    = as.data.frame(Blocks[rep(seq_len(nrow(Blocks)),  blocksizes ),]) 
+  Design[]  = lapply(Design, as.factor) 
+  Blocks[]  = lapply(Blocks, as.factor) 
 
     if (rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) 
       TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
     if (columns[i]>1) 
       TF=colsOpt(TF,Blocks[,i],Design[,2*i],Design[,2*i-1])
+
+  
+  
 
   #add back single rep treatments
   if ( min(fullreplicates)==1 && max(fullreplicates)>1 ) {
@@ -654,10 +687,9 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
   D[]=lapply(D, as.factor)
   D[,1] = factor(D[,1],levels(D[,1])[permBlocks])
-  TF=D[ do.call(order, D),][,ncol(D)]
-  blocksizes=blocksizes[permBlocks]
-
-  Design    =as.data.frame(cbind(  fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),] ,TF) )  
+ # TF=D[ do.call(order, D),][,ncol(D)]
+ # blocksizes=blocksizes[permBlocks]
+   Design    =as.data.frame(cbind(  fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),] ,TF) )  
 
  # Design=cbind(Design,TF)
   colnames(Design)=c(stratumnames,"Treatments")
