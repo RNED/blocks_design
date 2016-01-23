@@ -496,112 +496,99 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   # ******************************************************************************************************************************************************** 
   # Finds row and column sizes in each stratum of a design 
   # ********************************************************************************************************************************************************     
-  Sizes=function(blocksizes,i) {
+  Sizes=function(blocksizes,stratum) {
     nblocks=length(blocksizes)
     newblocksizes=NULL
     for (j in 1:nblocks) {
-      rowsizes=rep(floor(blocksizes[j]/rows[i]),rows[i])
+      shift=0
+      rowsizes=rep(blocksizes[j]%/%rows[stratum],rows[stratum])
       resid=blocksizes[j]-sum(rowsizes)
       if (resid>0)
         rowsizes[1:resid]=rowsizes[1:resid]+1
-      rowcols=vector(mode = "list", length =rows[i])
-      colsbase=floor( blocksizes[j] /rows[i]/columns[i] )
-       for ( z in 1:rows[i])
-         rowcols[[z]]=rep(colsbase,columns[i])
-      
-      shift=0
-      for (r in 1:rows[i]) {
-      resid=rowsizes[r]-columns[i]*colsbase
-      if (resid>0) {
-        rowcols[[r]][(shift:(shift+resid-1))%%columns[i]+1]=colsbase+1
-        shift=shift+resid
+      rowcolsizes=vector(mode = "list", length =rows[stratum])
+      for ( z in 1:rows[stratum])
+        rowcolsizes[[z]]=rep( rowsizes[z]%/%columns[stratum] , columns[stratum])
+      for (z in 1:rows[stratum]) {
+        resid=rowsizes[z]-sum(rowcolsizes[[z]])
+        if (resid>0) {
+          rowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]=rowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]+1
+          shift=shift+resid
         } 
       }
-    newblocksizes=c(newblocksizes , unlist(rowcols))
+      newblocksizes=c(newblocksizes , unlist(rowcolsizes))
     }
     # for testing only
     for (k in 1:nblocks) {
       v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
       m=matrix(newblocksizes[v],nrow=rows[i],ncol=columns[i],byrow=TRUE ) 
-      #print(m)
+      print(m)
     }
     newblocksizes
   }
   
   # ******************************************************************************************************************************************************** 
-  # Add back a single replicate treatment to the optimised reduced block design by filling along diagonals where first diagonal is initiated on the
-  # top left block if all blocks are equal otherwise the first sub-maximal block total on the left if present 
-  # ******************************************************************************************************************************************************     
-  
-  augmentedBlocks=function(blocksizes,addplots) {
-    mainblocks=cumblocks[strata]
-    mainsizes=aggregate(blocksizes, by=list(rep(1:mainblocks,each=(length(blocksizes)/mainblocks))),FUN=sum)[,2]
-    mainbase=floor(addplots/length(mainsizes))
-    addmainsizes=rep(mainbase,length(mainsizes))
-    mainresid=addplots-sum(addmainsizes)
-    indic=mainsizes==min(mainsizes)
-    if (mainresid>0) 
-        for (i in 1: length(indic)) 
-          if (indic[i]) {
-            addmainsizes[i]=addmainsizes[i]+1
-            mainresid=mainresid-1
-            if (mainresid==0) break
-          }
-    if (mainresid>0) 
-      for (i in 1: length(indic)) 
-        if (!indic[i]) {
-          addmainsizes[i]=addmainsizes[i]+1
-          mainresid=mainresid-1
-          if (mainresid==0) break
-      }
-    print(mainsizes)
-    print(addmainsizes)
-  }
-  # ******************************************************************************************************************************************************** 
-  # Add back a single replicate treatment to the optimised reduced block design by filling along diagonals where first diagonal is initiated on the
-  # top left block if all blocks are equal otherwise the first sub-maximal block total on the left if present 
-  # ******************************************************************************************************************************************************     
-  
-  oldaugmentedBlocks=function(blocksizes,addplots) {
-    strata=length(rows)
-    if (strata>1) mainblocks=cumprod(rows[1:(strata-1)]*columns[1:(strata-1)]) else mainblocks=1
-    nestrows=rows[strata]
-    nestcols=columns[strata]
-    for (i in 1:mainblocks) {
-      maxb=max( blocksizes[ ((i-1)*nestrows*nestcols+1) : blocksizes(i*nestrows*nestcols) ] )
-      minb=min( blocksizes[ ((i-1)*nestrows*nestcols+1) : blocksizes(i*nestrows*nestcols) ] )
-      for (j in 1:nestrows) {
-        for (k in 1:nestcols) {
-          if (blocksizes[(i-1)*nestrows*nestcols+(j-1)*nestcols+k]==minb) {
-            
-            
-          }
-        }
-      }
-    }
-    
-    v=vector(mode = "list", length =length(blocksizes))
-    for (j in 1:length(blocksizes)) { 
-      v[[j]]=rep(floor(blocksizes[j]/rows[i]),rows[i])
-      resid=blocksizes[j]-sum(v[[j]])
+  # Finds row and column sizes in each stratum of a design 
+  # ********************************************************************************************************************************************************     
+  oldSizes=function(blocksizes,augmented,stratum) {
+    nblocks=length(blocksizes)
+    newblocksizes=NULL
+    newaugment=NULL
+    for (j in 1:nblocks) {
+      shift=0
+      augmentshift=0
+      # row block sizes for replicated treatments 
+      rowsizes=rep(floor(blocksizes[j]/rows[stratum]),rows[stratum])
+      resid=blocksizes[j]-sum(rowsizes)
       if (resid>0)
-        v[[j]][1:resid]=v[[j]][1:resid]+1
+        rowsizes[1:resid]=rowsizes[1:resid]+1
+      # augmented row block sizes for unreplicated treatments 
+      augmentrows=rep(floor(augmented[j]/rows[stratum]),rows[stratum])
+      augmentresid=augmented[j]-sum(augmentrows)
+      if (augmentresid>0) 
+        augmentrows[  ((resid):(resid+augmentresid-1))%%rows[stratum]+1  ] = augmentrows[ ( (resid):(resid+augmentresid-1))%%rows[stratum]+1 ]+1
+      # base row-by-column blocks for replicated treatments
+      rowcols=vector(mode = "list", length =rows[stratum])
+      colsbase=floor( blocksizes[j] /rows[stratum]/columns[stratum] )
+      for ( z in 1:rows[stratum])
+        rowcols[[z]]=rep(colsbase,columns[stratum])
+      # base row-by-column blocks for unreplicated treatments
+      augment=vector(mode = "list", length =rows[stratum])
+      augmentcolsbase=floor( augmented[j] /rows[stratum]/columns[stratum] )
+      for ( z in 1:rows[stratum])
+        augment[[z]]=rep(augmentcolsbase,columns[stratum])
+      for (z in 1:rows[stratum]) {
+        # distribution of uneven row-by-column block sizes for replicated treatments
+        resid=rowsizes[z]-columns[stratum]*colsbase
+        if (resid>0) {
+          rowcols[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]=colsbase+1
+          shift=shift+resid
+        } 
+        # distribution of uneven row-by-column block sizes for unreplicated treatments
+        augmentresid=augmentrows[z]-columns[stratum]*augmentcolsbase
+        if ( augmentresid>0) {
+        augment[[r]][(shift+augmentshift :(shift+augmentshift+augmentresid-1))%%columns[i]+1]=augmentcolsbase+1
+        #augment[[z]][(augmentshift :(augmentshift+augmentresid-1))%%columns[stratum]+1]=augmentcolsbase+1
+        augmentshift=augmentshift+augmentresid
+        } 
+      }
+    newblocksizes=c(newblocksizes , unlist(rowcols))
+    newaugment=c(newaugment , unlist(augment))
     }
-    rowsizes=unlist(v)
     
-    w=vector(mode = "list", length =length(rowsizes))
-    shift=0
-    for (j in 1:length(rowsizes)) {
-      colsbase=floor(rowsizes[j]/columns[i])
-      resid=rowsizes[j]-columns[i]*colsbase
-      w[[j]]=rep(colsbase,columns[i])
-      if (resid>0) {
-        w[[j]][(shift:(shift+resid-1))%%columns[i]+1]=colsbase+1
-        shift=shift+resid
-      } 
+    
+    # for testing only
+    for (k in 1:nblocks) {
+      v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
+      m=matrix(newblocksizes[v],nrow=rows[i],ncol=columns[i],byrow=TRUE ) 
+      print(m)
     }
-    blocksizes=unlist(w)
-    blocksizes
+    for (k in 1:nblocks) {
+      v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
+      m=matrix(newaugment[v],nrow=rows[i],ncol=columns[i],byrow=TRUE ) 
+      print(m)
+    }
+    
+    list(newblocksizes=newblocksizes,newaugment=newaugment)
   }
   
   # ******************************************************************************************************************************************************** 
@@ -630,10 +617,30 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   if (prod(columns)>1) 
   stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Rows",i), paste("Columns", i) )})) else
     stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Blocks",i), paste("Columns", i) )}))
+  #add single rep treatments
+  if ( min(fullreplicates)==1 && max(fullreplicates)>1 )
+    unreptrts=((sum(treatments)+1) :sum(fulltreatments))
+  else unreptrts=NULL
+    #TF=as.factor(  c(TF, addTF )  ) 
+    #reptrts=rep(fullreplicates==1,fulltreatments)
+    #levels(TF)= (1:sum(fulltreatments*fullreplicates))[order(reptrts)] 
+    #TF=as.numeric(levels(TF))[TF]
+    #nunits=sum(fulltreatments*fullreplicates)
+    #TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
+    #blocksizes=newblocksizes
+    #treatments=fulltreatments
+    #replicates=fullreplicates
+    #ntrts=sum(treatments)
+  
   blocksizes=nunits
+  augmented=length(unreptrts)
+  addfullsets=augmented%/%cumblocks[strata+1]
+  augmented=augmented%%cumblocks[strata+1]
+  
   for (i in 1 :strata)  
     blocksizes=Sizes(blocksizes,i)
   
+  augmented=augmented+addfullsets
   # Design factors
   Blocks=data.frame(do.call(cbind,lapply(1:strata, function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
   fDesign=data.frame(do.call(cbind,lapply(1:(2*strata), function(i) {
@@ -662,26 +669,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
     if (columns[i]>1) 
       TF=colsOpt(TF,Blocks[,i],Design[,2*i],Design[,2*i-1])
-
-  
-  
-
-  #add back single rep treatments
-  if ( min(fullreplicates)==1 && max(fullreplicates)>1 ) {
-    addTF=((sum(treatments)+1) :sum(fulltreatments))
-    if (length(addTF)>1) addTF=sample(addTF)
-    newblocksizes=augmentedBlocks(blocksizes,length(addTF))
-    TF=as.factor(  c(TF, addTF )  ) 
-    reptrts=rep(fullreplicates==1,fulltreatments)
-    levels(TF)= (1:sum(fulltreatments*fullreplicates))[order(reptrts)] 
-    TF=as.numeric(levels(TF))[TF]
-    nunits=sum(fulltreatments*fullreplicates)
-    TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
-    blocksizes=newblocksizes
-    treatments=fulltreatments
-    replicates=fullreplicates
-    ntrts=sum(treatments)
-  }
 
   # Randomize
   D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
