@@ -114,7 +114,6 @@
 #' 
 blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,searches=(1+2000%/%(sum(treatments)+prod(rows))),seed=sample(10000,1),jumps=1) { 
   
-  
   # ******************************************************************************************************************************************************** 
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)
   # ********************************************************************************************************************************************************
@@ -211,7 +210,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     }
     list(MTT=MTT,MBB=MBB,MTB=MTB,TF=TF,relD=relD)
   }  
-  
   # ******************************************************************************************************************************************************** 
   #  Number of searches for an optimization with selected number of searches and selected number of junps to escape local optima
   # ********************************************************************************************************************************************************
@@ -305,7 +303,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
     return(TF)
   }  
-
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
@@ -327,7 +324,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     TF=Optimise(TF,Columns,MTT,MBB,MTB,Blocks)
     TF
   }  
-  
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ******************************************************************************************************************************************************** 
@@ -404,7 +400,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     }
     TF
   }  
-  
   # ******************************************************************************************************************************************************** 
   # Finds efficiency factors for the rows in each stratum of a design 
   # ********************************************************************************************************************************************************     
@@ -434,9 +429,10 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     efficiencies=data.frame(cbind( names[1:(2*strata)],levels,nblocks,effics, bounds)) 
     colnames(efficiencies)=c("Stratum","Levels","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies[,'Blocks'] = as.factor(efficiencies[,'Blocks'])
+    # omit any null strata
+      efficiencies=efficiencies[(levels>1),,drop=FALSE]
     efficiencies
   }
-  
   # ******************************************************************************************************************************************************** 
   # Carries out some input validation
   # ********************************************************************************************************************************************************     
@@ -492,7 +488,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
        are singular and cannot be used for any nested blocks design."))
     return(TRUE)
   }
-  
   # ******************************************************************************************************************************************************** 
   # Finds row and column sizes in each stratum of a design 
   # ********************************************************************************************************************************************************     
@@ -518,77 +513,12 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       newblocksizes=c(newblocksizes , unlist(rowcolsizes))
     }
     # for testing only
-    for (k in 1:nblocks) {
-      v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
-      m=matrix(newblocksizes[v],nrow=rows[i],ncol=columns[i],byrow=TRUE ) 
-      print(m)
-    }
+    #for (k in 1:nblocks) {
+     # v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
+     # m=matrix(newblocksizes[v],nrow=rows[i],ncol=columns[i],byrow=TRUE ) 
+      #print(m)
+    #}
     newblocksizes
-  }
-  
-  # ******************************************************************************************************************************************************** 
-  # Finds row and column sizes in each stratum of a design 
-  # ********************************************************************************************************************************************************     
-  oldSizes=function(blocksizes,augmented,stratum) {
-    nblocks=length(blocksizes)
-    newblocksizes=NULL
-    newaugment=NULL
-    for (j in 1:nblocks) {
-      shift=0
-      augmentshift=0
-      # row block sizes for replicated treatments 
-      rowsizes=rep(floor(blocksizes[j]/rows[stratum]),rows[stratum])
-      resid=blocksizes[j]-sum(rowsizes)
-      if (resid>0)
-        rowsizes[1:resid]=rowsizes[1:resid]+1
-      # augmented row block sizes for unreplicated treatments 
-      augmentrows=rep(floor(augmented[j]/rows[stratum]),rows[stratum])
-      augmentresid=augmented[j]-sum(augmentrows)
-      if (augmentresid>0) 
-        augmentrows[  ((resid):(resid+augmentresid-1))%%rows[stratum]+1  ] = augmentrows[ ( (resid):(resid+augmentresid-1))%%rows[stratum]+1 ]+1
-      # base row-by-column blocks for replicated treatments
-      rowcols=vector(mode = "list", length =rows[stratum])
-      colsbase=floor( blocksizes[j] /rows[stratum]/columns[stratum] )
-      for ( z in 1:rows[stratum])
-        rowcols[[z]]=rep(colsbase,columns[stratum])
-      # base row-by-column blocks for unreplicated treatments
-      augment=vector(mode = "list", length =rows[stratum])
-      augmentcolsbase=floor( augmented[j] /rows[stratum]/columns[stratum] )
-      for ( z in 1:rows[stratum])
-        augment[[z]]=rep(augmentcolsbase,columns[stratum])
-      for (z in 1:rows[stratum]) {
-        # distribution of uneven row-by-column block sizes for replicated treatments
-        resid=rowsizes[z]-columns[stratum]*colsbase
-        if (resid>0) {
-          rowcols[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]=colsbase+1
-          shift=shift+resid
-        } 
-        # distribution of uneven row-by-column block sizes for unreplicated treatments
-        augmentresid=augmentrows[z]-columns[stratum]*augmentcolsbase
-        if ( augmentresid>0) {
-        augment[[r]][(shift+augmentshift :(shift+augmentshift+augmentresid-1))%%columns[i]+1]=augmentcolsbase+1
-        #augment[[z]][(augmentshift :(augmentshift+augmentresid-1))%%columns[stratum]+1]=augmentcolsbase+1
-        augmentshift=augmentshift+augmentresid
-        } 
-      }
-    newblocksizes=c(newblocksizes , unlist(rowcols))
-    newaugment=c(newaugment , unlist(augment))
-    }
-    
-    
-    # for testing only
-    for (k in 1:nblocks) {
-      v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
-      m=matrix(newblocksizes[v],nrow=rows[i],ncol=columns[i],byrow=TRUE ) 
-      print(m)
-    }
-    for (k in 1:nblocks) {
-      v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
-      m=matrix(newaugment[v],nrow=rows[i],ncol=columns[i],byrow=TRUE ) 
-      print(m)
-    }
-    
-    list(newblocksizes=newblocksizes,newaugment=newaugment)
   }
   
   # ******************************************************************************************************************************************************** 
@@ -617,30 +547,11 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   if (prod(columns)>1) 
   stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Rows",i), paste("Columns", i) )})) else
     stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Blocks",i), paste("Columns", i) )}))
-  #add single rep treatments
-  if ( min(fullreplicates)==1 && max(fullreplicates)>1 )
-    unreptrts=((sum(treatments)+1) :sum(fulltreatments))
-  else unreptrts=NULL
-    #TF=as.factor(  c(TF, addTF )  ) 
-    #reptrts=rep(fullreplicates==1,fulltreatments)
-    #levels(TF)= (1:sum(fulltreatments*fullreplicates))[order(reptrts)] 
-    #TF=as.numeric(levels(TF))[TF]
-    #nunits=sum(fulltreatments*fullreplicates)
-    #TF=TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),(newblocksizes-blocksizes))))]
-    #blocksizes=newblocksizes
-    #treatments=fulltreatments
-    #replicates=fullreplicates
-    #ntrts=sum(treatments)
   
   blocksizes=nunits
-  augmented=length(unreptrts)
-  addfullsets=augmented%/%cumblocks[strata+1]
-  augmented=augmented%%cumblocks[strata+1]
-  
   for (i in 1 :strata)  
     blocksizes=Sizes(blocksizes,i)
-  
-  augmented=augmented+addfullsets
+
   # Design factors
   Blocks=data.frame(do.call(cbind,lapply(1:strata, function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
   fDesign=data.frame(do.call(cbind,lapply(1:(2*strata), function(i) {
@@ -648,7 +559,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       (Blocks[,i/2]-1)*columns[i/2]+rep(rep(1:columns[i/2],each=cumblocks[strata+1]/rows[i/2]/cumblocks[i/2]/columns[i/2]),rows[i/2]*cumblocks[i/2]) })))
   fDesign[]  =lapply(fDesign, as.factor) 
 
-  #permBlocks will randomise blocks ensuring that block sizes in any one stratum will never differ by more than a single plot
+  #permBlocks will randomise blocks in each stratum
   tempDesign=data.frame( do.call(cbind,lapply(1:(2*strata), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
   permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
 
@@ -665,20 +576,37 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   Design[]  = lapply(Design, as.factor) 
   Blocks[]  = lapply(Blocks, as.factor) 
 
+  for ( i in 1: strata) {
     if (rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) 
       TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
     if (columns[i]>1) 
       TF=colsOpt(TF,Blocks[,i],Design[,2*i],Design[,2*i-1])
-
+}
+  
+  #add back single rep treatments
+  if ( min(fullreplicates)==1 && max(fullreplicates)>1 ) {
+    addTF=((sum(treatments)+1) :sum(fulltreatments))
+    newblocksizes=length(addTF)
+    for ( i in 1: strata) 
+      newblocksizes=Sizes(newblocksizes,i)
+    TF=as.factor(  c(TF, addTF )  ) 
+    reptrts=rep(fullreplicates==1,fulltreatments)
+    levels(TF)= (1:sum(fulltreatments*fullreplicates))[order(reptrts)] 
+    TF=as.numeric(levels(TF))[TF]
+    nunits=sum(fulltreatments*fullreplicates)
+    TF=as.factor(TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),newblocksizes)))])
+    blocksizes=blocksizes+newblocksizes
+    treatments=fulltreatments
+    replicates=fullreplicates
+    ntrts=sum(treatments)
+}
   # Randomize
   D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
   D[]=lapply(D, as.factor)
   D[,1] = factor(D[,1],levels(D[,1])[permBlocks])
- # TF=D[ do.call(order, D),][,ncol(D)]
- # blocksizes=blocksizes[permBlocks]
-   Design    =as.data.frame(cbind(  fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),] ,TF) )  
-
- # Design=cbind(Design,TF)
+  TF=D[ do.call(order, D),][,ncol(D)]
+  blocksizes=blocksizes[permBlocks]
+   Design =as.data.frame(cbind(  fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),] ,TF) )  
   colnames(Design)=c(stratumnames,"Treatments")
   rownames(Design)=NULL
 
@@ -711,8 +639,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   names(Plan)=rcnames 
   # efficiencies
   Efficiencies=A_Efficiencies(Design)
-  if (prod(columns)==1) 
-    Efficiencies=Efficiencies[c( 2*(1:strata)-1),,drop=FALSE]
   row.names(Efficiencies)=NULL
   # treatment replications
   Treatments=data.frame(table(Design[,"Treatments"]))
