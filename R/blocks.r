@@ -433,6 +433,34 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       efficiencies=efficiencies[(levels>1),,drop=FALSE]
     efficiencies
   }
+  
+  # ******************************************************************************************************************************************************** 
+  # Finds row and column sizes in each stratum of a design 
+  # ********************************************************************************************************************************************************     
+  Sizes=function(blocksizes,stratum) {
+    nblocks=length(blocksizes)
+    newblocksizes=NULL
+    for (j in 1:nblocks) {
+      shift=0
+      rowsizes=rep(blocksizes[j]%/%rows[stratum],rows[stratum])
+      resid=blocksizes[j]-sum(rowsizes)
+      if (resid>0)
+        rowsizes[1:resid]=rowsizes[1:resid]+1
+      rowcolsizes=vector(mode = "list", length =rows[stratum])
+      for ( z in 1:rows[stratum])
+        rowcolsizes[[z]]=rep( rowsizes[z]%/%columns[stratum] , columns[stratum])
+      for (z in 1:rows[stratum]) {
+        resid=rowsizes[z]-sum(rowcolsizes[[z]])
+        if (resid>0) {
+          rowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]=rowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]+1
+          shift=shift+resid
+        } 
+      }
+      newblocksizes=c(newblocksizes , unlist(rowcolsizes))
+    }
+    newblocksizes
+  }
+  
   # ******************************************************************************************************************************************************** 
   # Carries out some input validation
   # ********************************************************************************************************************************************************     
@@ -482,43 +510,14 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       return(paste("The total number of plots is",  sum(treatments*replicates) , 
                    "whereas the total required number of model parameters is", prod(rows) + sum(treatments),", which is not feasible. "))  
     
-    if (max(replicates)==2 && length(rows)>1 && 2%in%rows && 2%in%columns && which(rows==2)==which(columns==2) && which(rows==2)<length(rows))
-      return( paste(" Semi-latin squares with two replicate sets of treatments and orthogonal main row and main column block effects automatically
-      confound one treatment contrast between the main row-by-column interaction effect. This means that the four blocks of such a semi-Latin square
-       are singular and cannot be used for any nested blocks design."))
+    if (max(replicates)==2 && length(rows)>1 )
+      for (i in 1 : (length(rows)-1)) 
+        if (rows[i]==2 && columns[i]==2) return( paste(" Warning: this design tries to fit a sub-block design within the blocks of a 2-replicate
+        semi-Latin square. However, because the row-by-column interaction of a 2-replicate semi-Latin square is always confounded with a treatment contrast, 
+        the nested sub-blocks design will always be singular. Instead, try replacing the crossed 2 x 2 row-and column block design by an uncrossed design with 4 rows and 
+        a single column."))
+    
     return(TRUE)
-  }
-  # ******************************************************************************************************************************************************** 
-  # Finds row and column sizes in each stratum of a design 
-  # ********************************************************************************************************************************************************     
-  Sizes=function(blocksizes,stratum) {
-    nblocks=length(blocksizes)
-    newblocksizes=NULL
-    for (j in 1:nblocks) {
-      shift=0
-      rowsizes=rep(blocksizes[j]%/%rows[stratum],rows[stratum])
-      resid=blocksizes[j]-sum(rowsizes)
-      if (resid>0)
-        rowsizes[1:resid]=rowsizes[1:resid]+1
-      rowcolsizes=vector(mode = "list", length =rows[stratum])
-      for ( z in 1:rows[stratum])
-        rowcolsizes[[z]]=rep( rowsizes[z]%/%columns[stratum] , columns[stratum])
-      for (z in 1:rows[stratum]) {
-        resid=rowsizes[z]-sum(rowcolsizes[[z]])
-        if (resid>0) {
-          rowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]=rowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]+1
-          shift=shift+resid
-        } 
-      }
-      newblocksizes=c(newblocksizes , unlist(rowcolsizes))
-    }
-    # for testing only
-    #for (k in 1:nblocks) {
-     # v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
-     # m=matrix(newblocksizes[v],nrow=rows[i],ncol=columns[i],byrow=TRUE ) 
-      #print(m)
-    #}
-    newblocksizes
   }
   
   # ******************************************************************************************************************************************************** 
@@ -542,27 +541,22 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   TF=rep(rep(1:ntrts,rep(replicates/hcf,treatments)), hcf)
   rand=sample(nunits)
   TF=as.factor( TF[rand][order(rep(1:hcf,each=nunits/hcf)[rand])] )
-  nblocks=prod(rows)
   cumblocks=c(1,cumprod(rows*columns))
   if (prod(columns)>1) 
   stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Rows",i), paste("Columns", i) )})) else
     stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Blocks",i), paste("Columns", i) )}))
-  
   blocksizes=nunits
   for (i in 1 :strata)  
     blocksizes=Sizes(blocksizes,i)
-
   # Design factors
-  Blocks=data.frame(do.call(cbind,lapply(1:strata, function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
-  fDesign=data.frame(do.call(cbind,lapply(1:(2*strata), function(i) {
-    if (isTRUE(all.equal(i%%2,1))) (Blocks[,(i+1)/2]-1)*rows[(i+1)/2]+rep(rep(1:rows[(i+1)/2],each=cumblocks[strata+1]/rows[(i+1)/2]/cumblocks[(i+1)/2]),cumblocks[(i+1)/2]) else
-      (Blocks[,i/2]-1)*columns[i/2]+rep(rep(1:columns[i/2],each=cumblocks[strata+1]/rows[i/2]/cumblocks[i/2]/columns[i/2]),rows[i/2]*cumblocks[i/2]) })))
-  fDesign[]  =lapply(fDesign, as.factor) 
-
+  Blocks=data.frame(do.call(cbind,lapply(1:strata,function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
+  fRows=do.call(cbind,lapply(1:strata,function(i) {(Blocks[,i]-1)*rows[i]+rep(rep(1:rows[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i]),cumblocks[i])}))
+  fCols=do.call(cbind,lapply(1:strata,function(i) {(Blocks[,i]-1)*columns[i]+rep(rep(1:columns[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i]/columns[i]),rows[i]*cumblocks[i])}))  
+  fDesign=data.frame(cbind(fRows,fCols))[, order(c( seq(1,2*strata, by=2) ,seq(2,2*strata, by=2)))]
+  fDesign[]=lapply(fDesign, as.factor) 
   #permBlocks will randomise blocks in each stratum
   tempDesign=data.frame( do.call(cbind,lapply(1:(2*strata), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
   permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
-
   # names for plans
   if (strata>1 & max(columns)>1)  
     rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste(fDesign[((i-1)*rows[strata]*columns[strata]+1),c(1:(2*(strata-1))) ],collapse= " "))})) 
