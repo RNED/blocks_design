@@ -564,19 +564,16 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   else if (strata>1 & max(columns)==1)  
     rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste(fDesign[((i-1)*rows[strata]+1),seq(1, 2*(strata-1),by = 2)],collapse= " "))})) 
   else  rcnames=" "
-  
   Design    = as.data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
   Blocks    = as.data.frame(Blocks[rep(seq_len(nrow(Blocks)),  blocksizes ),]) 
   Design[]  = lapply(Design, as.factor) 
   Blocks[]  = lapply(Blocks, as.factor) 
-
   for ( i in 1: strata) {
     if (rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) 
       TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
     if (columns[i]>1) 
       TF=colsOpt(TF,Blocks[,i],Design[,2*i],Design[,2*i-1])
 }
-  
   #add back single rep treatments
   if ( min(fullreplicates)==1 && max(fullreplicates)>1 ) {
     addTF=((sum(treatments)+1) :sum(fulltreatments))
@@ -603,7 +600,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
    Design =as.data.frame(cbind(  fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),] ,TF) )  
   colnames(Design)=c(stratumnames,"Treatments")
   rownames(Design)=NULL
-
   #Plan
   V=split(Design[,(2*strata+1)],rep(1:cumblocks[strata+1],blocksizes))
   baseblocks=unlist(lapply( 1:length(V), function(r){ paste( "  ", paste(format(V[[r]], width=nchar(sum(treatments)) ), collapse = " "))}))
