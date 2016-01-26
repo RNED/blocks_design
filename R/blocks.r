@@ -559,7 +559,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
   # names for plans
   if (strata>1 & max(columns)>1)  
-    rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste(fDesign[((i-1)*rows[strata]*columns[strata]+1),c(1:(2*(strata-1))) ],collapse= " "))})) 
+    rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste(fDesign[((i-1)*rows[strata]*columns[strata]+1),],collapse= " "))})) 
   else if (strata==1 & max(columns)>1) rcnames="Rows x Columns"
   else if (strata>1 & max(columns)==1)  
     rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste(fDesign[((i-1)*rows[strata]+1),seq(1, 2*(strata-1),by = 2)],collapse= " "))})) 
