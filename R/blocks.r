@@ -503,52 +503,47 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     newblocksizes=NULL
     
     for (j in 1:nblocks) {
-      shift=0
-      addshift=0
-      
       rowsizes=rep(blocksizes[j]%/%rows[stratum],rows[stratum])
       resid=blocksizes[j]-sum(rowsizes)
       if (resid>0)
         rowsizes[1:resid]=rowsizes[1:resid]+1
-      
-      
+
       addrowsizes=rep(addblocksizes[j]%/%rows[stratum],rows[stratum])
       addresid=addblocksizes[j]-sum(addrowsizes)
       if (addresid>0)
-        addrowsizes[  (resid:(resid+addresid-1))%%length(addrowsizes)+1   ]=addrowsizes[  (resid:(resid+addresid-1))%%length(addrowsizes)+1   ]+1
-        #addrowsizes[   1:addresid   ]=addrowsizes[1:addresid]+1
-      
+        addrowsizes[1:resid]=addrowsizes[1:resid]+1
+    
       rowcolsizes=vector(mode = "list", length =rows[stratum])
-      addrowcolsizes=vector(mode = "list", length =rows[stratum])
-      
       for ( z in 1:rows[stratum])
         rowcolsizes[[z]]=rep( rowsizes[z]%/%columns[stratum] , columns[stratum])
       
+      addrowcolsizes=vector(mode = "list", length =rows[stratum])
       for ( z in 1:rows[stratum])
         addrowcolsizes[[z]]=rep( addrowsizes[z]%/%columns[stratum] , columns[stratum])
-
       
+      shift=0
       for (z in 1:rows[stratum]) {
         resid=rowsizes[z]-sum(rowcolsizes[[z]])
         if (resid>0) {
           rowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]=rowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]+1
           shift=shift+resid
-        } 
+        }
       }
+
+      shift=0
+
       
       for (z in 1:rows[stratum]) {
-        addresid=addrowsizes[z]-sum(addrowcolsizes[[z]])
-        if (addresid>0) {
-          addrowcolsizes[[z]][(addshift:(addshift+addresid-1))%%columns[stratum]+1]=addrowcolsizes[[z]][(addshift:(addshift+addresid-1))%%columns[stratum]+1]+1
-          addshift=addshift+addresid
-        } 
+        resid=addrowsizes[z]-sum(addrowcolsizes[[z]])
+        if (resid>0) {
+          addrowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]=addrowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]+1
+          shift=shift+resid
+        }
       }
       
-
       newblocksizes=c(newblocksizes , unlist(rowcolsizes))
-      newaddblocksizes=c(newaddblocksizes, unlist(addrowcolsizes))
+      newaddblocksizes=c(newaddblocksizes, unlist(addrowcolsizes)) 
     }
-    
     # for testing only
     for (k in 1:nblocks) {
       v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
