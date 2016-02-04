@@ -39,32 +39,39 @@ Constructs randomized nested and crossed block designs for unstructured treatmen
 and rows can have any arbitrary feasible depth of nesting.
 }
 \details{
-The \code{treatments} and \code{replicates} parameters partition the total number of treatments into sets of equally replicated treatments where 
-\code{treatments} contains the set sizes and \code{replicates} contains the set replication numbers. 
+The \code{treatments} and \code{replicates} parameter vectors partition the total number of treatments into sets of equally replicated treatments where 
+\code{treatments} vector contains the set sizes and \code{replicates} vector contains the set replication numbers. 
 The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
 is the total number of plots. Treatments are numbered consecutively according to the ordering of the consecutive treatment sets. 
 
-The \code{row_blocks} parameter, if specified, defines the nested row_blocks for each individual stratum taken in order from the highest to the lowest.
-The first number is the number of main row_blocks, the second, if any, is the number of nested row-rows, the third, if any, 
-is the number of nested nested row-block,and so on for all the reqired strata. If left blank, the default block design is a 
+The \code{row_blocks} parameter vector, if specified, defines the nested row blocks in each individual stratum taken in order from the highest to the lowest.
+The first number is the number of main row_blocks, the second, if any, is the number of nested row-blocks, the third, if any, 
+is the number of nested nested row-blocks,and so on for all the reqired strata. If left blank, the default block design is a 
  maximal set of orthogonal main row-rows, where the maximal number of orthogonal rows is the highest common factor of the replication numbers. 
  
-The \code{col_blocks} parameter, if specified, defines the nested column_blocks for each individual stratum taken in order from the highest to the lowest. 
-Row and column rows are crossed within each stratum of the design and the \code{row_blocks} and \code{col_blocks} parameters, if specified, must be of equal length. 
-If a pure nested rows design is required in any particular stratum then the number of column rows for that stratum should be set to one and the number of row rows to
-the required number of nested rows. If unspecified the column rows are all set equal to unity for each stratum defined by the \code{row_blocks} parameter.
+The \code{col_blocks} parameter vector, if specified, defines the nested column blocks in each individual stratum taken in order from the highest to the lowest. 
+The \code{row_blocks} and \code{col_blocks} parameter vectors, if specified, must be of equal length and the pairs of parameters for each
+particular stratum defines the row-and-column block design for that stratum. 
+If a simple nested blocks design is required for any particular stratum then the number of columns for that stratum should be set to one and the number of rows to
+the required number of nested blocks. If the \code{col_blocks} parameter vector is left null, a simple nested blocks design defined by the \code{row_blocks} parameter
+is fitted.
 
-The block sizes in each rows stratum including the row-by-columns interactions strata are always as equal as possible and never differ in size by more than a single unit. 
+The block sizes in each rows stratum including the row-by-columns interactions strata are always as equal as possible and never differ in size by more than a single unit
+for replicated treatments. 
 If the number of nested rows in a particular stratum exactly divdes the number of units, the block sizes in that stratum will be exactly equal; otherwise the block sizes
-will differ by at most one unit. Row rows and column rows must always comprise at least two plots while the row-column intersection rows may comprise a single plot
-or any feasible number of plots.   
+will differ by at most one unit. Row blocks and column blocks must always comprise at least two plots while the row-column intersection rows may comprise a single plot
+or any feasible number of plots. 
+
+Unreplicated treatments with a single replication can also be included but are added heuristcally by assigning single unreplicated treatments to the optimized blocks of the
+replicated part of the design. To ensure that the blocks of an augmented design containing unreplicated treatments are as near equal as possible, the optimized blocks of the
+replicated part of the design must all be equal in size in any particular stratum of the design.     
 
  Warning: The swapping algorithm works from the top stratum downwards and is always constrained to make improving swaps within the levels of any existing rows.
  This can be problematic for a 2-replicate treatment design arranged as a 2 x 2 row-and-clolumn design because the algorithm will find a semi-Latin squarere with complete
- replicate row-rows and complete replicate column-rows which means that one treatment contrast will be
- fully confounded with the row-by-column interaction effect. This means that the algorithm will be unable to fit any nested block design within the rows of 
- any 2 x 2 semi-Latin square. For this situation, it would be better to construct a simple block design with four main row-rows and a single main column-block 
- and then to nest any required sub-block design within the four main rows.   
+ replicate row-blocks and complete replicate column-blocks which means that one treatment contrast will be
+ confounded with the row-by-column interaction effect and the algorithm will be unable to fit any nested block design within the rows of 
+ any 2 x 2 semi-Latin square. For this situation, it would be better to construct a simple block design with four main row-blocks and a single main column-block 
+ and then to nest any required sub-block design within the four main blocks.   
  
  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 
