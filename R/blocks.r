@@ -518,14 +518,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       }
       newblocksizes=c(newblocksizes , unlist(rowcolsizes))
     }
-    # for testing only
-    for (k in 1:nblocks) {
-      v= (((k-1)*rows[i]*columns[i]+1): (k*rows[i]*columns[i]  )             )
-      t=matrix(newblocksizes[v],nrow=rows[i],ncol=columns[i],byrow=TRUE ) 
-      print(t)
-      print(apply(t,1,sum))
-      print(apply(t,2,sum))
-    } 
   newblocksizes
   }
  
@@ -587,10 +579,10 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   #add back single rep treatments
   if ( min(fullreplicates)==1 && max(fullreplicates)>1 ) {
     addTF=((sum(treatments)+1) :sum(fulltreatments))
+    TF=as.factor( c(TF, addTF ) )
     newblocksizes=length(addTF)
     for ( i in 1: strata) 
       newblocksizes=Sizes(newblocksizes,i)
-    TF=as.factor(  c(TF, addTF )  ) 
     reptrts=rep(fullreplicates==1,fulltreatments)
     levels(TF)= (1:sum(fulltreatments*fullreplicates))[order(reptrts)] 
     TF=as.numeric(levels(TF))[TF]
