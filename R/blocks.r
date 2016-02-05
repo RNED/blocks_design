@@ -325,7 +325,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     MBB[seq_len(nlevels(Columns)-nlevels(Main)), seq_len(nlevels(Columns)-nlevels(Main))]=V[seq_len(nlevels(Columns)-nlevels(Main)),seq_len(nlevels(Columns)-nlevels(Main)),drop=FALSE]
     MTT[seq_len(nlevels(TF)-1),seq_len(nlevels(TF)-1)]=V[(nlevels(Columns)-nlevels(Main)+1):ncol(V),(nlevels(Columns)-nlevels(Main)+1):ncol(V), drop=FALSE]
     MTB[seq_len(nlevels(TF)-1),seq_len(nlevels(Columns)-nlevels(Main))]=V[(nlevels(Columns)-nlevels(Main)+1):ncol(V),seq_len(nlevels(Columns)-nlevels(Main)),drop=FALSE]
-    perm=order(order(seq_lev(nlevels(Columns))%%blevels ==0  ))  
+    perm=order(order(seq_len(nlevels(Columns))%%blevels ==0  ))  
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
     TF=Optimise(TF,Columns,MTT,MBB,MTB,Blocks)
