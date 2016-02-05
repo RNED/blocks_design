@@ -9,9 +9,9 @@ blocks(treatments, replicates, rows = HCF(replicates), columns = NULL,
   seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
-\item{treatments}{treatment numbers giving a partition of the total required number of treatments into sets of equally replicated treatments.}
+\item{treatments}{a vector of treatment numbers giving a partition of the total required number of treatments into sets of equally replicated treatments.}
 
-\item{replicates}{replication numbers giving the replictaion for each set of equally replicated treatments defined by the \code{treatments} partition.}
+\item{replicates}{a vector of replication numbers, one for each set of equally replicated treatments defined by the \code{treatments} vector.}
 
 \item{searches}{maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 2000 divided by the number of model parameters.}
 
@@ -19,7 +19,7 @@ blocks(treatments, replicates, rows = HCF(replicates), columns = NULL,
 
 \item{jumps}{number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.}
 
-\item{row_blocks}{factor levels defining the number of nested row rows in each succesive rows stratum taken in order from the highest to the lowest. 
+\item{row_blocks}{a vector of factor levels for the numbers of nested row blocks in each succesive rows stratum of the blocks design taken in order from the highest to the lowest. 
 The default is the hcf of the replication numbers.}
 
 \item{col_blocks}{factor levels defining the number of nested column rows in each succesive rows stratum taken in order from the highest to the lowest. 
@@ -47,45 +47,41 @@ is the total number of plots. Treatments are numbered consecutively according to
 The \code{row_blocks} parameter vector, if specified, defines the nested row blocks in each individual stratum taken in order from the highest to the lowest.
 The first number is the number of main row_blocks, the second, if any, is the number of nested row-blocks, the third, if any, 
 is the number of nested nested row-blocks,and so on for all the reqired strata. If left blank, the default block design is a 
- maximal set of orthogonal main row-rows, where the maximal number of orthogonal rows is the highest common factor of the replication numbers. 
+ maximal set of orthogonal main row-blocks, where the maximal number of orthogonal rows is the highest common factor of the replication numbers. 
  
 The \code{col_blocks} parameter vector, if specified, defines the nested column blocks in each individual stratum taken in order from the highest to the lowest. 
-The \code{row_blocks} and \code{col_blocks} parameter vectors, if specified, must be of equal length and the pairs of parameters for each
-particular stratum defines the row-and-column block design for that stratum. 
+The \code{row_blocks} and \code{col_blocks} parameter vectors, if specified, must be of equal length and the corresponding pairs of parameters
+define the row-and-column block designs in the individual strata taken in order from the highest to the lowest.
 If a simple nested blocks design is required for any particular stratum then the number of columns for that stratum should be set to one and the number of rows to
-the required number of nested blocks. If the \code{col_blocks} parameter vector is left null, a simple nested blocks design defined by the \code{row_blocks} parameter
-is fitted.
+the required number of nested blocks. If the \code{col_blocks} parameter vector is left null, the \code{row_blocks} parameter defines a simple set of nested row-blocks.
 
 The block sizes in each rows stratum including the row-by-columns interactions strata are always as equal as possible and never differ in size by more than a single unit
 for replicated treatments. 
 If the number of nested rows in a particular stratum exactly divdes the number of units, the block sizes in that stratum will be exactly equal; otherwise the block sizes
-will differ by at most one unit. Row blocks and column blocks must always comprise at least two plots while the row-column intersection rows may comprise a single plot
-or any feasible number of plots. 
+will differ by at most one unit. Row blocks and column blocks must always comprise at least two plots while the row-column intersections can contain a single plot
+or any feasible number of nested plots. 
 
-Unreplicated treatments with a single replication can also be included but are added heuristcally by assigning single unreplicated treatments to the optimized blocks of the
-replicated part of the design. To ensure that the blocks of an augmented design containing unreplicated treatments are as near equal as possible, the optimized blocks of the
-replicated part of the design must all be equal in size in any particular stratum of the design.     
+Unreplicated treatments with a single replication can also be included and are added heuristcally by assigning single unreplicated treatments to the individual blocks of the
+replicated part of the design. To ensure that the blocks containing unreplicated treatments are as near equal in size as possible,
+the replicated part of the design should be chosen to comprise blocks that are all equal in size in any particular stratum of the design.     
 
- Warning: The swapping algorithm works from the top stratum downwards and is always constrained to make improving swaps within the levels of any existing rows.
- This can be problematic for a 2-replicate treatment design arranged as a 2 x 2 row-and-clolumn design because the algorithm will find a semi-Latin squarere with complete
- replicate row-blocks and complete replicate column-blocks which means that one treatment contrast will be
- confounded with the row-by-column interaction effect and the algorithm will be unable to fit any nested block design within the rows of 
- any 2 x 2 semi-Latin square. For this situation, it would be better to construct a simple block design with four main row-blocks and a single main column-block 
- and then to nest any required sub-block design within the four main blocks.   
+ The swapping algorithm works from the top stratum downwards and always makes improving swaps within the levels of any existing rows.
+ For a 2-replicate treatment design arranged as a 2 x 2 row-and-clolumn design this means that the algorithm will find a semi-Latin squarere with complete
+ replicate row-blocks and complete replicate column-blocks but with one treatment contrast confounded with the row-by-column interaction contrast.
+ This means that the algorithm will be unable to fit any nested block design within the rows of 
+ any 2 x 2 semi-Latin square. For this situation, it would be better to nest any required sub-block design within the four main blocks of
+  a simple block design with four main row-blocks.
  
  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 
  The principle design outputs comprise:
 \itemize{
- \item  A design matrix showing the allocation of treatments to rows with successive nested rows factors arranged in successive columns in standard block order.  \cr
- \item  A design matrix as above but with the last (bottom) rows factor shown arranged horizontally to give a plan view. \cr
- \item  A set of incidence matrices, one for each rows stratum, showing the number of times each treatment occurs in each block for each stratum. \cr
- \item  A table showing the achieved D- and A-efficiency factors for each nested rows stratum together with an A-efficiency upper bound, where available. \cr
- \item  A table showing a skeleton analysis of degrees of freedom for the combined block and treatment design. \cr
-} 
-
-Very occasionally, the algorithm may fail to converge due to a near-singular design with a large number of single plot rows.
-In that case, it may be best to build a simpler design with larger rows and then to add the extra block constraints by hand using ad hoc or heuristic methods.
+ \item  A data frame showing the allocation of treatments to rows and columns with nested strata arranged in successive columns assuming standard block order.  \cr
+ \item  A table showing the replication number for each treatment in the design . \cr
+ \item  A table showing the block levels and the achieved D- and A-efficiency factors for each nested blocks stratum together with A-efficiency upper bounds, where available. \cr
+ \item  A plan showing the allocation of treatments to nested blocks or to crossed row-and-column blocks where the layout is shown in the bottom stratum of the design and
+  each plan layout is nested within the blocks of the next higher stratum, if any. Each plan layout is indexed by the factor labelling shown in the design data frame. \cr
+}
 }
 \examples{
 
