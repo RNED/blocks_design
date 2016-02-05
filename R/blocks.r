@@ -126,7 +126,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   # ********************************************************************************************************************************************************
   HCF=function(replicates)  {
     replicates=sort(replicates[replicates>0])
-    for (i in 1: length(replicates))
+    for (i in  seq_len(length(replicates)))
       while (!isTRUE(all.equal(replicates[i]%%replicates[1],0))) replicates[c(1,i)] = c(replicates[i]%%replicates[1], replicates[1])
       replicates[1]
   }   
@@ -137,7 +137,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     if (v < 4) return(TRUE) 
     if ( isTRUE(all.equal(v %% 2,0)) ||  isTRUE(all.equal(v %% 3,0)) ) return(FALSE) 
     if (v<25) return(TRUE)
-    for(i in  6*rep(1:floor((sqrt(v)+1)/6)) )
+    for(i in  6*seq_len(length(floor((sqrt(v)+1)/6)))        )
       if ( isTRUE(all.equal(v %% (i-1) , 0)) ||   isTRUE(all.equal(v %% (i+1) , 0)) ) return(FALSE) 
     return(TRUE)
   } 
@@ -146,8 +146,8 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   # ********************************************************************************************************************************************************
   Contrasts=function(MF,NF) {
     NM=matrix(0,nrow=length(NF),ncol=nlevels(NF))
-    NM[cbind(1:length(NF),NF)]=1 # factor indicator matrix  
-    for (i in 1:nlevels(MF)) 
+    NM[cbind(seq_len(length(NF)),NF)]=1 # factor indicator matrix  
+    for (i in seq_len(nlevels(MF))) 
       NM[MF==i,]=scale(NM[MF==i,] , center = TRUE, scale = FALSE)
     NM
   }
@@ -193,8 +193,8 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     nSamp=pmin(rep(8,nlevels(Restrict)),mainSizes)
     repeat {
       improved=FALSE
-      for (k in 1:nlevels(Restrict)) {
-        S=sort(sample( (1:length(TF))[Restrict==k], nSamp[k])) 
+      for (k in seq_len(nlevels(Restrict))) {
+        S=sort(sample(  seq_len(length(TF))[Restrict==k], nSamp[k])) 
         TB=MTB[TF[S],BF[S],drop=FALSE]-tcrossprod(MTB[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
         dMat=(TB+t(TB)+1)**2-
           (2*MTT[TF[S],TF[S],drop=FALSE]-tcrossprod(MTT[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MTT[cbind(TF[S],TF[S])]) + 1)*
@@ -228,7 +228,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     breps=tabulate(BF)     
     if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  )
       bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) else bound=NA
-    for (r in 1 : searches) {
+    for (r in seq_len(searches)) {
       dmax=DMax(MTT,MBB,MTB,TF,BF,Restrict)
       if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
         relD=relD*dmax$relD
@@ -243,12 +243,12 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
         }
       }
       if (r==searches) break
-      for (iswap in 1 : jumps) {
+      for (iswap in seq_len(jumps)) {
         counter=0
         repeat {  
           counter=counter+1
-          s1=sample(1:length(TF),1)
-          z=(1:length(TF))[Restrict==Restrict[s1] & BF!=BF[s1] & TF!=TF[s1]]
+          s1=sample(seq_len(length(TF)),1)
+          z=seq_len(length(TF))[Restrict==Restrict[s1] & BF!=BF[s1] & TF!=TF[s1]]
           if (length(z)==0) next
           if (length(z)>1) s=c(s1,sample(z,1))  else s=c(s1,z[1])
           dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
@@ -273,7 +273,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     candidates=NULL
     while (isTRUE(all.equal(length(candidates),0))) {
       if (rank<(n-1)) s1=sample(pivot[(1+rank):n],1) else s1=pivot[n]
-      candidates = rep(1:n)[MF==MF[s1] & Restrict==Restrict[s1] & BF!=BF[s1] & TF!=TF[s1]]
+      candidates = seq_len(n)[MF==MF[s1] & Restrict==Restrict[s1] & BF!=BF[s1] & TF!=TF[s1]]
     }
     if ( length(candidates)>1 )
       s2=sample(candidates,1) else s2=candidates[1] 
@@ -287,7 +287,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     BM[cbind(1:length(BF),BF)]=1
     fullrank=nlevels(TF)+nlevels(BF)-1
     TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-    TM[cbind(1:length(TF),TF)]=1
+    TM[cbind( seq_len(length(TF)),TF)]=1
     Q=qr(t(cbind(BM,TM)))
     rank=Q$rank
     pivot=Q$pivot
@@ -296,7 +296,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     while (rank<fullrank & times<1000) {
       times=times+1
       s=Swaps(TF,MF,BF,pivot,rank,n,Restrict)
-      rindex=(1:length(TF))
+      rindex=seq_len(length(TF))
       rindex[c(s[1],s[2])]=rindex[c(s[2],s[1])]
       newQ=qr(t(cbind(BM,TM[rindex,])))
       if (isTRUE(all.equal(newQ$rank,rank)) || newQ$rank>rank) { 
@@ -322,10 +322,10 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     MBB=matrix(0,nrow=nlevels(Columns),ncol=nlevels(Columns))
     MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
     MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Columns))
-    MBB[1:(nlevels(Columns)-nlevels(Main)), 1:(nlevels(Columns)-nlevels(Main))]=V[1:(nlevels(Columns)-nlevels(Main)),1:(nlevels(Columns)-nlevels(Main)),drop=FALSE]
-    MTT[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[(nlevels(Columns)-nlevels(Main)+1):ncol(V),(nlevels(Columns)-nlevels(Main)+1):ncol(V), drop=FALSE]
-    MTB[1:(nlevels(TF)-1),  1:(nlevels(Columns)-nlevels(Main)) ]=V[(nlevels(Columns)-nlevels(Main)+1):ncol(V),1:(nlevels(Columns)-nlevels(Main)),drop=FALSE]
-    perm=order(order( (1:nlevels(Columns))%%blevels ==0  ))  
+    MBB[seq_len(nlevels(Columns)-nlevels(Main)), seq_len(nlevels(Columns)-nlevels(Main))]=V[seq_len(nlevels(Columns)-nlevels(Main)),seq_len(nlevels(Columns)-nlevels(Main)),drop=FALSE]
+    MTT[seq_len(nlevels(TF)-1),seq_len(nlevels(TF)-1)]=V[(nlevels(Columns)-nlevels(Main)+1):ncol(V),(nlevels(Columns)-nlevels(Main)+1):ncol(V), drop=FALSE]
+    MTB[seq_len(nlevels(TF)-1),seq_len(nlevels(Columns)-nlevels(Main))]=V[(nlevels(Columns)-nlevels(Main)+1):ncol(V),seq_len(nlevels(Columns)-nlevels(Main)),drop=FALSE]
+    perm=order(order(seq_lev(nlevels(Columns))%%blevels ==0  ))  
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
     TF=Optimise(TF,Columns,MTT,MBB,MTB,Blocks)
@@ -349,27 +349,27 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       if (replicates[1]>2)
         for (i in 0: (v-1)) 
           t=c(t,(rep(0:(v-1))+i)%%v + 2*v)
-        TF=  as.factor(rep(1:(v*v),replicates[1])[order(t)])
+        TF=  as.factor(rep(seq_len(v*v),replicates[1])[order(t)])
     } else if (sqrLattice  &&  replicates[1]<(v+2)  && isPrime(v) ) {
       t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
-      for (z in 1: (replicates[1]-2))
+      for (z in seq_len(replicates[1]-2))
         for (j in 0: (v-1)) 
           t=c(t,(rep(0:(v-1))*z +j)%%v + v*(z+1) )
-        TF=as.factor(rep(1:(v*v),replicates[1])[order(t)])
+        TF=as.factor(rep(seq_len(v*v),replicates[1])[order(t)])
     } else if (sqrLattice  && replicates[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
       index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
       mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
-      TF=c(rep(1:ntrts), rep(1:ntrts)[order(rep(0:(v-1),v))])
-      for (i in 1: (replicates[1]-2))
-        TF=c(TF, rep(1:ntrts)[order(as.numeric(mols[,,i]) ) ]) 
+      TF=c(  seq_len(ntrts),seq_len(ntrts)[order(rep(0:(v-1),v))])
+      for (i in seq_len(replicates[1]-2))
+        TF=c(TF, seq_len(ntrts)[order(as.numeric(mols[,,i]))]) 
       TF=as.factor(TF)
     } else if (sqrLattice  && v==10  && replicates[1]==4) {
       TF=as.factor(c(
-        rep(1:100), rep(1:100)[order(rep(0:9,10))],
-        rep(1:100)[order(c(
+        seq_len(100),seq_len(100)[order(rep(0:9,10))],
+        seq_len(100)[order(c(
           1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
           5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8))],
-        rep(1:100)[order(c(
+        seq_len(100)[order(c(
           1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
           6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]
       )) 
@@ -383,9 +383,9 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==nblocks)
       mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])		
       TF=NULL
-      for (i in 1: w)
-        for (j in 1: w)
-          for (k in 1: (nunits/nblocks))
+      for (i in  seq_len(w))
+        for (j in seq_len(w))
+          for (k in seq_len(nunits/nblocks))
             TF=c(TF,mols[i,j,k]+(k-1)*w)
       TF=as.factor(TF)
     } else {
@@ -398,10 +398,10 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       MBB=matrix(0,nrow=nlevels(Blocks),ncol=nlevels(Blocks))
       MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
       MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Blocks))
-      MBB[1:(nlevels(Blocks)-nlevels(Main)), 1:(nlevels(Blocks)-nlevels(Main))]=V[1:(nlevels(Blocks)-nlevels(Main)),1:(nlevels(Blocks)-nlevels(Main)),drop=FALSE]
-      MTT[1:(nlevels(TF)-1),1:(nlevels(TF)-1)]=V[(nlevels(Blocks)-nlevels(Main)+1):ncol(V),(nlevels(Blocks)-nlevels(Main)+1):ncol(V), drop=FALSE]
-      MTB[1:(nlevels(TF)-1),  1:(nlevels(Blocks)-nlevels(Main)) ]=V[(nlevels(Blocks)-nlevels(Main)+1):ncol(V),1:(nlevels(Blocks)-nlevels(Main)),drop=FALSE]
-      perm=order(order( (1:nlevels(Blocks))%%blevels ==0  ))  
+      MBB[seq_len(nlevels(Blocks)-nlevels(Main)),seq_len(nlevels(Blocks)-nlevels(Main))]=V[seq_len(nlevels(Blocks)-nlevels(Main)),seq_len(nlevels(Blocks)-nlevels(Main)),drop=FALSE]
+      MTT[seq_len(nlevels(TF)-1),seq_len(nlevels(TF)-1)]=V[(nlevels(Blocks)-nlevels(Main)+1):ncol(V),(nlevels(Blocks)-nlevels(Main)+1):ncol(V), drop=FALSE]
+      MTB[seq_len(nlevels(TF)-1), seq_len(nlevels(Blocks)-nlevels(Main)) ]=V[(nlevels(Blocks)-nlevels(Main)+1):ncol(V),seq_len(nlevels(Blocks)-nlevels(Main)),drop=FALSE]
+      perm=order(order(seq(nlevels(Blocks))%%blevels ==0 ))  
       MTB=MTB[,perm]
       MBB=MBB[perm,perm] 
       TF=Optimise(TF,Blocks,MTT,MBB,MTB,Main)
@@ -417,11 +417,11 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     effics=matrix(1,nrow=2*strata,ncol=2)
     bounds=rep(NA,2*strata)
     nblocks=rep(NA,2*strata)
-    for (i in 1 : strata) {
+    for (i in seq_len(strata)) {
       nblocks[2*i-1]=nlevels(Design[,2*i-1])
       nblocks[2*i]  =nlevels(Design[,2*i])
     }
-    for (i in 1:strata) { 
+    for (i in seq_len(strata)) { 
       if (isTRUE(all.equal(max(replicates),min(replicates))) ) {
         if ( isTRUE(all.equal(nunits%%nblocks[2*i-1],0))) 
           bounds[2*i-1]=upper_bounds(nunits,ntrts,nblocks[2*i-1]) else if (hcf%%nblocks[2*i-1]==0) bounds[2*i-1]=1
@@ -493,12 +493,11 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
                    "whereas the total required number of model parameters is", prod(rows) + sum(treatments),", which is not feasible. "))  
     
     if (max(replicates)==2 && length(rows)>1 )
-      for (i in 1 : (length(rows)-1)) 
+      for (i in seq_len(length(rows)-1)) 
         if (rows[i]==2 && columns[i]==2) return( paste(" Warning: this design tries to fit a sub-block design within the blocks of a 2-replicate
         semi-Latin square. However, because the row-by-column interaction of a 2-replicate semi-Latin square is always confounded with a treatment contrast, 
         the nested sub-blocks design will always be singular. Instead, try replacing the crossed 2 x 2 row-and column block design by an uncrossed design with 4 rows and 
         a single column."))
-    
     return(TRUE)
   }
   
@@ -508,7 +507,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   Sizes=function(blocksizes,stratum) {
     nblocks=length(blocksizes)
     newblocksizes=NULL
-    for (j in 1:nblocks) {
+    for (j in seq_len(nblocks)) {
       rowsizes=rep(blocksizes[j]%/%rows[stratum],rows[stratum])
       resid=blocksizes[j]-sum(rowsizes)
       if (resid>0)
@@ -517,7 +516,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       for ( z in 1:rows[stratum])
         rowcolsizes[[z]]=rep(rowsizes[z]%/%columns[stratum] , columns[stratum])
       shift=0
-      for (z in 1:rows[stratum]) {
+      for (z in seq_len(rows[stratum])) {
         resid=rowsizes[z]-sum(rowcolsizes[[z]])
         if (resid>0) {
           rowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]=rowcolsizes[[z]][(shift:(shift+resid-1))%%columns[stratum]+1]+1
@@ -547,15 +546,13 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   nunits=sum(treatments*replicates)
   ntrts=sum(treatments)
   hcf=HCF(replicates)
-  
-  
-  
+
   cumblocks=c(1,cumprod(rows*columns))
   if (prod(columns)>1) 
   stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Rows",i), paste("Columns", i) )})) else
     stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Blocks",i), paste("Columns", i) )}))
   blocksizes=nunits
-  for (i in 1 :strata)
+  for (i in seq_len(strata))
     blocksizes=Sizes(blocksizes,i) 
   # Design factors
   Blocks=data.frame(do.call(cbind,lapply(1:strata,function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
@@ -571,18 +568,18 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste(fDesign[((i-1)*rows[strata]*columns[strata]+1),],collapse= " "))})) 
   else if (strata==1 & max(columns)>1) rcnames="Rows x Columns"
   else if (strata>1 & max(columns)==1)  
-    rcnames=unlist(lapply(1:cumblocks[strata], function(i) {c(paste(fDesign[((i-1)*rows[strata]+1),seq(1, 2*(strata-1),by = 2)],collapse= " "))})) 
+    rcnames=unlist(lapply(seq_len(cumblocks[strata]), function(i) {c(paste(fDesign[((i-1)*rows[strata]+1),seq(1, 2*(strata-1),by = 2)],collapse= " "))})) 
   else  rcnames=" "
   Design    = as.data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
   Blocks    = as.data.frame(Blocks[rep(seq_len(nrow(Blocks)),  blocksizes ),]) 
   Design[]  = lapply(Design, as.factor) 
   Blocks[]  = lapply(Blocks, as.factor) 
  
-  for ( z in 1 :10) {
-    TF=rep(rep(1:ntrts,rep(replicates/hcf,treatments)), hcf)
+  for ( z in seq_len(10)) {
+    TF=rep(rep( seq_len(ntrts)  ,rep(replicates/hcf,treatments)), hcf)
     rand=sample(nunits)
-    TF=as.factor( TF[rand][order(rep(1:hcf,each=nunits/hcf)[rand])] )
-    for ( i in 1: strata) {
+    TF=as.factor( TF[rand][order(rep(seq_len(hcf),each=nunits/hcf)[rand])] )
+    for ( i in seq_len(strata)) {
     if (rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) 
       TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
     if (is.null(TF)) break
@@ -593,18 +590,19 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     if (!is.null(TF)) break
   }
   if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
+  
   #add back single rep treatments
   if ( min(fullreplicates)==1 && max(fullreplicates)>1 ) {
     addTF=((sum(treatments)+1) :sum(fulltreatments))
     TF=as.factor( c(TF, addTF ) )
     newblocksizes=length(addTF)
-    for ( i in 1: strata) 
+    for ( i in seq_len(strata)) 
       newblocksizes=Sizes(newblocksizes,i)
     reptrts=rep(fullreplicates==1,fulltreatments)
-    levels(TF)= (1:sum(fulltreatments*fullreplicates))[order(reptrts)] 
+    levels(TF)= seq_len(sum(fulltreatments*fullreplicates))[order(reptrts)] 
     TF=as.numeric(levels(TF))[TF]
     nunits=sum(fulltreatments*fullreplicates)
-    TF=as.factor(TF[order(c(rep(1:length(blocksizes),blocksizes),rep(1:length(blocksizes),newblocksizes)))])
+    TF=as.factor(TF[order(c(rep( seq_len(length(blocksizes)),blocksizes),rep(   seq_len(length(blocksizes)),newblocksizes)))])
     blocksizes=blocksizes+newblocksizes
     treatments=fulltreatments
     replicates=fullreplicates
@@ -622,7 +620,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   rownames(Design)=NULL
   #Plan
   V=split(Design[,(2*strata+1)],rep(1:cumblocks[strata+1],blocksizes))
-  baseblocks=unlist(lapply( 1:length(V), function(r){ paste( "  ", paste(format(V[[r]], width=nchar(sum(treatments)) ), collapse = " "))}))
+  baseblocks=unlist(lapply(seq_len(length(V)), function(r){ paste( "  ", paste(format(V[[r]], width=nchar(sum(treatments)) ), collapse = " "))}))
   Plan=vector(mode="list",length=cumblocks[strata+1]/rows[strata]/columns[strata]  )
   if (columns[strata]>1) {
   colhead="Column 1"
@@ -640,7 +638,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
         rowhead=c(rowhead,paste("Blocks",i))
   }
   
-  for (i in 1:cumblocks[strata]) {
+  for (i in seq_len(cumblocks[strata])) {
     Plan[[i]]=as.data.frame(matrix(baseblocks[((i-1)*rows[strata]*columns[strata]+1):(i*rows[strata]*columns[strata])],nrow=rows[strata],ncol=columns[strata],byrow=TRUE))
     colnames(Plan[[i]])=colhead
     rownames(Plan[[i]])=rowhead
