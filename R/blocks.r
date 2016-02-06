@@ -3,70 +3,73 @@
 #' @description
 #' 
 #' Constructs randomized nested and crossed block designs for unstructured treatment sets where treatments can have any arbitrary levels of replication
-#' and rows can have any arbitrary feasible depth of nesting.
+#' and blocks can have any arbitrary feasible depth of nesting.
 #' 
 #' @details
 #' 
-#' The \code{treatments} and \code{replicates} parameter vectors partition the total number of treatments into sets of equally replicated treatments where 
-#' \code{treatments} vector contains the set sizes and \code{replicates} vector contains the set replication numbers. 
-#' The sum of the set sizes is the total number of treatments and the sum of the cross-products of the set sizes and the replication numbers
-#' is the total number of plots. Treatments are numbered consecutively according to the ordering of the consecutive treatment sets. 
+#' The \code{blocksdesign} package constructs simple nested block designs or crossed block designs with arbitrary depth of nesting and arbitrary crossed
+#' or nested block designs in each nested stratum.
 #' 
-#' The \code{row_blocks} parameter vector, if specified, defines the nested row blocks in each individual stratum taken in order from the highest to the lowest.
-#' The first number is the number of main row_blocks, the second, if any, is the number of nested row-blocks, the third, if any, 
-#' is the number of nested nested row-blocks,and so on for all the reqired strata. If left blank, the default block design is a 
-#'  maximal set of orthogonal main row-blocks, where the maximal number of orthogonal rows is the highest common factor of the replication numbers. 
+#' The \code{treatments} and \code{replicates} vectors give a partition the total number of treatments into sets of equally replicated treatments where the
+#' \code{treatments} vector provides the required treatments partition and the \code{replicates} vector provides the replication numbers for each treatment set. 
+#' The sum of the cross-products of the \code{treatments} and \code{replicates} vectors is the total number of plots and treatments are numbered consecutively 
+#' according to the ordering of the consecutive treatment sets. 
+#'   
+#' The \code{rows} vector, if specified, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
+#' The first number, if any, is the number of rows in the blocks of the top stratum, the second, if any, is the number of rows in the nested blocks of
+#'  the second stratum, the third, if any, is the number of rows in the nested blocks of the third stratum and so on for all the required strata in the design. 
 #'  
-#' The \code{col_blocks} parameter vector, if specified, defines the nested column blocks in each individual stratum taken in order from the highest to the lowest. 
-#' The \code{row_blocks} and \code{col_blocks} parameter vectors, if specified, must be of equal length and the corresponding pairs of parameters
-#' define the row-and-column block designs in the individual strata taken in order from the highest to the lowest.
-#' If a simple nested blocks design is required for any particular stratum then the number of columns for that stratum should be set to one and the number of rows to
-#' the required number of nested blocks. If the \code{col_blocks} parameter vector is left null, the \code{row_blocks} parameter defines a simple set of nested row-blocks.
+#' The \code{columns} vector, if specified, defines the nested column blocks in each nested stratum taken in order from the highest to the lowest. 
+#' The first number, if any, is the number of columns in the blocks of the top stratum, the second, if any, is the number of columns in the nested blocks of
+#'  the second stratum, the third, if any, is the number of columns in the nested blocks of the third stratum and so on for all the required strata in the design. 
+#'   
+#' The \code{rows} and \code{columns} vectors, if defined, must be of equal length and if a simple nested blocks design is required in 
+#' any particular stratum then the number of columns in that stratum should be set to unity.
 #' 
-#' The block sizes in each rows stratum including the row-by-columns interactions strata are always as equal as possible and never differ in size by more than a single unit
-#' for replicated treatments. 
-#' If the number of nested rows in a particular stratum exactly divdes the number of units, the block sizes in that stratum will be exactly equal; otherwise the block sizes
-#' will differ by at most one unit. Row blocks and column blocks must always comprise at least two plots while the row-column intersections can contain a single plot
-#' or any feasible number of nested plots. 
+#' If both the \code{rows} vector and the \code{columns} vector are null, the default block design will be a single set of orthogonal
+#' main blocks equal in number to the highest common factor of the replication numbers. If the \code{rows} vector is defined but the \code{columns} vector
+#' is null, the design will comprise simple nested blocks in each stratum defined by the \code{rows} vector.
 #' 
-#' Unreplicated treatments with a single replication can also be included and are added heuristcally by assigning single unreplicated treatments to the individual blocks of the
-#' replicated part of the design. To ensure that the blocks containing unreplicated treatments are as near equal in size as possible,
-#' the replicated part of the design should be chosen to comprise blocks that are all equal in size in any particular stratum of the design.     
+#' The block sizes in any particular rows or columns stratum are always as nearly equal in size as possible and will never differ by more
+#' than a single unit. The row blocks and column blocks must always comprise at least two plots and this restriction will constrain the 
+#' allowed number of row and column blocks.
 #' 
-#'  The swapping algorithm works from the top stratum downwards and always makes improving swaps within the levels of any existing rows.
-#'  For a 2-replicate treatment design arranged as a 2 x 2 row-and-clolumn design this means that the algorithm will find a semi-Latin squarere with complete
-#'  replicate row-blocks and complete replicate column-blocks but with one treatment contrast confounded with the row-by-column interaction contrast.
-#'  This means that the algorithm will be unable to fit any nested block design within the rows of 
-#'  any 2 x 2 semi-Latin square. For this situation, it would be better to nest any required sub-block design within the four main blocks of
-#'   a simple block design with four main row-blocks.
+#' Unreplicated treatments with a single replication are allowed but unreplicated treatments are added heuristically after the replicated
+#' part of the design has been optimized and to ensure that the blocks containing the unreplicated treatments do not differ in size by more than
+#'  a single unit, unreplicated treatments should only be used in designs where the replicated treatment blocks 
+#'  are all equal in size in each stratum of the design.     
+#' 
+#'  NB. For two-replicate 2 x 2 row-and-column block designs, the algorithm will always find a semi-Latin squarere with complete
+#'  replicate rows and complete replicate columns but will always fully confound one treatment contrast with the row-by-column interaction contrast.
+#'  For this reason, the algorithm is unable to fit any nested sub-block design within the row-by-column intersections of any two replicate 2 x 2 semi-Latin square. 
+#'  A better design would be a simple nested block design with four main blocks and sub-blocks nested within the main blocks.
 #'  
 #'  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 #' 
 #'  The principle design outputs comprise:
 #' \itemize{
-#'  \item  A data frame showing the allocation of treatments to rows and columns with nested strata arranged in successive columns assuming standard block order.  \cr
-#'  \item  A table showing the replication number for each treatment in the design . \cr
-#'  \item  A table showing the block levels and the achieved D- and A-efficiency factors for each nested blocks stratum together with A-efficiency upper bounds, where available. \cr
-#'  \item  A plan showing the allocation of treatments to nested blocks or to crossed row-and-column blocks where the layout is shown in the bottom stratum of the design and
-#'   each plan layout is nested within the blocks of the next higher stratum, if any. Each plan layout is indexed by the factor labelling shown in the design data frame. \cr
+#'  \item  A data frame showing the allocation of treatments to blocks with successive nested strata arranged in standard block order.  \cr
+#'  \item  A table showing the replication number of each treatment in the design . \cr
+#'  \item  A table showing the block levels and the achieved D- and A-efficiency factors for each blocks stratum together with A-efficiency upper bounds, where available. \cr
+#'  \item  Plans showing the allocation of treatments to blocks or to rows and columns in the bottom stratum of the design. 
+#'  Each plan layout is indexed by the factor levels of any higher level blocks containing the bottom level plans.    \cr
 #' } 
 #' 
-#' @param treatments a vector of treatment numbers giving a partition of the total required number of treatments into sets of equally replicated treatments.
+#' @param treatments  a vector giving a partition of the total required number of treatments into sets of equally replicated treatments.
 #' 
-#' @param replicates a vector of replication numbers, one for each set of equally replicated treatments defined by the \code{treatments} vector.
+#' @param replicates  a vector giving the replication number of each equally replicated treatment set in the \code{treatments} vector.
 #' 
-#' @param row_blocks a vector of factor levels for the numbers of nested row blocks in each succesive rows stratum of the blocks design taken in order from the highest to the lowest. 
-#' The default is the hcf of the replication numbers.
+#' @param rows  a vector of factor levels for the row blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
+#' The default is a single set of main blocks equal to the hcf of the replication numbers.
 #' 
-#' @param col_blocks factor levels defining the number of nested column rows in each succesive rows stratum taken in order from the highest to the lowest. 
-#' The column-rows are crossed with the row-rows in each nested stratum and the \code{row_blocks} and the \code{col_blocks} parameters, if present, must be of 
-#' equal length and must equal the required number of nested strata.   
+#' @param columns  a vector of factor levels forthe column blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
+#' The \code{rows} and the \code{columns} vectors, if both present, must be of equal length. The default is the null vector.  
 #' 
-#' @param seed integer initializing the random number generator. The default is a random seed.
+#' @param seed  an integer initializing the random number generator. The default is a random seed.
 #' 
-#' @param searches maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 2000 divided by the number of model parameters.
+#' @param searches  the maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 2000 divided by the number of model parameters.
 #' 
-#' @param jumps number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.
+#' @param jumps  the number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.
 #' 
 #' @return  
 #' \item{Design}{Data frame giving the optimized block and treatment factors in plot order}
@@ -84,38 +87,38 @@
 #' 
 #' # 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates  
 #' # the hcf of the replication numbers is 1 therefore the default design is completely randomized 
-#' rows(treatments=c(3,2,4),replicates=c(2,4,3))
+#' blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 #' 
 #' # 4 treatments x 4 replicates with 2 main rows each containing two complete replicates  
-#' rows(treatments=4,replicates=4,blocklevel=2)
+#' blocks(treatments=4,replicates=4,rows=2)
 #' 
 #' # 50 treatments x 4 replicates with 4 main rows and 5 nested sub-rows in each main block 
-#' rows(treatments=50,replicates=4,rows=c(4,5))
+#' blocks(treatments=50,replicates=4,rows=c(4,5))
 #' 
 #' # as above but with 20 additional single replicate treatments 
 #' # giving exactly one single replicate treatment per sub-block
-#' rows(treatments=c(50,20),replicates=c(4,1),rows=c(4,5))
+#' blocks(treatments=c(50,20),replicates=c(4,1),rows=c(4,5))
 #' 
 #' # 64 treatments x 2 replicates with 2 main rows and five succesively nested 2-level factors
-#' rows(treatments=64,replicates=2,rows=c(2,2,2,2,2,2))
+#' blocks(treatments=64,replicates=2,rows=c(2,2,2,2,2,2))
 #' 
 #' # 6 replicates of 6 treatments in 4 rows of size 9 (non-binary block design)
-#' rows(treatments=6,replicates=6,rows=4)
+#' blocks(treatments=6,replicates=6,rows=4)
 #' 
-#' # concurrence matrix of balanced incomplete block design 
-#' crossprod(rows(13,4,13,searches=100)$Incidences[[1]])
+#' # 4 replicates of 13 treatments arranged in a 13 x 4 Youden rectangle 
+#' blocks(treatments=13,replicates=4,rows=13,columns=4)
 #' 
-#' # concurrence matrix for 13 treatments x 4 replicates and 13 treatments with one rep in 13 rows 
-#' crossprod(rows(c(13,13),c(4,1),13)$Incidences[[1]])
+#' # 64 treatments x 2 replicates arranged in two main replicate blocks with an 8 x 8 row-and-column design nested within each main block
+#' blocks(treatments=64,replicates=2,rows=c(2,8),columns=c(1,8)) 
 #' 
-#' # 2**10 treatments x 2 replicates in 2**10 rows giving a fully saturated rows design 
+#' # 2**9 treatments x 2 replicates in 2**9 blocks giving a fully saturated block design 
 #' # (requires a considerable time to run!)
-#' \dontrun{ d=rows(1024,2,rep(2,10)) }
+#' \dontrun{ d=blocks(2**9,2,rep(2,9)) }
 #'          
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,searches=(1+2000%/%(sum(treatments)+prod(rows))),seed=sample(10000,1),jumps=1) { 
+blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,searches=(1+2000%/%(sum(treatments)+prod(rows))),seed=sample(10000,1),jumps=1) { 
   
   # ******************************************************************************************************************************************************** 
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)
@@ -190,7 +193,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     repeat {
       improved=FALSE
       for (k in seq_len(nlevels(Restrict))) {
-        S=sort(sample(  seq_len(length(TF))[Restrict==k], nSamp[k])) 
+        S=sort(sample(seq_len(length(TF))[Restrict==k], nSamp[k])) 
         TB=MTB[TF[S],BF[S],drop=FALSE]-tcrossprod(MTB[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
         dMat=(TB+t(TB)+1)**2-
           (2*MTT[TF[S],TF[S],drop=FALSE]-tcrossprod(MTT[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MTT[cbind(TF[S],TF[S])]) + 1)*
@@ -283,7 +286,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     BM[cbind(1:length(BF),BF)]=1
     fullrank=nlevels(TF)+nlevels(BF)-1
     TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-    TM[cbind( seq_len(length(TF)),TF)]=1
+    TM[cbind(seq_len(length(TF)),TF)]=1
     Q=qr(t(cbind(BM,TM)))
     rank=Q$rank
     pivot=Q$pivot
@@ -318,9 +321,12 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     MBB=matrix(0,nrow=nlevels(Columns),ncol=nlevels(Columns))
     MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
     MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Columns))
-    MBB[seq_len(nlevels(Columns)-nlevels(Main)), seq_len(nlevels(Columns)-nlevels(Main))]=V[seq_len(nlevels(Columns)-nlevels(Main)),seq_len(nlevels(Columns)-nlevels(Main)),drop=FALSE]
-    MTT[seq_len(nlevels(TF)-1),seq_len(nlevels(TF)-1)]=V[(nlevels(Columns)-nlevels(Main)+1):ncol(V),(nlevels(Columns)-nlevels(Main)+1):ncol(V), drop=FALSE]
-    MTB[seq_len(nlevels(TF)-1),seq_len(nlevels(Columns)-nlevels(Main))]=V[(nlevels(Columns)-nlevels(Main)+1):ncol(V),seq_len(nlevels(Columns)-nlevels(Main)),drop=FALSE]
+    indicb=seq_len(nlevels(Columns)-nlevels(Main))
+    indict=seq_len(nlevels(TF)-1)
+    indicv=seq_len(ncol(V)-nlevels(Columns)+nlevels(Main)) + nlevels(Columns)-nlevels(Main)
+    MBB[indicb,indicb]=V[indicb,indicb,drop=FALSE]
+    MTT[indict,indict]=V[indicv,indicv,drop=FALSE]
+    MTB[indict,indicb]=V[indicv,indicb,drop=FALSE]
     perm=order(order(seq_len(nlevels(Columns))%%blevels ==0  ))  
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
@@ -339,7 +345,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     sqrLattice  = regular && isTRUE(all.equal(v,floor(v))) && isTRUE(all.equal(nunits,v*nblocks))
     w=sqrt(nblocks)
     s=ntrts/w
-    rectLattice = regular && isTRUE(all.equal(replicates[1],w)) && isTRUE(all.equal(s,floor(s))) && (s<w)
+    trojanic = regular && isTRUE(all.equal(replicates[1],w)) && isTRUE(all.equal(s,floor(s))) && (s<w)
     if (sqrLattice  && replicates[1]<4) {
       t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
       if (replicates[1]>2)
@@ -355,7 +361,7 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     } else if (sqrLattice  && replicates[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
       index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
       mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
-      TF=c(  seq_len(ntrts),seq_len(ntrts)[order(rep(0:(v-1),v))])
+      TF=c(seq_len(ntrts),seq_len(ntrts)[order(rep(0:(v-1),v))])
       for (i in seq_len(replicates[1]-2))
         TF=c(TF, seq_len(ntrts)[order(as.numeric(mols[,,i]))]) 
       TF=as.factor(TF)
@@ -369,13 +375,13 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
           1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
           6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]
       )) 
-    } else if (rectLattice  && isPrime(w) ) {
+    } else if (trojanic  && isPrime(w) ) {
       for (z in 1:(nunits/nblocks))
         for (j in 0: (w-1)) 
           for (k in 0: (w-1)) 
             TF[ (k + j*w)*nunits/nblocks + z]=(j+k*z)%%w + (z-1)*w +1
           TF=as.factor(TF)
-    } else if (rectLattice &&  nblocks%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
+    } else if (trojanic &&  nblocks%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
       index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==nblocks)
       mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])		
       TF=NULL
@@ -394,9 +400,12 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       MBB=matrix(0,nrow=nlevels(Blocks),ncol=nlevels(Blocks))
       MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
       MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Blocks))
-      MBB[seq_len(nlevels(Blocks)-nlevels(Main)),seq_len(nlevels(Blocks)-nlevels(Main))]=V[seq_len(nlevels(Blocks)-nlevels(Main)),seq_len(nlevels(Blocks)-nlevels(Main)),drop=FALSE]
-      MTT[seq_len(nlevels(TF)-1),seq_len(nlevels(TF)-1)]=V[(nlevels(Blocks)-nlevels(Main)+1):ncol(V),(nlevels(Blocks)-nlevels(Main)+1):ncol(V), drop=FALSE]
-      MTB[seq_len(nlevels(TF)-1), seq_len(nlevels(Blocks)-nlevels(Main)) ]=V[(nlevels(Blocks)-nlevels(Main)+1):ncol(V),seq_len(nlevels(Blocks)-nlevels(Main)),drop=FALSE]
+      indicb=seq_len(nlevels(Blocks)-nlevels(Main))
+      indict=seq_len(nlevels(TF)-1)
+      indicv=seq_len(ncol(V)-nlevels(Blocks)+nlevels(Main)) + nlevels(Blocks)-nlevels(Main)
+      MBB[indicb,indicb]=V[indicb,indicb,drop=FALSE]
+      MTT[indict,indict]=V[indicv,indicv,drop=FALSE]
+      MTB[indict,indicb]=V[indicv,indicb,drop=FALSE]
       perm=order(order(seq(nlevels(Blocks))%%blevels ==0 ))  
       MTB=MTB[,perm]
       MBB=MBB[perm,perm] 
@@ -412,23 +421,17 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
     ntrts=nlevels(Design[,ncol(Design)])
     effics=matrix(1,nrow=2*strata,ncol=2)
     bounds=rep(NA,2*strata)
-    nblocks=rep(NA,2*strata)
-    for (i in seq_len(strata)) {
-      nblocks[2*i-1]=nlevels(Design[,2*i-1])
-      nblocks[2*i]  =nlevels(Design[,2*i])
-    }
-    for (i in seq_len(strata)) { 
-      if (isTRUE(all.equal(max(replicates),min(replicates))) ) {
-        if ( isTRUE(all.equal(nunits%%nblocks[2*i-1],0))) 
-          bounds[2*i-1]=upper_bounds(nunits,ntrts,nblocks[2*i-1]) else if (hcf%%nblocks[2*i-1]==0) bounds[2*i-1]=1
-          if ( isTRUE(all.equal(nunits%%nblocks[2*i],0))) 
-            bounds[2*i]=upper_bounds(nunits,ntrts,nblocks[2*i]) else if (hcf%%nblocks[2*i]==0) bounds[2*i]=1  
-      }
-      if (ntrts>1 && nblocks[2*i-1]>1)
-        effics[2*i-1,]=optEffics(Design$Treatments,Design[,2*i-1],ntrts,nblocks[2*i-1])  
-      if (ntrts>1 && nblocks[2*i]>1)
-        effics[2*i,]  =optEffics(Design$Treatments,Design[,2*i],ntrts,nblocks[2*i])  
-    }
+    nblocks=unlist(lapply(1:(2*strata), function(i) {nlevels(Design[,i])})) 
+    
+    if (isTRUE(all.equal(max(replicates),min(replicates))) ) 
+      for (i in seq_len(2*strata))  
+        if ( isTRUE(all.equal(nunits%%nblocks[i],0))) 
+          bounds[i]=upper_bounds(nunits,ntrts,nblocks[i]) else if (hcf%%nblocks[i]==0) bounds[i]=1
+      
+    for (i in seq_len(2*strata))    
+      if (ntrts>1 && nblocks[i]>1)
+        effics[i,]=optEffics(Design$Treatments,Design[,i],ntrts,nblocks[i])  
+
     names=colnames(Design)
     efficiencies=data.frame(cbind( names[1:(2*strata)],levels,nblocks,effics, bounds)) 
     colnames(efficiencies)=c("Stratum","Levels","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
@@ -437,7 +440,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
       efficiencies=efficiencies[(levels>1),,drop=FALSE]
     efficiencies
   }
-  
   
   # ******************************************************************************************************************************************************** 
   # Carries out some input validation
@@ -542,7 +544,6 @@ blocks = function( treatments,replicates, rows=HCF(replicates),columns=NULL,sear
   nunits=sum(treatments*replicates)
   ntrts=sum(treatments)
   hcf=HCF(replicates)
-
   cumblocks=c(1,cumprod(rows*columns))
   if (prod(columns)>1) 
   stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Rows",i), paste("Columns", i) )})) else
