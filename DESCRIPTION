@@ -7,15 +7,17 @@ Author: R. N. Edmondson
 Maintainer: Rodney Edmondson <rodney.edmondson@gmail.com>
 Depends:
     R (>= 3.1.0)
-Description: Nested block designs for unstructured treatment sets where
-    blocks can be repeatedly nested and treatments can have different levels of
-    replication. Blocks are optimized hierarchically from the top down with each
-    set of nested blocks optimized within the levels of any existing higher-level
+Description: Nested block designs for unstructured treatment sets with simple blocks or
+     nested row-and-column blocks. Treatments can have any arbitrary
+    replication and blocks can be nested to any required feasible depth of nesting.
+    Blocks are optimized hierarchically from the top down with each
+    set of nested blocks optimized within the levels of any higher-level
     blocks. Block sizes are equal if the number of blocks exactly divides the number
     of plots, otherwise they differ by at most one plot. The design output is a
     data table giving a randomised allocation of treatments to blocks together with
-    a plan table showing treatments in blocks and a set of blocks-by-treatments
-    incidence matrices, one for each blocks stratum.
+    plans showing the allocation of treatments to blocks in the bottom stratum of the design. 
+    Achieved D and A-efficiency factors are shown for each blocks stratum together with an A-efficiency
+    upper bound where available.
 License: GPL(>= 2)
 URL: http://www.expdesigns.co.uk
 Suggests:

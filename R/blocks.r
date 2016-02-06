@@ -605,7 +605,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     replicates=fullreplicates
     ntrts=sum(treatments)
   }
-
   # Randomize
   D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
   D[]=lapply(D, as.factor)
@@ -634,13 +633,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       for (i in 2: rows[strata])
         rowhead=c(rowhead,paste("Blocks",i))
   }
-  
   for (i in seq_len(cumblocks[strata])) {
     Plan[[i]]=as.data.frame(matrix(baseblocks[((i-1)*rows[strata]*columns[strata]+1):(i*rows[strata]*columns[strata])],nrow=rows[strata],ncol=columns[strata],byrow=TRUE))
     colnames(Plan[[i]])=colhead
     rownames(Plan[[i]])=rowhead
   }
-
   names(Plan)=rcnames 
   # efficiencies
   Efficiencies=A_Efficiencies(Design)
