@@ -38,11 +38,11 @@ Constructs randomized nested and crossed block designs for unstructured treatmen
 and blocks can have any arbitrary feasible depth of nesting.
 }
 \details{
-The \code{blocksdesign} package constructs simple nested block designs or crossed block designs with arbitrary depth of nesting and arbitrary crossed
-or nested block designs in each nested stratum.
+The \code{blocksdesign} package constructs nested or crossed block designs with arbitrary number of nested strata and arbitrary nesting or crossing
+in each blocks stratum.
 
-The \code{treatments} and \code{replicates} vectors give a partition the total number of treatments into sets of equally replicated treatments where the
-\code{treatments} vector provides the required treatments partition and the \code{replicates} vector provides the replication numbers for each treatment set. 
+The \code{treatments} and \code{replicates} vectors give a partition of the total number of treatments into sets of equally replicated treatments where the
+\code{treatments} vector provides the required treatments partition and the \code{replicates} vector provides the required replication for each treatment set. 
 The sum of the cross-products of the \code{treatments} and \code{replicates} vectors is the total number of plots and treatments are numbered consecutively 
 according to the ordering of the consecutive treatment sets. 
   
