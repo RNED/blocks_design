@@ -111,7 +111,7 @@ blocks(treatments=6,replicates=6,rows=4)
 # 4 replicates of 13 treatments arranged in a 13 x 4 Youden rectangle 
 blocks(treatments=13,replicates=4,rows=13,columns=4)
 
-# 64 treatments x 2 replicates arranged in two main replicate blocks with an 8 x 8 row-and-column design nested within each main block
+# 64 treatments x 2 replicates with nested 8 x 8 row-and-column designs in two main blocks 
 blocks(treatments=64,replicates=2,rows=c(2,8),columns=c(1,8)) 
 
 # 2**9 treatments x 2 replicates in 2**9 blocks giving a fully saturated block design 
