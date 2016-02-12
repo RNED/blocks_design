@@ -664,16 +664,16 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   if (rowcol) {
   colhead=NULL
   for (i in 1: columns[strata])
-    colhead=c(colhead,paste("Columns",strata,"=",i))
+    colhead=c(colhead,paste("Columns",strata,i))
   rowhead=NULL
   if (rows[strata]>1)
   for (i in 1: rows[strata])
-    rowhead=c(rowhead,paste("Rows",strata,"=",i))
+    rowhead=c(rowhead,paste("Rows",strata,i))
   } else {
     colhead="treatments"
     rowhead=NULL
       for (i in 1: rows[strata])
-        rowhead=c(rowhead,paste("Blocks",strata,"=",i))
+        rowhead=c(rowhead,paste("Blocks",strata,i))
   }
   
   for (i in seq_len(cumblocks[strata])) {
