@@ -583,15 +583,16 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   fDesign=data.frame(cbind(fRows,fCols))[, order(c( seq(1,2*strata, by=2) ,seq(2,2*strata, by=2)))]
   } else {fDesign=data.frame(fRows)}
   fDesign[]=lapply(fDesign, as.factor) 
-  
+
   #permBlocks will randomise blocks in each stratum
   tempDesign=data.frame( do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
   permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
-  
+
   # names for plans
   rcnames=" "
   if (strata>1) {
     fRowIndex=do.call(cbind,lapply(1:(strata-1),function(i) { rep(rep(1:rows[i],each=cumblocks[strata]/rows[i]/cumblocks[i]),cumblocks[i])}))
+    
     if (rowcol) {
       fColIndex=do.call(cbind,lapply(1:(strata-1),function(i) {rep(rep(1:columns[i],each=cumblocks[strata]/rows[i]/cumblocks[i]/columns[i]),rows[i]*cumblocks[i])}))  
       fIndex=data.frame(cbind(fRowIndex,fColIndex))[, order(c( seq(1,2*(strata-1), by=2) ,seq(2,2*(strata-1), by=2)))]
@@ -604,7 +605,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   } else if (strata==1 & rowcol) {
     rcnames="Rows x Columns" 
   }
-  
+
   Design    = as.data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
   Blocks    = as.data.frame(Blocks[ rep(seq_len(nrow(Blocks)),  blocksizes ),] ) 
   Design[]  = lapply(Design, as.factor) 
@@ -654,11 +655,15 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
    Design[]  = lapply(Design, as.factor)
   colnames(Design)=c(stratumnames,"Treatments")
   rownames(Design)=NULL
-  
+  print(fDesign)
+  print(Design)
   #Plan
   V=split(Design[,ncol(Design)],rep(1:cumblocks[strata+1],blocksizes))
+  #print(do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x })) )
+  Plan=as.data.frame(cbind(fDesign, rep("",length(V)), do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
+  colnames(Plan)=c(stratumnames,"Plots",rep(1:max(blocksizes)))
+  print(Plan)
   baseblocks=unlist(lapply(seq_len(length(V)), function(r){ paste( "  ", paste(format(V[[r]], width=nchar(sum(treatments)) ), collapse = " "))}))
-  Plan=vector(mode="list",length=cumblocks[strata+1]/rows[strata]/columns[strata]  )
   
   # labels
   if (rowcol) {
@@ -676,12 +681,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         rowhead=c(rowhead,paste("Blocks",strata,i))
   }
   
-  for (i in seq_len(cumblocks[strata])) {
-    Plan[[i]]=as.data.frame(matrix(baseblocks[((i-1)*rows[strata]*columns[strata]+1):(i*rows[strata]*columns[strata])],nrow=rows[strata],ncol=columns[strata],byrow=TRUE))
-    colnames(Plan[[i]])=colhead
-    rownames(Plan[[i]])=rowhead
-  }
-  names(Plan)=rcnames
+ # names(Plan)=rcnames
   # efficiencies
   if (rowcol) Efficiencies=A_rcEfficiencies(Design) else Efficiencies=A_Efficiencies(Design)
   row.names(Efficiencies)=NULL
