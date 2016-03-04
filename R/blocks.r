@@ -663,8 +663,37 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     rownames(Design)=NULL
     #Plan
     V=split(Design[,ncol(Design)],rep(1:cumblocks[strata+1],blocksizes))
-    Plots=rep("",length(V))
-    Plan=as.data.frame(cbind(fDesign,Plots , do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
+    if (!rowcol | columns[length(columns)]==1) {
+      Plots=rep("",length(V))
+      Plan=as.data.frame(cbind(fDesign,Plots , do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
+    } else {
+      ncols=columns[length(columns)]
+      nrows=rows[length(rows)]
+      squares=cumblocks[length(cumblocks)-1]
+      columns[length(columns)]=1
+      cumblocks=c(1,cumprod(rows*columns))
+      Blocks=data.frame(do.call(cbind,lapply(1:strata,function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
+      fRows=do.call(cbind,lapply(1:strata,function(i) {(Blocks[,i]-1)*rows[i]+rep(rep(1:rows[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i]),cumblocks[i])}))
+      fCols=do.call(cbind,lapply(1:strata,function(i) {(Blocks[,i]-1)*columns[i]+rep(rep(1:columns[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i]/columns[i]),rows[i]*cumblocks[i])}))  
+      fDesign=data.frame(cbind(fRows,fCols))[, order(c( seq(1,2*strata, by=2) ,seq(2,2*strata, by=2)))] 
+      colnames(fDesign)=stratumnames
+      fDesign=fDesign[-ncol(fDesign)] 
+      fDesign[]=lapply(fDesign, as.factor) 
+      X=lapply(V, paste, collapse = " ") 
+      plan=matrix("",nrow=squares*nrows,ncol=squares*ncols)
+      for (z in 1: squares)
+      for (i in 1:nrows)
+      for (j in 1:ncols)
+       plan[(z-1)*nrows+i, (z-1)*ncols+j] =X[[(z-1)*nrows*ncols+(i-1)*ncols + j]]
+      Columns=rep("",nrow(fDesign))
+      Plan=as.data.frame(cbind(fDesign,Columns,plan))
+
+    }
+    
+    print(Design)
+    print(Plan)
+    #print(f)
+    #print(V)
     #colnames(Plan)=c(stratumnames,"Plots",rep(1:max(blocksizes)))
     # efficiencies
     if (rowcol) Efficiencies=A_rcEfficiencies(Design) else Efficiencies=A_Efficiencies(Design)
