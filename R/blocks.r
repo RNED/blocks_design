@@ -687,13 +687,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
        plan[(z-1)*nrows+i, (z-1)*ncols+j] =X[[(z-1)*nrows*ncols+(i-1)*ncols + j]]
       Columns=rep("",nrow(fDesign))
       Plan=as.data.frame(cbind(fDesign,Columns,plan))
-
+      names(Plan)[names(Plan) == 'Columns'] <- paste('Columns', length(columns))
     }
-    
-    print(Design)
-    print(Plan)
-    #print(f)
-    #print(V)
     #colnames(Plan)=c(stratumnames,"Plots",rep(1:max(blocksizes)))
     # efficiencies
     if (rowcol) Efficiencies=A_rcEfficiencies(Design) else Efficiencies=A_Efficiencies(Design)
