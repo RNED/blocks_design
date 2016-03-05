@@ -661,10 +661,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     Treatments=data.frame(table(Design[,"Treatments"]))
     Treatments[]=lapply(Treatments, as.factor) 
     colnames(Treatments)=c("Treatments","Replicates")
-    
     # omit single level row or column strata in row and column designs
-    if (rowcol) Design[c(which(as.numeric(rbind(rows,columns))==1))]=NULL
-    if (rowcol) Plan[c(which(as.numeric(rbind(rows,columns))==1 ))]=NULL
+    if (rowcol) Design[c(which(as.numeric(rbind(rows,columns))==1))]= list(NULL) 
+    if (rowcol) Plan[c(which(as.numeric(rbind(rows,columns))==1 ))]= list(NULL) 
     # efficiencies
     Efficiencies=A_Efficiencies(Design)
     row.names(Efficiencies)=NULL
