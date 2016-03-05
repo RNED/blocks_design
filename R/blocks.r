@@ -558,13 +558,13 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
   if (isTRUE(all.equal(length(rows),0))) rows=1
-  if (isTRUE(all.equal(length(columns),0))) columns=rep(1,length(rows))
+  if (length(rows)>1 & any(rows==1) & length(columns)==0) stop("Strata with a single block are meaningless in nested designs")
+  if (isTRUE(all.equal(length(columns),0) )) columns=rep(1,length(rows))
   if (!isTRUE(all.equal(length(columns),length(rows)))) stop("The number of row rows strata and the number of column rows strata must be equal")
   testout=testInputs(treatments,replicates,rows,columns,seed) 
   if (!isTRUE(testout)) stop(testout)
   set.seed(seed)
   strata=length(rows)
-  
   if (max(replicates)==1) {
     ntrts=sum(treatments)
     treatments=as.factor(sample(ntrts))
@@ -607,8 +607,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     tempDesign=data.frame( do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
     permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
    
-     # Design data frame omitting any block factors with a single level
-
+     # Design data frame
     Design  = as.data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
     Blocks  = as.data.frame(Blocks[ rep(seq_len(nrow(Blocks)),  blocksizes ),] ) 
     Design[]= lapply(Design, as.factor) 
@@ -629,6 +628,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       }
       if (!is.null(TF)) break
     }
+
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
     #add back single rep treatments
     if ( min(fullreplicates)==1 && max(fullreplicates)>1) {
@@ -654,7 +654,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     TF=D[ do.call(order, D),][,ncol(D)]
     blocksizes=blocksizes[permBlocks]
     colnames(fDesign)=stratumnames
-    if (rowcol) fDesign=fDesign[,c(as.numeric(rbind(rows,columns))>1)] else fDesign=fDesign[,c(rows)>1]
+    
+   
     
     Design =fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),]
     Treatments=TF
@@ -676,10 +677,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       fRows=do.call(cbind,lapply(1:strata,function(i) {(Blocks[,i]-1)*rows[i]+rep(rep(1:rows[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i]),cumblocks[i])}))
       fCols=do.call(cbind,lapply(1:strata,function(i) {(Blocks[,i]-1)*columns[i]+rep(rep(1:columns[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i]/columns[i]),rows[i]*cumblocks[i])}))  
       fDesign=data.frame(cbind(fRows,fCols))[, order(c( seq(1,2*strata, by=2) ,seq(2,2*strata, by=2)))] 
+      columns[length(columns)]=ncols
       colnames(fDesign)=stratumnames
       fDesign=fDesign[-ncol(fDesign)] 
       fDesign[]=lapply(fDesign, as.factor) 
-      X=lapply(V, paste, collapse = " ") 
+      X=lapply(V, paste, collapse = ",") 
       plan=matrix("",nrow=squares*nrows,ncol=squares*ncols)
       for (z in 1: squares)
       for (i in 1:nrows)
@@ -689,14 +691,18 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       Plan=as.data.frame(cbind(fDesign,Columns,plan))
       names(Plan)[names(Plan) == 'Columns'] <- paste('Columns', length(columns))
     }
-    #colnames(Plan)=c(stratumnames,"Plots",rep(1:max(blocksizes)))
-    # efficiencies
-    if (rowcol) Efficiencies=A_rcEfficiencies(Design) else Efficiencies=A_Efficiencies(Design)
-      row.names(Efficiencies)=NULL
     # treatment replications
     Treatments=data.frame(table(Design[,"Treatments"]))
     Treatments[]=lapply(Treatments, as.factor) 
     colnames(Treatments)=c("Treatments","Replicates")
+    
+    # omit single level row or column strata in row and column designs
+    if (rowcol) Design[c(which(as.numeric(rbind(rows,columns))==1))]=NULL
+    if (rowcol) Plan[c(which(as.numeric(rbind(rows,columns))==1 ))]=NULL
+    # efficiencies
+    if (rowcol) Efficiencies=A_rcEfficiencies(Design) else Efficiencies=A_Efficiencies(Design)
+    row.names(Efficiencies)=NULL
   }
+  
   list(Treatments=Treatments,Efficiencies=Efficiencies,Plan=Plan,Design=Design,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
