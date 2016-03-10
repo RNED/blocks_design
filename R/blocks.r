@@ -526,6 +526,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # ********************************************************************************************************************************************************     
   if (isTRUE(all.equal(length(rows),0))) rows=1
   if (length(rows)>1 && any(rows==1) && length(columns)==0) rows=rows[-which(rows==1)]
+  if (length(rows)>1 &&  length(columns)>1 && rows[length(rows)]==1 && columns[length(columns)]==1) {
+    rows=rows[-length(rows)]
+    columns=columns[-length(columns)]
+  }
   if (isTRUE(all.equal(length(columns),0) )) columns=rep(1,length(rows))
   if (!isTRUE(all.equal(length(columns),length(rows)))) stop("The number of row rows strata and the number of column rows strata must be equal")
   if (sum(treatments)==1) stop("Designs with only one treatment are not useful for comparative experiments")
@@ -626,12 +630,19 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         FM=matrix( fullblocksizes[index], nrow=rows[strata], ncol=columns[strata] ,byrow=TRUE)
         BM=matrix( blocksizes[index], nrow=rows[strata], ncol=columns[strata] ,byrow=TRUE)
         colsum=apply(FM,2,sum)
-        if (max(colsum)-min(colsum)>1) {
+        counter=0
+        while (max(colsum)-min(colsum)>1) {
+          counter=counter+1
           max=which(colsum==max(colsum))
           min=which(colsum==min(colsum))
+          max=max[sample.int(length(max),1)]
+          min=min[sample.int(length(min),1)]
           for (t in 1 :rows[strata]) 
            if ( (FM[t,max]-FM[t,min])>0 & BM[t,max]==BM[t,min] ) FM[t,c(max,min)]=FM[t,c(min,max)]
-          }
+          colsum=apply(FM,2,sum)
+          if (counter>99) break
+        }
+        if (counter>99) warning("Unable to find an equal or near-equal allocation of column sizes - perhaps try a different design?") 
         temp=c(temp,as.vector(t(FM)))
       }
       fullblocksizes=temp
