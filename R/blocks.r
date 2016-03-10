@@ -532,7 +532,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   testout=testInputs(treatments,replicates,rows,columns,seed) 
   if (!isTRUE(testout)) stop(testout)
   set.seed(seed)
-  strata=length(rows)
   if (max(replicates)==1) {
     ntrts=sum(treatments)
     treatments=as.factor(sample(ntrts))
@@ -549,6 +548,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     Plan[]  = lapply(Plan, as.factor)
   } else {
     # Design factors
+    strata=length(rows)
     cumblocks=c(1,cumprod(rows*columns))
     Blocks=data.frame(do.call(cbind,lapply(1:strata,function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
     fRows=do.call(cbind,lapply(1:strata,function(i) {(Blocks[,i]-1)*rows[i]+rep(  rep(1:rows[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i])  ,cumblocks[i])}))
@@ -561,7 +561,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     #permBlocks will randomise whole blocks in nested strata or will randomize rows and columns in each nested stratum of a crossed design 
     tempDesign=data.frame( do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
     permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
-    hcf=HCF(replicates[replicates>1])
     nunits=sum(treatments[replicates>1]*replicates[replicates>1])
     ntrts=sum(treatments[replicates>1])
     # design
@@ -576,13 +575,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     fullreps=rep(replicates,treatments)
     trts=rep(1:sum(treatments))[fullreps>1]
     reps=fullreps[fullreps>1]
+    hcf=HCF(replicates[replicates>1])
     for ( z in seq_len(10)) {
       TF=rep(rep(trts,reps/hcf),hcf)
       rand=sample(nunits)
       TF=as.factor( TF[rand][order(rep(seq_len(hcf),each=nunits/hcf)[rand])] )
       for ( i in seq_len(strata)) {
-        if (rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)  ) 
-         if(rowcol) TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1]) else TF=rowsOpt(TF,Blocks[,i],Design[,i])
+        if (rowcol &&  rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
+        if (!rowcol && rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,Blocks[,i],Design[,i])
         if (is.null(TF)) break
         if (rowcol && columns[i]>1 ) TF=colsOpt(TF,Blocks[,i],Design[,2*i],Design[,2*i-1])
         if (is.null(TF)) break
@@ -592,12 +592,27 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
     #add back single rep treatments
     if ( min(replicates)==1 && max(replicates)>1) {
-      print(TF)
+
      nunits=sum(treatments*replicates)
      ntrts=sum(treatments)
       fullblocksizes=nunits
       for (i in seq_len(strata))
         fullblocksizes=Sizes(fullblocksizes,i)
+    if (rowcol) {
+      subrows=rep(  1:(prod(rows*columns)/columns[strata]), each=columns[strata])
+      FB=split(fullblocksizes,subrows)
+      BB=split(blocksizes,subrows)
+      for (z in 1 : (prod(rows*columns)/columns[strata]) ) {
+        diff=FB[[z]]-BB[[z]]
+        while (max(diff)-min(diff)>1) {
+          min=which(diff==min(diff))
+          max=which(diff==max(diff))
+          FB[[z]][c(min,max)]=FB[[z]][c(max,min)]
+          diff=FB[[z]]-BB[[z]]
+        }
+      }
+      fullblocksizes=unlist(FB)
+    }
       sblocksizes=fullblocksizes-blocksizes
       TF=as.numeric(levels(TF))[TF]
       addTF=rep(1:sum(treatments))[fullreps==1]
@@ -610,7 +625,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         repTF[[addBlocks[i]]]=(append( repTF[[addBlocks[i]]] ,  singTF[[i]]))
       TF=as.factor(unlist(repTF))
       blocksizes=fullblocksizes
-     print(TF)
     }
     # Randomize
     D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
@@ -654,7 +668,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
        plan[(z-1)*nrows+i, (z-1)*ncols+j] =X[[(z-1)*nrows*ncols+(i-1)*ncols + j]]
       Columns=rep("",nrow(fDesign))
       Plan=as.data.frame(cbind(fDesign,Columns,plan))
-      names(Plan)[names(Plan) == 'Columns'] <- paste('Columns', length(columns))
+      names(Plan)[names(Plan) == 'Columns'] = paste('Columns', length(columns))
     }
     # treatment replications
     TreatmentsTable=data.frame(table(Design[,"Treatments"]))
