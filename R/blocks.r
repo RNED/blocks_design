@@ -590,6 +590,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       if (!is.null(TF)) break
     }
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
+    
     #add back single rep treatments
     if ( min(replicates)==1 && max(replicates)>1) {
 
@@ -598,6 +599,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       fullblocksizes=nunits
       for (i in seq_len(strata))
         fullblocksizes=Sizes(fullblocksizes,i)
+      
+      
+      # temporary fix for adding single rep treatments to row-and-column designs - may not always work and needs a lot of improvemnt 
     if (rowcol) {
       subrows=rep(  1:(prod(rows*columns)/columns[strata]), each=columns[strata])
       FB=split(fullblocksizes,subrows)
@@ -612,7 +616,31 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         }
       }
       fullblocksizes=unlist(FB)
+      
+      
+      if (strata>1) main=prod(rows[strata-1]*columns[strata-1]) else main=1
+      nest=rows[strata]*columns[strata]
+      temp=NULL
+      for (z in 1 : main) {
+        index=rep( (nest*(z-1)+1):(nest*z)  )
+        FM=matrix( fullblocksizes[index], nrow=rows[strata], ncol=columns[strata] ,byrow=TRUE)
+        BM=matrix( blocksizes[index], nrow=rows[strata], ncol=columns[strata] ,byrow=TRUE)
+        colsum=apply(FM,2,sum)
+        if (max(colsum)-min(colsum)>1) {
+          max=which(colsum==max(colsum))
+          min=which(colsum==min(colsum))
+          for (t in 1 :rows[strata]) 
+           if ( (FM[t,max]-FM[t,min])>0 & BM[t,max]==BM[t,min] ) FM[t,c(max,min)]=FM[t,c(min,max)]
+          }
+        temp=c(temp,as.vector(t(FM)))
+      }
+      fullblocksizes=temp
     }
+      
+      
+      
+      
+      
       sblocksizes=fullblocksizes-blocksizes
       TF=as.numeric(levels(TF))[TF]
       addTF=rep(1:sum(treatments))[fullreps==1]
@@ -626,6 +654,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       TF=as.factor(unlist(repTF))
       blocksizes=fullblocksizes
     }
+      
+      
+      
+      
+      
     # Randomize
     D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
     D[]=lapply(D, as.factor)
