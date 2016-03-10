@@ -616,11 +616,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         }
       }
       fullblocksizes=unlist(FB)
-      
-      
-      if (strata>1) main=prod(rows[strata-1]*columns[strata-1]) else main=1
+
+      if (strata>1) main=prod(rows[1:(strata-1)]*columns[1:(strata-1)]) else main=1
       nest=rows[strata]*columns[strata]
       temp=NULL
+     
       for (z in 1 : main) {
         index=rep( (nest*(z-1)+1):(nest*z)  )
         FM=matrix( fullblocksizes[index], nrow=rows[strata], ncol=columns[strata] ,byrow=TRUE)
@@ -636,10 +636,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       }
       fullblocksizes=temp
     }
-      
-      
-      
-      
       
       sblocksizes=fullblocksizes-blocksizes
       TF=as.numeric(levels(TF))[TF]
