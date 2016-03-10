@@ -571,6 +571,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     blocksizes=nunits
     for (i in seq_len(strata))
       blocksizes=Sizes(blocksizes,i) 
+  
     Design  = data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
     Blocks  = data.frame(Blocks[ rep(seq_len(nrow(Blocks)),  blocksizes ),] ) 
     Design[]= lapply(Design, as.factor) 
@@ -595,59 +596,17 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     }
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
     
-    #add back single rep treatments
-    if ( min(replicates)==1 && max(replicates)>1) {
+    
+    
 
-     nunits=sum(treatments*replicates)
-     ntrts=sum(treatments)
+    
+    #add back single rep treatments for single stratum blocks only
+    if ( min(replicates)==1 && max(replicates)>1) {
+      nunits=sum(treatments*replicates)
+      ntrts=sum(treatments)
       fullblocksizes=nunits
       for (i in seq_len(strata))
         fullblocksizes=Sizes(fullblocksizes,i)
-      
-      
-      # temporary fix for adding single rep treatments to row-and-column designs - may not always work and needs a lot of improvemnt 
-    if (rowcol) {
-      subrows=rep(  1:(prod(rows*columns)/columns[strata]), each=columns[strata])
-      FB=split(fullblocksizes,subrows)
-      BB=split(blocksizes,subrows)
-      for (z in 1 : (prod(rows*columns)/columns[strata]) ) {
-        diff=FB[[z]]-BB[[z]]
-        while (max(diff)-min(diff)>1) {
-          min=which(diff==min(diff))
-          max=which(diff==max(diff))
-          FB[[z]][c(min,max)]=FB[[z]][c(max,min)]
-          diff=FB[[z]]-BB[[z]]
-        }
-      }
-      fullblocksizes=unlist(FB)
-
-      if (strata>1) main=prod(rows[1:(strata-1)]*columns[1:(strata-1)]) else main=1
-      nest=rows[strata]*columns[strata]
-      temp=NULL
-     
-      for (z in 1 : main) {
-        index=rep( (nest*(z-1)+1):(nest*z)  )
-        FM=matrix( fullblocksizes[index], nrow=rows[strata], ncol=columns[strata] ,byrow=TRUE)
-        BM=matrix( blocksizes[index], nrow=rows[strata], ncol=columns[strata] ,byrow=TRUE)
-        colsum=apply(FM,2,sum)
-        counter=0
-        while (max(colsum)-min(colsum)>1) {
-          counter=counter+1
-          max=which(colsum==max(colsum))
-          min=which(colsum==min(colsum))
-          max=max[sample.int(length(max),1)]
-          min=min[sample.int(length(min),1)]
-          for (t in 1 :rows[strata]) 
-           if ( (FM[t,max]-FM[t,min])>0 & BM[t,max]==BM[t,min] ) FM[t,c(max,min)]=FM[t,c(min,max)]
-          colsum=apply(FM,2,sum)
-          if (counter>99) break
-        }
-        if (counter>99) warning("Unable to find an equal or near-equal allocation of column sizes - perhaps try a different design?") 
-        temp=c(temp,as.vector(t(FM)))
-      }
-      fullblocksizes=temp
-    }
-      
       sblocksizes=fullblocksizes-blocksizes
       TF=as.numeric(levels(TF))[TF]
       addTF=rep(1:sum(treatments))[fullreps==1]
@@ -657,15 +616,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       sblocks=rep( 1:length(sblocksizes),sblocksizes)
       singTF=split(addTF,sblocks)
       for (i in 1:length(addBlocks)) 
-        repTF[[addBlocks[i]]]=(append( repTF[[addBlocks[i]]] ,  singTF[[i]]))
+        repTF[[addBlocks[i]]]=sample(append( repTF[[addBlocks[i]]] ,  singTF[[i]]))
       TF=as.factor(unlist(repTF))
       blocksizes=fullblocksizes
     }
-      
-      
-      
-      
-      
+    
+    
+  
+
     # Randomize
     D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
     D[]=lapply(D, as.factor)
