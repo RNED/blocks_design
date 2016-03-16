@@ -328,6 +328,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ******************************************************************************************************************************************************** 
   rowsOpt=function(TF,Main,Blocks) { 
+    tlevels=levels(TF)
     nblocks=nlevels(Blocks)
     mblocks=nlevels(Main)
     v=sqrt(ntrts)  
@@ -343,12 +344,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         for (i in 0: (v-1)) 
           t=c(t,(rep(0:(v-1))+i)%%v + 2*v)
         TF=  as.factor(rep(seq_len(v*v),replicates[1])[order(t)])
+        levels(TF)=tlevels
     } else if (sqrLattice  &&  replicates[1]<(v+2)  && isPrime(v) ) {
       t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
       for (z in seq_len(replicates[1]-2))
         for (j in 0: (v-1)) 
           t=c(t,(rep(0:(v-1))*z +j)%%v + v*(z+1) )
         TF=as.factor(rep(seq_len(v*v),replicates[1])[order(t)])
+        levels(TF)=tlevels
     } else if (sqrLattice  && replicates[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
       index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
       mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
@@ -356,6 +359,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       for (i in seq_len(replicates[1]-2))
         TF=c(TF, seq_len(ntrts)[order(as.numeric(mols[,,i]))]) 
       TF=as.factor(TF)
+      levels(TF)=tlevels
     } else if (sqrLattice  && v==10  && replicates[1]==4) {
       TF=as.factor(c(
         seq_len(100),seq_len(100)[order(rep(0:9,10))],
@@ -366,12 +370,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
           1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
           6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]
       )) 
+      levels(TF)=tlevels
     } else if (trojanic  && isPrime(w) ) {
       for (z in 1:(nunits/nblocks))
         for (j in 0: (w-1)) 
           for (k in 0: (w-1)) 
             TF[ (k + j*w)*nunits/nblocks + z]=(j+k*z)%%w + (z-1)*w +1
           TF=as.factor(TF)
+          levels(TF)=tlevels
     } else if (trojanic &&  nblocks%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
       index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==nblocks)
       mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])		
@@ -381,6 +387,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
           for (k in seq_len(nunits/nblocks))
             TF=c(TF,mols[i,j,k]+(k-1)*w)
       TF=as.factor(TF)
+      levels(TF)=tlevels
     } else {
       TF=NonSingular(TF,Main,Blocks,rep(1,length(TF)))
       if (is.null(TF)) return(TF)
@@ -413,7 +420,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     for (j in seq_len(nblocks)) {
       rowsizes=rep(blocksizes[j]%/%rows[stratum],rows[stratum])
       resid=blocksizes[j]-sum(rowsizes)
-      if (resid>0)
+      if (resid>0) 
         rowsizes[1:resid]=rowsizes[1:resid]+1
       rowcolsizes=vector(mode = "list", length =rows[stratum])
       for ( z in 1:rows[stratum])
@@ -426,7 +433,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
           shift=shift+resid
         }
       }
-      newblocksizes=c(newblocksizes , unlist(rowcolsizes))
+      newblocksizes=c(newblocksizes,unlist(rowcolsizes))
     }
   newblocksizes
   }
@@ -552,6 +559,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     Plan[]  = lapply(Plan, as.factor)
   } else {
     # Design factors
+    fulltreatments=treatments
+    fullreplicates=replicates
+    treatments=treatments[replicates>1]
+    replicates=replicates[replicates>1]
     strata=length(rows)
     cumblocks=c(1,cumprod(rows*columns))
     Blocks=data.frame(do.call(cbind,lapply(1:strata,function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
@@ -565,22 +576,24 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     #permBlocks will randomise whole blocks in nested strata or will randomize rows and columns in each nested stratum of a crossed design 
     tempDesign=data.frame( do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
     permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
-    nunits=sum(treatments[replicates>1]*replicates[replicates>1])
-    ntrts=sum(treatments[replicates>1])
+    nunits=sum(treatments*replicates)
+    ntrts=sum(treatments)
     # design
     blocksizes=nunits
-    for (i in seq_len(strata))
+    regular=TRUE
+    for (i in seq_len(strata)) {
       blocksizes=Sizes(blocksizes,i) 
-  
+      if (max(blocksizes)>min(blocksizes)) regular=FALSE
+    }
     Design  = data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
-    Blocks  = data.frame(Blocks[ rep(seq_len(nrow(Blocks)),  blocksizes ),] ) 
+    Blocks  = data.frame(Blocks[rep(seq_len(nrow(Blocks)),  blocksizes ),]) 
     Design[]= lapply(Design, as.factor) 
     Blocks[]= lapply(Blocks, as.factor) 
     # Treatment factors and levels ignoring single replicate treatments
-    fullreps=rep(replicates,treatments)
-    trts=rep(1:sum(treatments))[fullreps>1]
-    reps=fullreps[fullreps>1]
-    hcf=HCF(replicates[replicates>1])
+    reps=rep(fullreplicates,fulltreatments)
+    trts=rep(1:sum(fulltreatments))[reps>1]
+    reps=reps[reps>1]
+    hcf=HCF(replicates)
     for ( z in seq_len(10)) {
       TF=rep(rep(trts,reps/hcf),hcf)
       rand=sample(nunits)
@@ -595,13 +608,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       if (!is.null(TF)) break
     }
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
-    
-    
-    
-
-    
-    #add back single rep treatments for single stratum blocks only
-    if ( min(replicates)==1 && max(replicates)>1) {
+    # add back single rep treatments for nested stratum blocks only
+    replicates=fullreplicates
+    treatments=fulltreatments
+    if ( min(replicates)==1 && max(replicates)>1 && ( max(columns)==1 || regular==TRUE ) ) {
+      fullreps=rep(replicates,treatments)
       nunits=sum(treatments*replicates)
       ntrts=sum(treatments)
       fullblocksizes=nunits
@@ -610,7 +621,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       sblocksizes=fullblocksizes-blocksizes
       TF=as.numeric(levels(TF))[TF]
       addTF=rep(1:sum(treatments))[fullreps==1]
-      blocks=rep( 1:length(blocksizes),blocksizes)
+      blocks=rep(1:length(blocksizes),blocksizes)
       repTF=split(TF,blocks)
       addBlocks=which(sblocksizes>0)
       sblocks=rep( 1:length(sblocksizes),sblocksizes)
@@ -620,9 +631,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       TF=as.factor(unlist(repTF))
       blocksizes=fullblocksizes
     }
+    if ( min(replicates)==1 && max(replicates)>1 &&  max(columns)>1 & regular==FALSE )  
+       stop("Algorithm cannot deal with irregular row-and-column designs containing single replicate treatents ")
     
-    
-  
 
     # Randomize
     D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
