@@ -632,7 +632,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       blocksizes=fullblocksizes
     }
     if ( min(replicates)==1 && max(replicates)>1 &&  max(columns)>1 & regular==FALSE )  
-       stop("Algorithm cannot deal with irregular row-and-column designs containing single replicate treatents ")
+       warning("Algorithm cannot deal with irregular row-and-column designs containing single replicate treatents ")
     
 
     # Randomize
