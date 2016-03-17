@@ -324,70 +324,68 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     TF=Optimise(TF,Columns,MTT,MBB,MTB,Blocks)
     return(TF)
   }  
-  # ******************************************************************************************************************************************************** 
+  # ********************************************************* ,labels=newlabels*********************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ******************************************************************************************************************************************************** 
   rowsOpt=function(TF,Main,Blocks) { 
-    tlevels=levels(TF)
-    nblocks=nlevels(Blocks)
-    mblocks=nlevels(Main)
-    v=sqrt(ntrts)  
-    regrep=isTRUE(all.equal(max(replicates),min(replicates)))
-    regular=isTRUE(all.equal(nunits%%nblocks,0)) && isTRUE(all.equal(hcf%%mblocks,0))
-    sqrLattice  = regular && isTRUE(all.equal(v,floor(v))) && isTRUE(all.equal(nunits,v*nblocks))
-    w=sqrt(nblocks)
-    s=ntrts/w
-    trojanic = regular && isTRUE(all.equal(replicates[1],w)) && isTRUE(all.equal(s,floor(s))) && (s<w)
-    if (sqrLattice  && replicates[1]<4) {
+    newlabels=levels(TF)
+    mreps=hcf/nlevels(Main)
+    b=nlevels(Blocks) #number of nested blocks
+    v=sqrt(ntrts)  # dimension of a lattice square
+    k=nunits/b  # block size
+    r=nunits/ntrts # replication
+    w=sqrt(b) # dimension of a set of k Latin squares for a Trojanic blocks design
+    regrep = isTRUE(all.equal(max(replicates),min(replicates)))
+    regblocks = isTRUE(all.equal(k,floor(k))) && isTRUE(all.equal(mreps,floor(mreps))) 
+    sqrLattice  = regrep && regblocks  && isTRUE(all.equal(v,floor(v))) && isTRUE(all.equal(k,v))
+    trojanic = regrep && regblocks  && isTRUE(all.equal(r,w))  && (k<w)
+    if (sqrLattice  && r<4) {
       t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
-      if (replicates[1]>2)
+      if (r>2)
         for (i in 0: (v-1)) 
           t=c(t,(rep(0:(v-1))+i)%%v + 2*v)
-        TF=  as.factor(rep(seq_len(v*v),replicates[1])[order(t)])
-        levels(TF)=tlevels
-    } else if (sqrLattice  &&  replicates[1]<(v+2)  && isPrime(v) ) {
+        TF=  factor(rep(seq_len(v*v),r)[order(t)] ,labels=newlabels )
+    } else if (sqrLattice  &&  r<(v+2)  && isPrime(v) ) {
       t=c(rep(0:(v-1),each=v),rep(0:(v-1),v)+v)
-      for (z in seq_len(replicates[1]-2))
+      if (r>2)
+      for (z in seq_len(r-2))
         for (j in 0: (v-1)) 
           t=c(t,(rep(0:(v-1))*z +j)%%v + v*(z+1) )
-        TF=as.factor(rep(seq_len(v*v),replicates[1])[order(t)])
-        levels(TF)=tlevels
-    } else if (sqrLattice  && replicates[1]<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
+        TF=factor(rep(seq_len(v*v),r)[order(t)] ,labels=newlabels)
+    } else if (sqrLattice  && r<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
       index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
       mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
-      TF=c(seq_len(ntrts),seq_len(ntrts)[order(rep(0:(v-1),v))])
-      for (i in seq_len(replicates[1]-2))
-        TF=c(TF, seq_len(ntrts)[order(as.numeric(mols[,,i]))]) 
-      TF=as.factor(TF)
-      levels(TF)=tlevels
-    } else if (sqrLattice  && v==10  && replicates[1]==4) {
-      TF=as.factor(c(
+      t=c(seq_len(ntrts),seq_len(ntrts)[order(rep(0:(v-1),v))])
+      if (r>2)
+      for (i in seq_len(r-2))
+        t=c(t, seq_len(ntrts)[order(as.numeric(mols[,,i]))]) 
+      TF=factor(t,labels=newlabels)
+    } else if (sqrLattice  && v==10  && r==4) {
+      TF=factor(c(
         seq_len(100),seq_len(100)[order(rep(0:9,10))],
         seq_len(100)[order(c(
           1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
           5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8))],
         seq_len(100)[order(c(
           1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
-          6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]
-      )) 
-      levels(TF)=tlevels
+          6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]),
+        labels=newlabels)
     } else if (trojanic  && isPrime(w) ) {
-      for (z in 1:(nunits/nblocks))
-        for (j in 0: (w-1)) 
-          for (k in 0: (w-1)) 
-            TF[ (k + j*w)*nunits/nblocks + z]=(j+k*z)%%w + (z-1)*w +1
-          TF=as.factor(TF)
-          levels(TF)=tlevels
-    } else if (trojanic &&  nblocks%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
-      index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==nblocks)
+      t=rep(NA,k*r*r)
+      for (z in seq_len(k))
+        for (y in 0: (r-1)) 
+          for (x in 0: (r-1)) 
+            t[(x + y*w)*k + z]=(y+x*z)%%w + (z-1)*w +1
+          TF=factor(t,labels=newlabels)
+    } else if (trojanic &&  b%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
+      index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==b)
       mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])		
       TF=NULL
       for (i in  seq_len(w))
         for (j in seq_len(w))
-          for (k in seq_len(nunits/nblocks))
-            TF=c(TF,mols[i,j,k]+(k-1)*w)
-      TF=as.factor(TF)
-      levels(TF)=tlevels
+          for (x in seq_len(k))
+            TF=c(TF,mols[i,j,x]+(x-1)*w)
+      TF=factor(TF,labels=newlabels)
     } else {
       TF=NonSingular(TF,Main,Blocks,rep(1,length(TF)))
       if (is.null(TF)) return(TF)
@@ -404,7 +402,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       MBB[indicb,indicb]=V[indicb,indicb,drop=FALSE]
       MTT[indict,indict]=V[indicv,indicv,drop=FALSE]
       MTB[indict,indicb]=V[indicv,indicb,drop=FALSE]
-      perm=order(order(seq(nlevels(Blocks))%%blevels ==0 ))  
+      perm=order(order(seq(nlevels(Blocks))%%blevels ==0))  
       MTB=MTB[,perm]
       MBB=MBB[perm,perm] 
       TF=Optimise(TF,Blocks,MTT,MBB,MTB,Main)
@@ -437,7 +435,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     }
   newblocksizes
   }
-  
   # ******************************************************************************************************************************************************** 
   # Calculates D and A-efficiency factors for treatment factor TF assuming block factor BF
   # ********************************************************************************************************************************************************
@@ -475,7 +472,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     if (anyNA(treatments) | anyNA(replicates)) return(" NA values not allowed")
     if (any(!is.finite(treatments)) | any(!is.finite(replicates)) | any(is.nan(treatments)) | any(is.nan(replicates))) 
       return(" Treatments and replicates can contain only finite integers ")
-    if ( length(treatments)!=length(replicates)) 
+    if ( length(treatments)!=length(replicates))
       return(paste("The number of treatments sets = " , length(treatments) , " does not equal the number of replication sets = " , length(replicates)))
     if (any(treatments<1)) return("Treatments must be non-negative integers")
     if (any(replicates<1)) return("Replicates must be non-negative integers")  
@@ -490,7 +487,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     cumblocks=c(1,cumprod(rows*columns))
     strata=length(rows)
     plots=sum(treatments[replicates>1]*replicates[replicates>1])
-    
     if (cumrows[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]>1) return("Too many rows for the available plots  - every row must contain at least two (replicated) treatments")
     if (cumrows[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]==1) return("Too many blocks for the available plots  - every block must contain at least two (replicated) treatments")
     if (cumcols[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]>1) return("Too many columns for the available plots  - every column must contain at least two (replicated) plots")
@@ -596,19 +592,19 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     hcf=HCF(replicates)
     for ( z in seq_len(10)) {
       TF=rep(rep(trts,reps/hcf),hcf)
-      rand=sample(nunits)
+      rand=sample(nunits)      
       TF=as.factor( TF[rand][order(rep(seq_len(hcf),each=nunits/hcf)[rand])] )
       for ( i in seq_len(strata)) {
         if (rowcol &&  rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
         if (!rowcol && rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,Blocks[,i],Design[,i])
         if (is.null(TF)) break
-        if (rowcol && columns[i]>1 ) TF=colsOpt(TF,Blocks[,i],Design[,2*i],Design[,2*i-1])
+        if (rowcol && columns[i]>1) TF=colsOpt(TF,Blocks[,i],Design[,2*i],Design[,2*i-1])
         if (is.null(TF)) break
       }
       if (!is.null(TF)) break
     }
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
-    # add back single rep treatments for nested stratum blocks only
+    # add back single rep treatments for neste      if (r>2)      if (r>2)      if (r>2)d stratum blocks only
     replicates=fullreplicates
     treatments=fulltreatments
     if ( min(replicates)==1 && max(replicates)>1 && ( max(columns)==1 || regular==TRUE ) ) {
@@ -632,9 +628,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       blocksizes=fullblocksizes
     }
     if ( min(replicates)==1 && max(replicates)>1 &&  max(columns)>1 & regular==FALSE )  
-       stop("Algorithm cannot deal with irregular row-and-column designs containing single replicate treatents ")
-    
-
+       stop("Algorithm cannot deal with irregular row-and-column designs containing any single replicate treatments ")
     # Randomize
     D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
     D[]=lapply(D, as.factor)
@@ -687,7 +681,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     if (rowcol) Design[c(which(as.numeric(rbind(rows,columns))==1))]= list(NULL) 
     if (rowcol) Plan[c(which(as.numeric(rbind(rows,columns))==1 ))]= list(NULL) 
     # efficiencies
-
     Efficiencies=A_Efficiencies(Design)
     row.names(Efficiencies)=NULL
   }
