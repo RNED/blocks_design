@@ -578,9 +578,12 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     nunits=sum(treatments*replicates)
     ntrts=sum(treatments)
     # design
+    regular=TRUE
     blocksizes=nunits
-    for (i in seq_len(strata)) 
+    for (i in seq_len(strata)) {
       blocksizes=Sizes(blocksizes,i) 
+      if ( abs(max(blocksizes) - min(blocksizes)) >.000000000001) regular=FALSE
+    }
     Design  = data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
     Blocks  = data.frame(Blocks[rep(seq_len(nrow(Blocks)),  blocksizes ),]) 
     Design[]= lapply(Design, as.factor) 
@@ -607,8 +610,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     # add back single rep treatments for nested stratum blocks only
     replicates=fullreplicates
     treatments=fulltreatments
-    stratumblocks=nunits/cumprod(rows)
-    regular=all((stratumblocks-floor(stratumblocks))==0)
+    #stratumblocks=nunits/cumprod(rows)
+    #regular=all((stratumblocks-floor(stratumblocks))==0)
     if ( min(replicates)==1 && max(replicates)>1 && ( max(columns)==1 || regular==TRUE ) ) {
       fullreps=rep(replicates,treatments)
       nunits=sum(treatments*replicates)
@@ -630,7 +633,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       blocksizes=fullblocksizes
     }
     if ( min(replicates)==1 && max(replicates)>1 &&  max(columns)>1 && regular==FALSE )  
-       stop("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
+       warning("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
     # Randomize
     D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
     D[]=lapply(D, as.factor)
