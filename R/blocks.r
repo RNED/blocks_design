@@ -349,16 +349,16 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     regblocks = identical(k,floor(k)) && identical(mreps,floor(mreps)) 
     sqrLattice  = regrep && regblocks  && identical(v,floor(v)) && identical(k,v)
     trojanic = regrep && regblocks  && identical(r,w)  && (k<w)
-    if ( (sqrLattice  && r<4) ||  (sqrLattice && r<(v+2) && isPrime(v)) ) {
+    if ( (sqrLattice  && r<4) || (sqrLattice && r<(v+2) && isPrime(v)) ) {
       TF=factor(rep(seq_len(v*v),r)[order(unlist(cMOLS(v))[1:(r*v*v)])] ,labels=newlabels)
     } else if (sqrLattice  && r<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
-      index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
-      mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
-      t=seq_len(ntrts)
-      if (r>1) t=c(t,   seq_len(ntrts)[order(rep(0:(v-1),v))]   )
-      if (r>2)
-      for (i in seq_len(r-2))
-        t=c(t, seq_len(ntrts)[order(as.numeric(mols[,,i]))]) 
+      t=c(seq_len(ntrts),seq_len(ntrts)[order(rep(0:(v-1),v))]   )
+      if (r>2) {
+        index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
+        mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])	
+        for (i in seq_len(r-2))
+          t=c(t, seq_len(ntrts)[order(as.numeric(mols[,,i]))]) 
+      }
       TF=factor(t,labels=newlabels)
     } else if (sqrLattice  && v==10  && r==4) {
       TF=factor(c(
