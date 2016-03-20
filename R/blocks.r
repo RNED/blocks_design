@@ -324,7 +324,17 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     TF=Optimise(TF,Columns,MTT,MBB,MTB,Blocks)
     return(TF)
   }  
-  # ********************************************************* ,labels=newlabels*********************************************************************************************** 
+  # *******************************************************************************************************************************************************
+  # Returns v-1 cyclically generated v x v Latin squares plus the rows array (first) and the columns array (last). If v is prime, the squares are MOLS  
+  # ********************************************************************************************************************************************************  
+  cMOLS=function(v) {
+    mols=lapply(0:(v-1),function(z){do.call(rbind, lapply(0:(v-1), function(j){ (rep(0:(v-1))*z +j)%%v} ))})
+    mols[[v+1]]=t(mols[[1]])
+    mols=mols[c(1,length(mols),2:(length(mols)-1))]
+    mols=lapply(1:length(mols),function(z){ (z-1)*v+mols[[z]] })
+    mols
+  }
+  # *******************************************************************************************************************************************************
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ******************************************************************************************************************************************************** 
   rowsOpt=function(TF,Main,Blocks) { 
@@ -334,26 +344,13 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     v=sqrt(ntrts)  # dimension of a lattice square
     k=nunits/b  # block size
     r=nunits/ntrts # replication
-    w=sqrt(b) # dimension of a set of k Latin squares of dimension w * w for Trojanic designs
-    regrep = isTRUE(all.equal(max(replicates),min(replicates)))
-    regblocks = isTRUE(all.equal(k,floor(k))) && isTRUE(all.equal(mreps,floor(mreps))) 
-    sqrLattice  = regrep && regblocks  && isTRUE(all.equal(v,floor(v))) && isTRUE(all.equal(k,v))
-    trojanic = regrep && regblocks  && isTRUE(all.equal(r,w))  && (k<w)
-    if (sqrLattice  && r<4) {
-      t=rep(0:(v-1),each=v)
-      if (r>1) t=c(t,rep(0:(v-1),v)+v)
-      if (r>2)
-        for (i in 0: (v-1)) 
-          t=c(t,(rep(0:(v-1))+i)%%v + 2*v)
-        TF=  factor(rep(seq_len(v*v),r)[order(t)] ,labels=newlabels )
-    } else if (sqrLattice  &&  r<(v+2)  && isPrime(v) ) {
-      t=rep(0:(v-1),each=v)
-      if (r>1) t=c(t,rep(0:(v-1),v)+v)
-      if (r>2)
-      for (z in seq_len(r-2))
-        for (j in 0: (v-1)) 
-          t=c(t,(rep(0:(v-1))*z +j)%%v + v*(z+1) )
-        TF=factor(rep(seq_len(v*v),r)[order(t)] ,labels=newlabels)
+    w=sqrt(b) # dimension of a set of k Latin squares of dimension b * b for a Trojanic design
+    regrep = identical(max(replicates),min(replicates))
+    regblocks = identical(k,floor(k)) && identical(mreps,floor(mreps)) 
+    sqrLattice  = regrep && regblocks  && identical(v,floor(v)) && identical(k,v)
+    trojanic = regrep && regblocks  && identical(r,w)  && (k<w)
+    if ( (sqrLattice  && r<4) ||  (sqrLattice && r<(v+2) && isPrime(v)) ) {
+      TF=factor(rep(seq_len(v*v),r)[order(unlist(cMOLS(v))[1:(r*v*v)])] ,labels=newlabels)
     } else if (sqrLattice  && r<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
       index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==ntrts)
       mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])			
@@ -582,7 +579,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     blocksizes=nunits
     for (i in seq_len(strata)) {
       blocksizes=Sizes(blocksizes,i) 
-      if ( abs(max(blocksizes) - min(blocksizes)) >.000000000001) regular=FALSE
+      if (max(blocksizes) > min(blocksizes)) regular=FALSE
     }
     Design  = data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
     Blocks  = data.frame(Blocks[rep(seq_len(nrow(Blocks)),  blocksizes ),]) 
@@ -610,8 +607,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     # add back single rep treatments for nested stratum blocks only
     replicates=fullreplicates
     treatments=fulltreatments
-    #stratumblocks=nunits/cumprod(rows)
-    #regular=all((stratumblocks-floor(stratumblocks))==0)
     if ( min(replicates)==1 && max(replicates)>1 && ( max(columns)==1 || regular==TRUE ) ) {
       fullreps=rep(replicates,treatments)
       nunits=sum(treatments*replicates)
@@ -633,7 +628,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       blocksizes=fullblocksizes
     }
     if ( min(replicates)==1 && max(replicates)>1 &&  max(columns)>1 && regular==FALSE )  
-       warning("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
+       stop("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
     # Randomize
     D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
     D[]=lapply(D, as.factor)
