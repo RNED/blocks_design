@@ -346,9 +346,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     r=nunits/ntrts # replication
     w=sqrt(b) # dimension of a set of k Latin squares of dimension b * b for a Trojanic design
     regrep = identical(max(replicates),min(replicates))
-    regblocks = identical(k,floor(k)) && identical(mreps,floor(mreps)) 
-    sqrLattice  = regrep && regblocks  && identical(v,floor(v)) && identical(k,v)
-    trojanic = regrep && regblocks  && identical(r,w)  && (k<w)
+    sqrLattice  = regrep && identical(k,floor(k)) && identical(mreps,floor(mreps)) && identical(v,floor(v)) && identical(k,v)
+    trojanic = regrep && identical(k,floor(k)) && identical(mreps,floor(mreps)) && identical(r,w)  && (k<w)
     if ( (sqrLattice  && r<4) || (sqrLattice && r<(v+2) && isPrime(v)) ) {
       TF=factor(rep(seq_len(v*v),r)[order(unlist(cMOLS(v))[1:(r*v*v)])] ,labels=newlabels)
     } else if (sqrLattice  && r<(v+2)  &&  ntrts%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
@@ -361,15 +360,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       }
       TF=factor(t,labels=newlabels)
     } else if (sqrLattice  && v==10  && r==4) {
-      TF=factor(c(
-        seq_len(100),seq_len(100)[order(rep(0:9,10))],
-        seq_len(100)[order(c(
-          1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
-          5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8))],
-        seq_len(100)[order(c(
-          1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
-          6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6))]),
-        labels=newlabels)
+      square1=c(1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
+      5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8)
+      square2=c(1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
+      6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6)
+      TF=factor(c(seq_len(100),seq_len(100)[order(rep(0:9,10))],seq_len(100)[order(square1)],seq_len(100)[order(square2)]),labels=newlabels)
     } else if (trojanic  && isPrime(w) ) {
       t=rep(NA,k*r*r)
       for (z in seq_len(k))
@@ -482,16 +477,27 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     if (anyNA(columns) ) return(" NA columns values not allowed") 
     if (any(!is.finite(columns)) | any(is.nan(columns)) ) return(" columns can contain only finite integers ")
     if (min(columns)<1) return (" columns must be at least one ")
+    if (isTRUE(all.equal(length(columns),0) )) columns=rep(1,length(rows))
+    if (!isTRUE(all.equal(length(columns),length(rows)))) stop("The number of row rows strata and the number of column rows strata must be equal")
+    if (length(rows)>0 && length(columns)>0 ) {
+      indic=rows*columns
+      rows=rows[(indic!=1)] 
+      columns=columns[(indic!=1)] 
+    } else rows= rows[(rows!=1)] 
+    if (length(rows)==0) rows=1
+    if (sum(treatments)==1) stop("Designs with only one treatment are not useful for comparative experiments")
     cumcols=cumprod(columns)
     cumrows=cumprod(rows)
     cumblocks=c(1,cumprod(rows*columns))
     strata=length(rows)
     plots=sum(treatments[replicates>1]*replicates[replicates>1])
+
     if (cumrows[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]>1) return("Too many rows for the available plots  - every row must contain at least two (replicated) treatments")
     if (cumrows[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]==1) return("Too many blocks for the available plots  - every block must contain at least two (replicated) treatments")
     if (cumcols[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]>1) return("Too many columns for the available plots  - every column must contain at least two (replicated) plots")
     if (cumcols[strata]*2>plots & cumrows[strata]==1 & cumcols[strata]>1) return("Too many blocks for the available plots  - every block must contain at least two (replicated) plots")
     if (cumblocks[strata+1]>plots & cumrows[strata]>1 & cumcols[strata]>1) return("Too many rows and columns for the available plots  - every row-by-column intersection must contain at least one replicated plot")
+    if (2*cumblocks[strata+1]>plots & (rows[strata]==1 || columns[strata]==1) ) return("Too many blocks for the available plots  - every nested block must contain at least two plots")
     
     if (!is.null(searches)) {
       if (anyNA(searches) ) return(" NA searches values not allowed") 
@@ -527,15 +533,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
-  if (isTRUE(all.equal(length(rows),0))) rows=1
-  if (length(rows)>1 && any(rows==1) && length(columns)==0) rows=rows[-which(rows==1)]
-  if (length(rows)>1 &&  length(columns)>1 && rows[length(rows)]==1 && columns[length(columns)]==1) {
-    rows=rows[-length(rows)]
-    columns=columns[-length(columns)]
-  }
-  if (isTRUE(all.equal(length(columns),0) )) columns=rep(1,length(rows))
-  if (!isTRUE(all.equal(length(columns),length(rows)))) stop("The number of row rows strata and the number of column rows strata must be equal")
-  if (sum(treatments)==1) stop("Designs with only one treatment are not useful for comparative experiments")
+  
   testout=testInputs(treatments,replicates,rows,columns,seed) 
   if (!isTRUE(testout)) stop(testout)
   set.seed(seed)
