@@ -462,7 +462,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # ******************************************************************************************************************************************************** 
   # Finds efficiency factors for block designs 
   # ********************************************************************************************************************************************************     
-  Validate=function() {
+  Validate=function(treatments,replicates,rows,columns,seed,jumps,searches) {
     if (missing(treatments) | missing(replicates)) stop(" Treatments or replicates not defined ")   
     if (is.null(treatments) | is.null(replicates)) stop(" Treatments or replicates list is empty ")   
     if (anyNA(treatments) | anyNA(replicates)) stop(" NA values not allowed")
@@ -498,7 +498,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
   
-  Validate() 
+  Validate(treatments,replicates,rows,columns,seed,jumps,searches) 
   if (length(columns)==0) columns=rep(1,length(rows))
   if (max(rows)>1 && max(columns)>1) {
     indic=rows*columns
