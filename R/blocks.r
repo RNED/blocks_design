@@ -458,84 +458,74 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies
   }
-  # ******************************************************************************************************************************************************** 
-  # Carries out some input validation
-  # ********************************************************************************************************************************************************     
-  testInputs=function(treatments,replicates,rows,columns,seed) {  
-    if (missing(treatments) | missing(replicates)) return(" Treatments or replicates not defined ")   
-    if (is.null(treatments) | is.null(replicates)) return(" Treatments or replicates list is empty ")   
-    if (anyNA(treatments) | anyNA(replicates)) return(" NA values not allowed")
-    if (any(!is.finite(treatments)) | any(!is.finite(replicates)) | any(is.nan(treatments)) | any(is.nan(replicates))) 
-      return(" Treatments and replicates can contain only finite integers ")
-    if ( length(treatments)!=length(replicates))
-      return(paste("The number of treatments sets = " , length(treatments) , " does not equal the number of replication sets = " , length(replicates)))
-    if (any(treatments<1)) return("Treatments must be non-negative integers")
-    if (any(replicates<1)) return("Replicates must be non-negative integers")  
-    if (anyNA(rows) ) return(" NA rows values not allowed") 
-    if (any(!is.finite(rows)) | any(is.nan(rows)) ) return(" rows can contain only finite integers ")
-    if (min(rows)<1) return (" rows must be at least one ")
-    if (anyNA(columns) ) return(" NA columns values not allowed") 
-    if (any(!is.finite(columns)) | any(is.nan(columns)) ) return(" columns can contain only finite integers ")
-    if (min(columns)<1) return (" columns must be at least one ")
-    if (isTRUE(all.equal(length(columns),0) )) columns=rep(1,length(rows))
-    if (!isTRUE(all.equal(length(columns),length(rows)))) stop("The number of row rows strata and the number of column rows strata must be equal")
-    if (length(rows)>0 && length(columns)>0 ) {
-      indic=rows*columns
-      rows=rows[(indic!=1)] 
-      columns=columns[(indic!=1)] 
-    } else rows= rows[(rows!=1)] 
-    if (length(rows)==0) rows=1
-    if (sum(treatments)==1) stop("Designs with only one treatment are not useful for comparative experiments")
-    cumcols=cumprod(columns)
-    cumrows=cumprod(rows)
-    cumblocks=c(1,cumprod(rows*columns))
-    strata=length(rows)
-    plots=sum(treatments[replicates>1]*replicates[replicates>1])
-
-    if (cumrows[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]>1) return("Too many rows for the available plots  - every row must contain at least two (replicated) treatments")
-    if (cumrows[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]==1) return("Too many blocks for the available plots  - every block must contain at least two (replicated) treatments")
-    if (cumcols[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]>1) return("Too many columns for the available plots  - every column must contain at least two (replicated) plots")
-    if (cumcols[strata]*2>plots & cumrows[strata]==1 & cumcols[strata]>1) return("Too many blocks for the available plots  - every block must contain at least two (replicated) plots")
-    if (cumblocks[strata+1]>plots & cumrows[strata]>1 & cumcols[strata]>1) return("Too many rows and columns for the available plots  - every row-by-column intersection must contain at least one replicated plot")
-    if (2*cumblocks[strata+1]>plots & (rows[strata]==1 || columns[strata]==1) ) return("Too many blocks for the available plots  - every nested block must contain at least two plots")
-    
-    if (!is.null(searches)) {
-      if (anyNA(searches) ) return(" NA searches values not allowed") 
-      if ( any(!is.finite(searches)) | any(is.nan(searches))) return(" Searches must be a finite integer ") 
-      if (searches<1)  return(" Repeats must be at least one ")   
-    }  
-    if (!is.null(jumps)) {
-      if (anyNA(jumps) ) return(" NA jumps values not allowed") 
-      if ( !all(is.finite(jumps)) | !all(!is.nan(jumps))) return(" jumps must be a finite integer ") 
-      if (jumps<1)  return(" Random jumps must be at least one ")   
-    }    
-    if (!is.null(seed)) {
-      if (anyNA(seed) ) return(" NA seed values not allowed") 
-      if (any(!is.finite(seed)) | any(is.nan(seed))) return(" Seed must be a finite integer ") 
-      if (seed<1)  return(" Seed must be at least one ")   
-    } 
-    if ( isTRUE( sum(treatments) < 2 ) )
-      return(paste("The number of treatments must be at least two "))  
-    
-    if ( isTRUE( sum(treatments*replicates) < (prod(rows) + sum(treatments)-1) ) )
-      return(paste("The total number of plots is",  sum(treatments*replicates) , 
-                   "whereas the total required number of model parameters is", prod(rows) + sum(treatments),", which is not feasible. "))  
-    
-    if (max(replicates)==2 && length(rows)>1 )
-      for (i in seq_len(length(rows)-1)) 
-        if (rows[i]==2 && columns[i]==2) return( paste(" Warning: this design tries to fit a sub-block design within the blocks of a 2-replicate
-        semi-Latin square. However, because the row-by-column interaction of a 2-replicate semi-Latin square is always confounded with a treatment contrast, 
-        the nested sub-blocks design will always be singular. Instead, try replacing the crossed 2 x 2 row-and column block design by an uncrossed design with 4 rows and 
-        a single column."))
-    return(TRUE)
-  }
+  
   # ******************************************************************************************************************************************************** 
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
+  if (missing(treatments) | missing(replicates)) stop(" Treatments or replicates not defined ")   
+  if (is.null(treatments) | is.null(replicates)) stop(" Treatments or replicates list is empty ")   
+  if (anyNA(treatments) | anyNA(replicates)) stop(" NA values not allowed")
+  if (any(!is.finite(treatments)) | any(!is.finite(replicates)) | any(is.nan(treatments)) | any(is.nan(replicates))) 
+    stop(" Treatments and replicates can contain only finite integers ")
+  if ( length(treatments)!=length(replicates))
+    stop(paste("The number of treatments sets = " , length(treatments) , " does not equal the number of replication sets = " , length(replicates)))
+  if (any(treatments<1)) stop("Treatments must be non-negative integers")
+  if (any(replicates<1)) stop("Replicates must be non-negative integers")  
+  if (anyNA(rows) ) stop(" NA rows values not allowed") 
+  if (any(!is.finite(rows)) | any(is.nan(rows)) ) stop(" rows can contain only finite integers ")
+  if (min(rows)<1) stop(" rows must be at least one ")
+  if (anyNA(columns) ) stop(" NA columns values not allowed") 
+  if (any(!is.finite(columns)) | any(is.nan(columns)) ) stop(" columns can contain only finite integers ")
+  if (isTRUE(all.equal(length(columns),0) )) columns=rep(1,length(rows))
+  if (min(columns)<1) stop(" columns must be at least one ")
+  if (!isTRUE(all.equal(length(columns),length(rows)))) stop("The number of row rows strata and the number of column rows strata must be equal")
+  if (length(rows)>0 && length(columns)>0 ) {
+    indic=rows*columns
+    rows=rows[(indic!=1)] 
+    columns=columns[(indic!=1)] 
+  } else rows= rows[(rows!=1)] 
+  if (length(rows)==0) rows=1
+  if (sum(treatments)==1) stop("Designs with only one treatment are not useful for comparative experiments")
+  cumcols=cumprod(columns)
+  cumrows=cumprod(rows)
+  cumblocks=c(1,cumprod(rows*columns))
+  strata=length(rows)
+  plots=sum(treatments[replicates>1]*replicates[replicates>1])
+  if (cumrows[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]>1) stop("Too many rows for the available plots  - every row must contain at least two (replicated) treatments")
+  if (cumrows[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]==1) stop("Too many blocks for the available plots  - every block must contain at least two (replicated) treatments")
+  if (cumcols[strata]*2>plots & cumrows[strata]>1 & cumcols[strata]>1) stop("Too many columns for the available plots  - every column must contain at least two (replicated) plots")
+  if (cumcols[strata]*2>plots & cumrows[strata]==1 & cumcols[strata]>1) stop("Too many blocks for the available plots  - every block must contain at least two (replicated) plots")
+  if (cumblocks[strata+1]>plots & cumrows[strata]>1 & cumcols[strata]>1) stop("Too many rows and columns for the available plots  - every row-by-column intersection must contain at least one replicated plot")
+  if (2*cumblocks[strata+1]>plots & (rows[strata]==1 || columns[strata]==1) ) stop("Too many blocks for the available plots  - every nested block must contain at least two plots")
+  if (!is.null(searches)) {
+    if (anyNA(searches) ) stop(" NA searches values not allowed") 
+    if ( any(!is.finite(searches)) | any(is.nan(searches))) stop(" Searches must be a finite integer ") 
+    if (searches<1) stop(" Repeats must be at least one ")   
+  }  
+  if (!is.null(jumps)) {
+    if (anyNA(jumps) ) stop(" NA jumps values not allowed") 
+    if ( !all(is.finite(jumps)) | !all(!is.nan(jumps))) stop(" jumps must be a finite integer ") 
+    if (jumps<1)  stop(" Random jumps must be at least one ")   
+  }    
+  if (!is.null(seed)) {
+    if (anyNA(seed) ) stop(" NA seed values not allowed") 
+    if (any(!is.finite(seed)) | any(is.nan(seed))) stop(" Seed must be a finite integer ") 
+    if (seed<1) stop(" Seed must be at least one ")   
+  } 
+  if ( isTRUE( sum(treatments) < 2 ) ) stop(paste("The number of treatments must be at least two "))  
   
-  testout=testInputs(treatments,replicates,rows,columns,seed) 
-  if (!isTRUE(testout)) stop(testout)
+  if ( isTRUE( sum(treatments*replicates) < (prod(rows) + sum(treatments)-1) ) )
+    stop(paste("The total number of plots is",  sum(treatments*replicates) , 
+                 "whereas the total required number of model parameters is", prod(rows) + sum(treatments),", which is not feasible. "))  
+  
+  if (max(replicates)==2 && length(rows)>1 )
+    for (i in seq_len(length(rows)-1)) 
+      if (rows[i]==2 && columns[i]==2) stop( paste(" Warning: this design tries to fit a sub-block design within the blocks of a 2-replicate
+        semi-Latin square. However, because the row-by-column interaction of a 2-replicate semi-Latin square is always confounded with a treatment contrast, 
+        the nested sub-blocks design will always be singular. Instead, try replacing the crossed 2 x 2 row-and column block design by an uncrossed design with 4 rows and 
+        a single column."))
+  
   set.seed(seed)
   if (max(replicates)==1) {
     ntrts=sum(treatments)
