@@ -500,12 +500,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   
   Validate(treatments,replicates,rows,columns,seed,jumps,searches) 
   if (length(columns)==0) columns=rep(1,length(rows))
-  if (max(rows)>1 && max(columns)>1) {
     indic=rows*columns
+    if (max(indic)==1) {
+      rows=1
+      columns=1
+    } else {
     rows=rows[(indic!=1)] 
     columns=columns[(indic!=1)] 
-  } else rows= rows[(rows!=1)] 
-  if (length(rows)==0) rows=1
+    }
   cumcols=cumprod(columns)
   cumrows=cumprod(rows)
   cumblocks=c(1,cumprod(rows*columns))
@@ -565,7 +567,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       blocksizes=Sizes(blocksizes,i) 
       if (max(blocksizes) > min(blocksizes)) regular=FALSE
     }
-   
     if ( min(fullreplicates)==1 && max(fullreplicates)>1 &&  max(columns)>1 && regular==FALSE )  
       stop("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
     
