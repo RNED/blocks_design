@@ -565,6 +565,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       blocksizes=Sizes(blocksizes,i) 
       if (max(blocksizes) > min(blocksizes)) regular=FALSE
     }
+   
+    if ( min(fullreplicates)==1 && max(fullreplicates)>1 &&  max(columns)>1 && regular==FALSE )  
+      stop("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
+    
     Design  = data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
     Blocks  = data.frame(Blocks[rep(seq_len(nrow(Blocks)),  blocksizes ),]) 
     Design[]= lapply(Design, as.factor) 
@@ -611,8 +615,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       TF=as.factor(unlist(repTF))
       blocksizes=fullblocksizes
     }
-    if ( min(replicates)==1 && max(replicates)>1 &&  max(columns)>1 && regular==FALSE )  
-       stop("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
+    
     # Randomize
     D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
     D[]=lapply(D, as.factor)
