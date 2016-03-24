@@ -552,7 +552,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     Blocks=do.call(cbind,lapply(1:(strata+1),function(i) {  gl(  cpblocks[i], cpblocks[strata+1]/cpblocks[i], cpblocks[strata+1]  )    })) -1
     if (isrowcol)  fDesign=do.call(cbind,lapply(1:(2*strata), function(r){fDesign[,r]+Blocks[,(r-1)%/%2+1]*rowcol[r] }))+1
     if (!isrowcol) fDesign=do.call(cbind,lapply(1:strata,     function(r){fDesign[,2*r-1]+Blocks[,r]*rowcol[2*r-1] }))+1
-    #if (!isrowcol) fDesign= fDesign[, seq(1, ncol(fDesign), by = 2)]
     fDesign=data.frame(fDesign)
     fDesign[]=lapply(fDesign, as.factor) 
     Blocks=data.frame(Blocks+1)
