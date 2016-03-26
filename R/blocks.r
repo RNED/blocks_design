@@ -7,8 +7,8 @@
 #' 
 #' @details
 #' 
-#' The \code{blocksdesign} package constructs nested or crossed block designs with arbitrary number of nested strata and arbitrary nesting or crossing
-#' in each blocks stratum.
+#' The \code{blocksdesign} package constructs arbitrary block designs with arbitrary depth of nesting and arbitrary crossed row-and-column block designs in each nested stratum.
+#' Setting the number of column or row blocks to unity in a particular stratum gives a simple nested block structure for that stratum.       
 #' 
 #' The \code{treatments} and \code{replicates} vectors give a partition of the total number of treatments into sets of equally replicated treatments where the
 #' \code{treatments} vector provides the required treatments partition and the \code{replicates} vector provides the required replication for each treatment set. 
@@ -513,13 +513,13 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   cumblocks=c(1,cumprod(rows*columns))
   strata=length(rows)
   plots=sum(treatments[replicates>1]*replicates[replicates>1])
-  if (cumrows[strata]*2>plots) stop("Too many row blocks for the available plots  - every row block must contain at least two (replicated) treatments")
-  if (cumcols[strata]*2>plots) stop("Too many column blocks for the available plots  - every column block must contain at least two (replicated) plots")
-  if (cumblocks[strata+1]>plots & cumrows[strata]>1 & cumcols[strata]>1) stop("Too many blocks - every row-by-column intersection must contain at least one replicated plot")
+  if (cumrows[strata]*2>plots & max(replicates)>1) stop("Too many row blocks for the available plots  - every row block must contain at least two (replicated) treatments")
+  if (cumcols[strata]*2>plots & max(replicates)>1) stop("Too many column blocks for the available plots  - every column block must contain at least two (replicated) plots")
+  if (cumblocks[strata+1]>plots & cumrows[strata]>1 & cumcols[strata]>1 ) stop("Too many blocks - every row-by-column intersection must contain at least one replicated plot")
   if ( isTRUE( sum(treatments) < 2 ) ) stop(paste("The number of treatments must be at least two "))  
-  if ( isTRUE( sum(treatments*replicates) < (cumrows[strata] + cumcols[strata] + sum(treatments)-1) ) )
+  if ( isTRUE( sum(treatments*replicates) < (cumrows[strata] + cumcols[strata] + sum(treatments)-2) ) )
     stop(paste("The total number of plots is",sum(treatments*replicates), "whereas the total required number of model parameters is", 
-               cumrows[strata] + cumcols[strata] + sum(treatments)-1)) 
+               cumrows[strata] + cumcols[strata] + sum(treatments)-2)) 
   if (max(replicates)==2 && length(rows)>1 )
     for (i in seq_len(length(rows)-1)) 
       if (rows[i]==2 && columns[i]==2) stop( paste("Cannot have nested sub-blocks within a 2 x 2 semi-Latin square - try a nested sub-blocks design within 4 main blocks"))
@@ -555,7 +555,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     fDesign[]=lapply(fDesign, as.factor) 
     Blocks=data.frame(Blocks+1)
     Blocks[]=lapply(Blocks, as.factor) 
-
     #permBlocks will randomise whole blocks in nested strata or will randomize rows and columns in each nested stratum of a crossed design 
     tempDesign=data.frame( do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
     permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
@@ -639,7 +638,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       Plan=as.data.frame(cbind(fDesign,Plots , do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
     } else {
       if(strata>1) {
-        fDesign=do.call(cbind,lapply(1:(2*(strata-1)),function(i) {  gl(  rowcol[i],   cprowcol[2*(strata-1)]/cprowcol[i], cprowcol[2*(strata-1)]  )    }))
+        fDesign=do.call(cbind,lapply(1:(2*(strata-1)),function(i) {gl(rowcol[i],cprowcol[2*(strata-1)]/cprowcol[i], cprowcol[2*(strata-1)])}))
         fDesign= data.frame(cbind( fDesign[ rep(seq(nrow(fDesign)),each=rows[strata]), ], seq_len(nrow(fDesign))))
       } else fDesign=data.frame(seq_len(rows[1]))
       colnames(fDesign)=stratumnames[1:ncol(fDesign)]
