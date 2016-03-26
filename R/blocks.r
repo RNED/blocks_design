@@ -118,7 +118,7 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,searches=(1+2000%/%(sum(treatments)+prod(rows))),seed=sample(10000,1),jumps=1) { 
+blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,searches=(1+10000%/%sum(treatments*replicates)),seed=sample(10000,1),jumps=1) { 
   
   # ******************************************************************************************************************************************************** 
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)
@@ -550,9 +550,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     isrowcol=max(columns>1)
     fDesign=do.call(cbind,lapply(1:(2*strata),function(i) {  gl(  rowcol[i],   cprowcol[2*strata]/cprowcol[i], cprowcol[2*strata]  )    })) -1 
     Blocks=do.call(cbind,lapply(1:(strata+1),function(i) {  gl(  cpblocks[i], cpblocks[strata+1]/cpblocks[i], cpblocks[strata+1]  )    })) -1
-    if (isrowcol)  fDesign=do.call(cbind,lapply(1:(2*strata), function(r){fDesign[,r]+Blocks[,(r-1)%/%2+1]*rowcol[r] }))+1
-    if (!isrowcol) fDesign=do.call(cbind,lapply(1:strata,     function(r){fDesign[,2*r-1]+Blocks[,r]*rowcol[2*r-1] }))+1
-    fDesign=data.frame(fDesign)
+    if (isrowcol)  fDesign=data.frame(do.call(cbind,lapply(1:(2*strata), function(r){fDesign[,r]+Blocks[,(r-1)%/%2+1]*rowcol[r] }))+1)
+    if (!isrowcol) fDesign=data.frame(do.call(cbind,lapply(1:strata,     function(r){fDesign[,2*r-1]+Blocks[,r]*rowcol[2*r-1] }))+1)
     fDesign[]=lapply(fDesign, as.factor) 
     Blocks=data.frame(Blocks+1)
     Blocks[]=lapply(Blocks, as.factor) 
@@ -618,7 +617,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       TF=as.factor(unlist(repTF))
       blocksizes=fullblocksizes
     }
-    
     # Randomize
     D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
     D[]=lapply(D, as.factor)
@@ -640,27 +638,19 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       Plots=rep("",length(V))
       Plan=as.data.frame(cbind(fDesign,Plots , do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
     } else {
-      ncols=columns[length(columns)]
-      nrows=rows[length(rows)]
-      squares=cumblocks[length(cumblocks)-1]
-      columns[length(columns)]=1
-      cumblocks=c(1,cumprod(rows*columns))
-      Blocks=data.frame(do.call(cbind,lapply(1:strata,function(r){ rep(1:cumblocks[r],each=(cumblocks[strata+1]/cumblocks[r]))})))
-      fRows=do.call(cbind,lapply(1:strata,function(i) {(Blocks[,i]-1)*rows[i]+rep(rep(1:rows[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i]),cumblocks[i])}))
-      fCols=do.call(cbind,lapply(1:strata,function(i) {(Blocks[,i]-1)*columns[i]+rep(rep(1:columns[i],each=cumblocks[strata+1]/rows[i]/cumblocks[i]/columns[i]),rows[i]*cumblocks[i])}))  
-      fDesign=data.frame(cbind(fRows,fCols))[, order(c( seq(1,2*strata, by=2) ,seq(2,2*strata, by=2)))] 
-      columns[length(columns)]=ncols
-      colnames(fDesign)=stratumnames
-      fDesign=fDesign[-ncol(fDesign)] 
+      if(strata>1) {
+        fDesign=do.call(cbind,lapply(1:(2*(strata-1)),function(i) {  gl(  rowcol[i],   cprowcol[2*(strata-1)]/cprowcol[i], cprowcol[2*(strata-1)]  )    }))
+        fDesign= data.frame(cbind( fDesign[ rep(seq(nrow(fDesign)),each=rows[strata]), ], seq_len(nrow(fDesign))))
+      } else fDesign=data.frame(seq_len(rows[1]))
+      colnames(fDesign)=stratumnames[1:ncol(fDesign)]
+      rownames(fDesign)=NULL
       fDesign[]=lapply(fDesign, as.factor) 
-      X=lapply(V, paste, collapse = ",") 
-      plan=matrix("",nrow=squares*nrows,ncol=squares*ncols)
-      for (z in 1: squares)
-      for (i in 1:nrows)
-      for (j in 1:ncols)
-       plan[(z-1)*nrows+i, (z-1)*ncols+j] =X[[(z-1)*nrows*ncols+(i-1)*ncols + j]]
-      Columns=rep("",nrow(fDesign))
-      Plan=as.data.frame(cbind(fDesign,Columns,plan))
+      rcblocks=unlist(lapply(V, paste, collapse = ",") )
+      plan=matrix("",nrow=cumblocks[strata]*columns[strata],ncol=cumblocks[strata]*rows[strata])
+      for (z in 1: cumblocks[strata])
+        plan[c(((z-1)*columns[strata]+1):(z*columns[strata])),c(((z-1)*rows[strata]+1):(z*rows[strata]))] =  
+        rcblocks[c(((z-1)*rows[strata]*columns[strata]+1):(z*rows[strata]*columns[strata]))]
+      Plan=as.data.frame(cbind(fDesign,rep("",nrow(fDesign)),t(plan)))
       names(Plan)[names(Plan) == 'Columns'] = paste('Columns', length(columns))
     }
     # omit single level row or column strata in row and column designs

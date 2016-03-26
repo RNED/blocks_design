@@ -5,7 +5,7 @@
 \title{Block designs}
 \usage{
 blocks(treatments, replicates, rows = HCF(replicates), columns = NULL,
-  searches = (1 + 2000\%/\%(sum(treatments) + prod(rows))),
+  searches = (1 + 10000\%/\%sum(treatments * replicates)),
   seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
