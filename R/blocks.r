@@ -7,8 +7,9 @@
 #' 
 #' @details
 #' 
-#' The \code{blocksdesign} package constructs arbitrary block designs with arbitrary depth of nesting and with arbitrary crossed row-and-column blocks
-#' in each nested stratum. Designs with a single row or a single column automatically drop the redundant classification and fit a simple nested blocks design.       
+#' The \code{blocksdesign} package constructs arbitrary block designs with arbitrary depth of nesting and arbitrary crossed row-and-column blocks
+#' in each nested stratum. Row-and-column designs where one classification has a single block level automatically default to a simple nested blocks design
+#' with number of nested blocks equal to the other classification (if both classifications have a single level the corresponding stratum is dropped completely from the design).       
 #' 
 #' The \code{treatments} and \code{replicates} vectors give a partition of the total number of treatments into sets of equally replicated treatments where the
 #' \code{treatments} vector provides the required treatments partition and the \code{replicates} vector provides the required replication for each treatment set. 
@@ -30,28 +31,29 @@
 #' main blocks equal in number to the highest common factor of the replication numbers. If the \code{rows} vector is defined but the \code{columns} vector
 #' is null, the design will comprise simple nested blocks in each stratum defined by the \code{rows} vector.
 #' 
-#' Block sizes are always as nearly equal as possible and will never differ by more than a single plot in any particular blocks classification.
+#' Block sizes are always as nearly equal as possible and will never differ by more than a single plot in any particular classification.
 #' Row blocks and column blocks must always contain at least two plots per block and this restriction will constrain the 
 #' permitted numbers of rows and columns in the various strata of a design.
 #' 
 #' Unreplicated treatments are allowed and any simple nested block design can be augmented by any number of single unreplicated treatments to give augmented blocks
-#' that never differ in size by more than a single plot. General crossed block designs, however, are more complex and currently 
-#' the algorithm will only accommodate single unreplicated treatments in a crossed block design where all the block sizes of the replicated part of the treatment design are exactly equal.
+#' that never differ in size by more than a single plot. General crossed block designs are more complex and currently 
+#' the algorithm will only accommodate single unreplicated treatments in a crossed block design where all the block sizes of the replicated part 
+#' of the treatment design are exactly equal.
 #' 
-#'  Row-and-column block designs with more treatments than replicates and with complete replicate rows and complete replicate columns must contain multiple plots in 
-#'  at least some of the row-by-column intersections and sometimes it may be useful to nest blocks in the row-by-column intersections of such a design.
-#'  Curently, however, 2 x 2 row-and-column designs with complete replicate rows and complete replicate columns cannot accommodate nested blocks and will generate an error message. Instead,
-#'  we recommend a simple nested blocks design with two complete or four incomplete main blocks. 
+#'  Complete row-and-column block designs with more treatments than replicates must contain multiple plots in at least some of the row-by-column intersections and
+#'  sometimes it may be useful to nest blocks in these row-by-column intersections.
+#'  However, 2 x 2 row-and-column designs with complete replicate rows and complete replicate columns always confound one treatment contrast between the row-by-column 
+#'  interaction and for these designs it is impossible to nest blocks in the row-by-column intersections. 
+#'  Instead, we recommend a simple nested blocks design with two complete or four incomplete main blocks. 
 #'  
 #'  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 #' 
 #'  The principle design outputs comprise:
 #' \itemize{
-#'  \item  A data frame showing the allocation of treatments to blocks with successive nested strata arranged in standard block order.  \cr
-#'  \item  A table showing the replication number of each treatment in the design . \cr
+#'  \item  A data frame showing the allocation of treatments to blocks with successive nested strata arranged in standard block order. \cr
+#'  \item  A table showing the replication number of each treatment in the design. \cr
 #'  \item  A table showing the block levels and the achieved D- and A-efficiency factors for each blocks stratum together with A-efficiency upper bounds, where available. \cr
-#'  \item  Plans showing the allocation of treatments to blocks or to rows and columns in the bottom stratum of the design. 
-#'  Each plan layout is indexed by the factor levels of any higher level blocks containing the bottom level plans.    \cr
+#'  \item  Plans showing the allocation of treatments to blocks or to rows and columns in the bottom stratum of the design. \cr
 #' } 
 #' 
 #' @param treatments  a vector giving a partition of the total required number of treatments into sets of equally replicated treatments.
@@ -61,7 +63,7 @@
 #' @param rows  a vector of factor levels for the row blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
 #' The default is a single set of main blocks equal to the hcf of the replication numbers.
 #' 
-#' @param columns  a vector of factor levels forthe column blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
+#' @param columns  a vector of factor levels for the column blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
 #' The \code{rows} and the \code{columns} vectors, if both present, must be of equal length. The default is the null vector.  
 #' 
 #' @param seed  an integer initializing the random number generator. The default is a random seed.
