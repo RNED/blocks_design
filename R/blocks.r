@@ -8,7 +8,7 @@
 #' @details
 #' 
 #' The \code{blocksdesign} package constructs arbitrary block designs with arbitrary depth of nesting and arbitrary crossed row-and-column block designs in each nested stratum.
-#' Setting the number of column or row blocks to unity in a particular stratum gives a simple nested block structure for that stratum.       
+#' Strata with a row-and-column design with a single crossed column (or row) block will have a simple nested blocks structure.       
 #' 
 #' The \code{treatments} and \code{replicates} vectors give a partition of the total number of treatments into sets of equally replicated treatments where the
 #' \code{treatments} vector provides the required treatments partition and the \code{replicates} vector provides the required replication for each treatment set. 
@@ -24,25 +24,25 @@
 #'  the second stratum, the third, if any, is the number of columns in the nested blocks of the third stratum and so on for all the required strata in the design. 
 #'   
 #' The \code{rows} and \code{columns} vectors, if defined, must be of equal length and if a simple nested blocks design is required in 
-#' any particular stratum then the number of columns in that stratum should be set to unity.
+#' any particular stratum then one of the row or column blocks classifications in that stratum should be set to unity.
 #' 
 #' If both the \code{rows} vector and the \code{columns} vector are null, the default block design will be a single set of orthogonal
 #' main blocks equal in number to the highest common factor of the replication numbers. If the \code{rows} vector is defined but the \code{columns} vector
 #' is null, the design will comprise simple nested blocks in each stratum defined by the \code{rows} vector.
 #' 
-#' The block sizes in any particular rows or columns stratum are always as nearly equal in size as possible and will never differ by more
-#' than a single unit. The row blocks and column blocks must always comprise at least two plots and this restriction will constrain the 
-#' allowed number of row and column blocks.
+#' The block sizes are always as nearly equal in size as possible in any particular blocks classification and will never differ by more
+#' than a single unit. Row blocks and column blocks in any particular nested stratum must always contain at least two plots per block and this restriction will constrain the 
+#' allowed numbers of row and column blocks in the various strata of a design.
 #' 
-#' Unreplicated treatments with a single replication are allowed but unreplicated treatments are added heuristically after the replicated
-#' part of the design has been optimized and to ensure that the blocks containing the unreplicated treatments do not differ in size by more than
-#'  a single unit, unreplicated treatments should only be used in designs where the replicated treatment blocks 
-#'  are all equal in size in each stratum of the design.     
+#' Unreplicated treatments with a single replication are allowed and are added heuristically after the replicated
+#' part of the design has been optimized. Any simple nested block design can be augmented by any number of single unreplicated treatments to give augmented blocks
+#' that never differ in size by more than a single unit in any particular stratum. General crossed block designs, however, can be augmented by single unreplicated 
+#' treatments only when the initial block sizes of the replicated part of the design in any particular stratum are all equal. Otherwise, the algorithm stops.  
 #' 
-#'  NB. For two-replicate 2 x 2 row-and-column block designs, the algorithm will always find a semi-Latin squarere with complete
-#'  replicate rows and complete replicate columns but will always fully confound one treatment contrast with the row-by-column interaction contrast.
-#'  For this reason, the algorithm is unable to fit any nested sub-block design within the row-by-column intersections of any two replicate 2 x 2 semi-Latin square. 
-#'  A better design would be a simple nested block design with four main blocks and sub-blocks nested within the main blocks.
+#'  For two-replicate 2 x 2 row-and-column block designs, the algorithm always finds a semi-Latin squarere with complete
+#'  replicate rows and complete replicate columns but with one treatment contrast confounded with the row-by-column interaction contrast.
+#'  For this reason, nested block designs cannot be fitted within the row-by-column intersections of two replicate 2 x 2 semi-Latin squares. 
+#'  Normally, it would be better to have two main blocks with two sub-blocks nested within each main block and further nesting within the sub-blocks if required.
 #'  
 #'  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 #' 
