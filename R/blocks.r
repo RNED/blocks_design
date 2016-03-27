@@ -650,7 +650,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       for (z in 1: cumblocks[strata])
         plan[c(((z-1)*columns[strata]+1):(z*columns[strata])),c(((z-1)*rows[strata]+1):(z*rows[strata]))] =  
         rcblocks[c(((z-1)*rows[strata]*columns[strata]+1):(z*rows[strata]*columns[strata]))]
-      Plan=as.data.frame(cbind(fDesign,rep("",nrow(fDesign)),t(plan)))
+      Columns=rep("",nrow(fDesign))
+      Plan=as.data.frame(cbind(fDesign,Columns,t(plan)))
+      
+      
       names(Plan)[names(Plan) == 'Columns'] = paste('Columns', length(columns))
     }
     # omit single level row or column strata in row and column designs
