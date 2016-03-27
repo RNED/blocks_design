@@ -39,8 +39,8 @@ and blocks can have any arbitrary feasible depth of nesting.
 }
 \details{
 The \code{blocksdesign} package constructs arbitrary block designs with arbitrary depth of nesting and arbitrary crossed row-and-column blocks
-in each nested stratum. Row-and-column designs where one classification has a single block level automatically default to a simple nested blocks design
-with number of nested blocks equal to the other classification (if both classifications have a single level the corresponding stratum is dropped completely from the design).       
+in each nested stratum. Where one classification of a row-and-column design has a single block level, the design automatically defaults to a simple nested blocks design
+(if both classifications have a single level that blocks stratum is dropped from the design).       
 
 The \code{treatments} and \code{replicates} vectors give a partition of the total number of treatments into sets of equally replicated treatments where the
 \code{treatments} vector provides the required treatments partition and the \code{replicates} vector provides the required replication for each treatment set. 
@@ -68,13 +68,13 @@ permitted numbers of rows and columns in the various strata of a design.
 
 Unreplicated treatments are allowed and any simple nested block design can be augmented by any number of single unreplicated treatments to give augmented blocks
 that never differ in size by more than a single plot. General crossed block designs are more complex and currently 
-the algorithm will only accommodate single unreplicated treatments in a crossed block design where all the block sizes of the replicated part 
-of the treatment design are exactly equal.
+the algorithm will only accommodate single unreplicated treatments in a crossed block design if the block sizes of the replicated part 
+of the design are all equal in each stratum of the design.
 
  Complete row-and-column block designs with more treatments than replicates must contain multiple plots in at least some of the row-by-column intersections and
- sometimes it may be useful to nest blocks in these row-by-column intersections.
- However, 2 x 2 row-and-column designs with complete replicate rows and complete replicate columns always confound one treatment contrast between the row-by-column 
- interaction and for these designs it is impossible to nest blocks in the row-by-column intersections. 
+ sometimes it may be useful to nest block designs in the individual row-by-column intersections.
+ For 2 x 2 row-and-column designs with complete replicate rows and complete replicate columns, however, one treatment contrast will always be confounded
+  with the row-by-column interaction and for these designs, it is impossible to nest blocks in the row-by-column intersections. 
  Instead, we recommend a simple nested blocks design with two complete or four incomplete main blocks. 
  
  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
@@ -84,7 +84,7 @@ of the treatment design are exactly equal.
  \item  A data frame showing the allocation of treatments to blocks with successive nested strata arranged in standard block order. \cr
  \item  A table showing the replication number of each treatment in the design. \cr
  \item  A table showing the block levels and the achieved D- and A-efficiency factors for each blocks stratum together with A-efficiency upper bounds, where available. \cr
- \item  Plans showing the allocation of treatments to blocks or to rows and columns in the bottom stratum of the design. \cr
+ \item  Plans showing the allocation of treatments to blocks or to rows and to columns in the bottom stratum of the design. \cr
 }
 }
 \examples{
