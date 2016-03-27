@@ -19,7 +19,7 @@ The default is a single set of main blocks equal to the hcf of the replication n
 \item{columns}{a vector of factor levels forthe column blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
 The \code{rows} and the \code{columns} vectors, if both present, must be of equal length. The default is the null vector.}
 
-\item{searches}{the maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 2000 divided by the number of model parameters.}
+\item{searches}{the maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 10000 divided by the number of plots.}
 
 \item{seed}{an integer initializing the random number generator. The default is a random seed.}
 
@@ -38,12 +38,12 @@ Constructs randomized nested and crossed block designs for unstructured treatmen
 and blocks can have any arbitrary feasible depth of nesting.
 }
 \details{
-The \code{blocksdesign} package constructs arbitrary block designs with arbitrary depth of nesting and arbitrary crossed row-and-column designs in each nested stratum.
-Setting the number of column or row blocks to unity in a particular stratum gives a simple nested block structure for that stratum.       
+The \code{blocksdesign} package constructs arbitrary block designs with arbitrary depth of nesting and with arbitrary crossed row-and-column blocks
+in each nested stratum. Designs with a single row or a single column automatically drop the redundant classification and fit a simple nested blocks design.       
 
 The \code{treatments} and \code{replicates} vectors give a partition of the total number of treatments into sets of equally replicated treatments where the
 \code{treatments} vector provides the required treatments partition and the \code{replicates} vector provides the required replication for each treatment set. 
-The sum of the cross-products of the \code{treatments} and \code{replicates} vectors is the total number of plots and treatments are numbered consecutively 
+The sum of the cross-products of the \code{treatments} and \code{replicates} vectors is the total number of plots and the treatments are numbered consecutively 
 according to the ordering of the consecutive treatment sets. 
   
 The \code{rows} vector, if specified, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
@@ -55,25 +55,24 @@ The first number, if any, is the number of columns in the blocks of the top stra
  the second stratum, the third, if any, is the number of columns in the nested blocks of the third stratum and so on for all the required strata in the design. 
   
 The \code{rows} and \code{columns} vectors, if defined, must be of equal length and if a simple nested blocks design is required in 
-any particular stratum then the number of columns in that stratum should be set to unity.
+any particular stratum the row or the column blocks classifications in that stratum should be set to unity.
 
 If both the \code{rows} vector and the \code{columns} vector are null, the default block design will be a single set of orthogonal
 main blocks equal in number to the highest common factor of the replication numbers. If the \code{rows} vector is defined but the \code{columns} vector
 is null, the design will comprise simple nested blocks in each stratum defined by the \code{rows} vector.
 
-The block sizes in any particular rows or columns stratum are always as nearly equal in size as possible and will never differ by more
-than a single unit. The row blocks and column blocks must always comprise at least two plots and this restriction will constrain the 
-allowed number of row and column blocks.
+Block sizes are always as nearly equal as possible and will never differ by more than a single plot in any particular blocks classification.
+Row blocks and column blocks must always contain at least two plots per block and this restriction will constrain the 
+permitted numbers of rows and columns in the various strata of a design.
 
-Unreplicated treatments with a single replication are allowed but unreplicated treatments are added heuristically after the replicated
-part of the design has been optimized and to ensure that the blocks containing the unreplicated treatments do not differ in size by more than
- a single unit, unreplicated treatments should only be used in designs where the replicated treatment blocks 
- are all equal in size in each stratum of the design.     
+Unreplicated treatments are allowed and any simple nested block design can be augmented by any number of single unreplicated treatments to give augmented blocks
+that never differ in size by more than a single plot. General crossed block designs, however, are more complex and currently 
+the algorithm will only accommodate single unreplicated treatments in a crossed block design where all the block sizes of the replicated part of the treatment design are exactly equal.
 
- NB. For two-replicate 2 x 2 row-and-column block designs, the algorithm will always find a semi-Latin squarere with complete
- replicate rows and complete replicate columns but will always fully confound one treatment contrast with the row-by-column interaction contrast.
- For this reason, the algorithm is unable to fit any nested sub-block design within the row-by-column intersections of any two replicate 2 x 2 semi-Latin square. 
- A better design would be a simple nested block design with four main blocks and sub-blocks nested within the main blocks.
+ Row-and-column block designs with more treatments than replicates and with complete replicate rows and complete replicate columns must contain multiple plots in 
+ at least some of the row-by-column intersections and sometimes it may be useful to nest blocks in the row-by-column intersections of such a design.
+ Curently, however, 2 x 2 row-and-column designs with complete replicate rows and complete replicate columns cannot accommodate nested blocks and will generate an error message. Instead,
+ we recommend a simple nested blocks design with two complete or four incomplete main blocks. 
  
  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 

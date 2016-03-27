@@ -7,12 +7,12 @@
 #' 
 #' @details
 #' 
-#' The \code{blocksdesign} package constructs arbitrary block designs with arbitrary depth of nesting and arbitrary crossed row-and-column block designs in each nested stratum.
-#' Strata with a row-and-column design with a single crossed column (or row) block will have a simple nested blocks structure.       
+#' The \code{blocksdesign} package constructs arbitrary block designs with arbitrary depth of nesting and with arbitrary crossed row-and-column blocks
+#' in each nested stratum. Designs with a single row or a single column automatically drop the redundant classification and fit a simple nested blocks design.       
 #' 
 #' The \code{treatments} and \code{replicates} vectors give a partition of the total number of treatments into sets of equally replicated treatments where the
 #' \code{treatments} vector provides the required treatments partition and the \code{replicates} vector provides the required replication for each treatment set. 
-#' The sum of the cross-products of the \code{treatments} and \code{replicates} vectors is the total number of plots and treatments are numbered consecutively 
+#' The sum of the cross-products of the \code{treatments} and \code{replicates} vectors is the total number of plots and the treatments are numbered consecutively 
 #' according to the ordering of the consecutive treatment sets. 
 #'   
 #' The \code{rows} vector, if specified, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
@@ -24,25 +24,24 @@
 #'  the second stratum, the third, if any, is the number of columns in the nested blocks of the third stratum and so on for all the required strata in the design. 
 #'   
 #' The \code{rows} and \code{columns} vectors, if defined, must be of equal length and if a simple nested blocks design is required in 
-#' any particular stratum then one of the row or column blocks classifications in that stratum should be set to unity.
+#' any particular stratum the row or the column blocks classifications in that stratum should be set to unity.
 #' 
 #' If both the \code{rows} vector and the \code{columns} vector are null, the default block design will be a single set of orthogonal
 #' main blocks equal in number to the highest common factor of the replication numbers. If the \code{rows} vector is defined but the \code{columns} vector
 #' is null, the design will comprise simple nested blocks in each stratum defined by the \code{rows} vector.
 #' 
-#' The block sizes are always as nearly equal in size as possible in any particular blocks classification and will never differ by more
-#' than a single unit. Row blocks and column blocks in any particular nested stratum must always contain at least two plots per block and this restriction will constrain the 
-#' allowed numbers of row and column blocks in the various strata of a design.
+#' Block sizes are always as nearly equal as possible and will never differ by more than a single plot in any particular blocks classification.
+#' Row blocks and column blocks must always contain at least two plots per block and this restriction will constrain the 
+#' permitted numbers of rows and columns in the various strata of a design.
 #' 
-#' Unreplicated treatments with a single replication are allowed and are added heuristically after the replicated
-#' part of the design has been optimized. Any simple nested block design can be augmented by any number of single unreplicated treatments to give augmented blocks
-#' that never differ in size by more than a single unit in any particular stratum. General crossed block designs, however, can be augmented by single unreplicated 
-#' treatments only when the initial block sizes of the replicated part of the design in any particular stratum are all equal. Otherwise, the algorithm stops.  
+#' Unreplicated treatments are allowed and any simple nested block design can be augmented by any number of single unreplicated treatments to give augmented blocks
+#' that never differ in size by more than a single plot. General crossed block designs, however, are more complex and currently 
+#' the algorithm will only accommodate single unreplicated treatments in a crossed block design where all the block sizes of the replicated part of the treatment design are exactly equal.
 #' 
-#'  For two-replicate 2 x 2 row-and-column block designs, the algorithm always finds a semi-Latin squarere with complete
-#'  replicate rows and complete replicate columns but with one treatment contrast confounded with the row-by-column interaction contrast.
-#'  For this reason, nested block designs cannot be fitted within the row-by-column intersections of two replicate 2 x 2 semi-Latin squares. 
-#'  Normally, it would be better to have two main blocks with two sub-blocks nested within each main block and further nesting within the sub-blocks if required.
+#'  Row-and-column block designs with more treatments than replicates and with complete replicate rows and complete replicate columns must contain multiple plots in 
+#'  at least some of the row-by-column intersections and sometimes it may be useful to nest blocks in the row-by-column intersections of such a design.
+#'  Curently, however, 2 x 2 row-and-column designs with complete replicate rows and complete replicate columns cannot accommodate nested blocks and will generate an error message. Instead,
+#'  we recommend a simple nested blocks design with two complete or four incomplete main blocks. 
 #'  
 #'  Lattice designs where v is a prime-power require the \code{\link[crossdes]{MOLS}} package.
 #' 
@@ -67,7 +66,7 @@
 #' 
 #' @param seed  an integer initializing the random number generator. The default is a random seed.
 #' 
-#' @param searches  the maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 2000 divided by the number of model parameters.
+#' @param searches  the maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 10000 divided by the number of plots.
 #' 
 #' @param jumps  the number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.
 #' 
