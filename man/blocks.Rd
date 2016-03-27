@@ -40,7 +40,7 @@ and blocks can have any arbitrary feasible depth of nesting.
 \details{
 The \code{blocksdesign} package constructs arbitrary block designs with arbitrary depth of nesting and arbitrary crossed row-and-column blocks
 in each nested stratum. Where one classification of a row-and-column design has a single block level, the design automatically defaults to a simple nested blocks design
-(if both classifications have a single level that blocks stratum is dropped from the design).       
+(if both classifications of a stratum have a single level that stratum is dropped from the design).       
 
 The \code{treatments} and \code{replicates} vectors give a partition of the total number of treatments into sets of equally replicated treatments where the
 \code{treatments} vector provides the required treatments partition and the \code{replicates} vector provides the required replication for each treatment set. 
@@ -103,8 +103,11 @@ blocks(treatments=50,replicates=4,rows=c(4,5))
 # giving exactly one single replicate treatment per sub-block
 blocks(treatments=c(50,20),replicates=c(4,1),rows=c(4,5))
 
+# 64 treatments x 2 replicates with 2 main rows and four succesively nested 2-level factors
+blocks(treatments=64,replicates=2,rows=c(2,2,2,2,2))
+
 # 64 treatments x 2 replicates with 2 main rows and five succesively nested 2-level factors
-blocks(treatments=64,replicates=2,rows=c(2,2,2,2,2,2))
+\dontrun{ blocks(treatments=64,replicates=2,rows=c(2,2,2,2,2,2)) }
 
 # 6 replicates of 6 treatments in 4 rows of size 9 (non-binary block design)
 blocks(treatments=6,replicates=6,rows=4)
