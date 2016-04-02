@@ -233,7 +233,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         if (!isTRUE(all.equal(relD,globrelD)) && relD>globrelD) {
           globTF=TF
           globrelD=relD
-          if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF,BF,nlevels(BF))[2]))) break
+          if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF,BF)[2]))) break
         }
       }
       if (r==searches) break
@@ -328,6 +328,85 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     TF=Optimise(TF,Columns,MTT,MBB,MTB,Blocks)
     return(TF)
   }  
+  # ******************************************************************************************************************************************************** 
+  # Optimize row-by-column intersection blocks conditional on rows and columns remaining unchanged
+  # ********************************************************************************************************************************************************    
+  rowscolsOpt=function(TF,Rows,Columns,Blocks) { 
+    TF=NonSingular(TF,Rows,Blocks,rep(1,length(TF)))
+    if (is.null(TF)) return(TF)
+    blevels=nlevels(Blocks)%/%nlevels(Rows)
+    BM=Contrasts(Rows,Blocks)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(Rows)),drop=FALSE]
+    TM=Contrasts(Rows,TF)[,-nlevels(TF),drop=FALSE] 
+    V=chol2inv(chol(crossprod(cbind(BM,TM))))
+    MBB=matrix(0,nrow=nlevels(Blocks),ncol=nlevels(Blocks))
+    MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
+    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Blocks))
+    indicb=seq_len(nlevels(Blocks)-nlevels(Rows))
+    indict=seq_len(nlevels(TF)-1)
+    indicv=seq_len(ncol(V)-nlevels(Blocks)+nlevels(Rows)) + nlevels(Blocks)-nlevels(Rows)
+    MBB[indicb,indicb]=V[indicb,indicb,drop=FALSE]
+    MTT[indict,indict]=V[indicv,indicv,drop=FALSE]
+    MTB[indict,indicb]=V[indicv,indicb,drop=FALSE]
+    perm=order(order(seq(nlevels(Blocks))%%blevels ==0))  
+    MTB=MTB[,perm]
+    MBB=MBB[perm,perm] 
+    TF=condOpt(TF,Blocks,MTT,MBB,MTB,Rows)
+    return(TF)
+  }  
+  
+  # ******************************************************************************************************************************************************** 
+  #  Number of searches for an optimization with selected number of searches and selected number of junps to escape local optima
+  # ********************************************************************************************************************************************************
+  condOpt=function(TF,BF,MTT,MBB,MTB,Restrict)  {
+    print(Restrict)
+    print(BF)
+    globrelD=0
+    relD=1
+    globTF=TF
+    treps=tabulate(TF)
+    breps=tabulate(BF)     
+    if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  )
+      bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) else bound=NA
+    for (r in seq_len(searches)) {
+      dmax=DMax(MTT,MBB,MTB,TF,BF,Restrict)
+      if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
+        relD=relD*dmax$relD
+        TF=dmax$TF
+        MTT=dmax$MTT
+        MBB=dmax$MBB
+        MTB=dmax$MTB 
+        if (!isTRUE(all.equal(relD,globrelD)) && relD>globrelD) {
+          globTF=TF
+          globrelD=relD
+          if ( !is.na(bound) && bound==optEffics(globTF,BF) ) break
+        }
+      }
+      if (r==searches) break
+      for (iswap in seq_len(jumps)) {
+        counter=0
+        repeat {  
+          counter=counter+1
+          s1=sample(seq_len(length(TF)),1)
+          z=seq_len(length(TF))[Restrict==Restrict[s1] & BF!=BF[s1] & TF!=TF[s1]]
+          if (length(z)==0) next
+          if (length(z)>1) s=c(s1,sample(z,1))  else s=c(s1,z[1])
+          dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
+            (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
+          if (dswap>.1 | counter>1000) break
+        }
+        if (counter>1000) return(globTF) # no non-singular swaps
+        relD=relD*dswap
+        up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
+        MTT=up$MTT
+        MBB=up$MBB
+        MTB=up$MTB
+        TF[c(s[1],s[2])]=TF[c(s[2],s[1])]  
+      } 
+    }
+    globTF
+  } 
+  
+  
   # *******************************************************************************************************************************************************
   # Returns v-1 cyclically generated v x v Latin squares plus the rows array (first) and the columns array (last). If v is prime, the squares are MOLS  
   # ********************************************************************************************************************************************************  
@@ -437,7 +516,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # ******************************************************************************************************************************************************** 
   # Calculates D and A-efficiency factors for treatment factor TF assuming block factor BF
   # ********************************************************************************************************************************************************
-  optEffics=function(TF,BF,k ) { 
+  optEffics=function(TF,BF) { 
+    k=nlevels(BF)
     if (ntrts<=k) 
       e=eigen( (diag(ntrts)-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)] else    
         e=c(rep(1,(ntrts-k)), 
@@ -447,24 +527,62 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # ******************************************************************************************************************************************************** 
   # Finds efficiency factors for block designs 
   # ********************************************************************************************************************************************************     
-  A_Efficiencies=function(Design) {
+  BlockEfficiencies=function(Design) {
     strata=ncol(Design)-1
-    nblocks=as.numeric(sapply(Design, nlevels))[1:strata]
-    bounds=rep(NA,strata)
     effics=matrix(NA,nrow=strata,ncol=2)
-    if (isTRUE(all.equal(max(replicates),min(replicates))) ) 
-      for (i in seq_len(strata))  
-        if ( isTRUE(all.equal(nunits%%nblocks[i],0))) 
-          bounds[i]=upper_bounds(nunits,ntrts,nblocks[i])
     for (i in seq_len(strata))    
-        effics[i,]=optEffics(Design$Treatments,Design[,i],nblocks[i])  
-    efficiencies=data.frame(cbind(colnames(Design)[1:strata],nblocks,effics,bounds))
+      effics[i,]=optEffics(Design$Treatments,Design[,i])  
+    bounds=rep(NA,strata)
+    if (max(replicates)==min(replicates)) 
+      for (i in seq_len(strata))  
+        if ( nunits%%nlevels(Design[,i])==0 ) 
+          bounds[i]=upper_bounds(nunits,ntrts,nlevels(Design[,i]) )
+    names=NULL
+    for (i in 1:strata)
+      names=c(names,paste("Blocks",i))
+    blocks=NULL
+    for (i in 1:strata) 
+      blocks=c( blocks,nlevels(Design[,i]))
+    efficiencies=data.frame(cbind(names,blocks,effics,bounds))
+    colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
+    efficiencies
+    efficiencies
+  }
+  # ******************************************************************************************************************************************************** 
+  # Finds efficiency factors for row-and-column designs 
+  # ********************************************************************************************************************************************************     
+  RowColEfficiencies=function(Design,Blocks) {
+    strata=ncol(Blocks)-1
+    effics=matrix(NA,nrow=(3*strata),ncol=2)
+    for (i in seq_len(strata)) {
+      effics[3*(i-1)+1,]=optEffics(Design$Treatments,Design[,2*(i-1)+1])  
+      effics[3*(i-1)+2,]=optEffics(Design$Treatments,Design[,2*(i-1)+2])  
+      effics[3*(i-1)+3,]=optEffics(Design$Treatments,Blocks[,i+1])  
+    }
+    bounds=rep(NA,(3*strata))
+    if (max(replicates)==min(replicates)) {
+      for (i in seq_len(strata))  {
+        if (nunits%%nlevels(Design[,2*(i-1)+1])==0)
+          bounds[3*(i-1)+1]=upper_bounds(nunits,ntrts,nlevels(Design[,2*(i-1)+1]))
+        if (nunits%%nlevels(Design[,2*(i-1)+2])==0)
+          bounds[3*(i-1)+2]=upper_bounds(nunits,ntrts,nlevels(Design[,2*(i-1)+2]))
+        if (nunits%%nlevels(Blocks[,i+1])==0)
+          bounds[3*(i-1)+3]=upper_bounds(nunits,ntrts,nlevels(Blocks[,i+1]))
+      }
+    }
+    names=NULL
+    for (i in 1:strata)
+    names=c(names,paste("Rows",i),paste("Columns",i),paste("Rows x Columns",i))
+    blocks=NULL
+    for (i in 1:strata) 
+      blocks=c( blocks,nlevels(Design[,2*(i-1)+1]),nlevels(Design[,2*(i-1)+2]),nlevels(Blocks[,i+1]))
+    efficiencies=data.frame(cbind(names,blocks,effics,bounds))
     colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies
   }
   
   # ******************************************************************************************************************************************************** 
-  # Finds efficiency factors for block designs 
+  # Some validation checks
   # ********************************************************************************************************************************************************     
   Validate=function(treatments,replicates,rows,columns,seed,jumps,searches) {
     if (missing(treatments) | missing(replicates)) stop(" Treatments or replicates not defined ")   
@@ -578,6 +696,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     Blocks  = data.frame(Blocks[rep(seq_len(nrow(Blocks)),  blocksizes ),]) 
     Design[]= lapply(Design, as.factor) 
     Blocks[]= lapply(Blocks, as.factor) 
+    
     # Treatment factors and levels ignoring single replicate treatments
     reps=rep(fullreplicates,fulltreatments)
     trts=rep(1:sum(fulltreatments))[reps>1]
@@ -588,14 +707,18 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       rand=sample(nunits)      
       TF=as.factor( TF[rand][order(rep(seq_len(hcf),each=nunits/hcf)[rand])] )
       for ( i in seq_len(strata)) {
-        if (isrowcol &&  rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
         if (!isrowcol && rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,Blocks[,i],Design[,i])
         if (is.null(TF)) break
+        if (isrowcol &&  rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
+        if (is.null(TF)) break
         if (isrowcol && columns[i]>1) TF=colsOpt(TF,Blocks[,i],Design[,2*i],Design[,2*i-1])
+        if (is.null(TF)) break
+        if (isrowcol && columns[i]>1 && rows[i]>1) TF=rowscolsOpt(TF, Design[,2*i-1],Design[,2*i],Blocks[,i+1])
         if (is.null(TF)) break
       }
       if (!is.null(TF)) break
     }
+
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
     # add back single rep treatments for nested stratum blocks only
     replicates=fullreplicates
@@ -635,6 +758,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     Design[]  = lapply(Design, as.factor)
     colnames(Design)=c(stratumnames,"Treatments")
     rownames(Design)=NULL
+
     #Plan
     V=split(Design[,ncol(Design)],rep(1:cumblocks[strata+1],blocksizes))
     if (!isrowcol| columns[length(columns)]==1  | rows[length(rows)]==1  ) {
@@ -650,21 +774,30 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       fDesign[]=lapply(fDesign, as.factor) 
       rcblocks=unlist(lapply(V, paste, collapse = ",") )
       plan=matrix("",nrow=cumblocks[strata]*columns[strata],ncol=cumblocks[strata]*rows[strata])
+
       for (z in 1: cumblocks[strata])
         plan[c(((z-1)*columns[strata]+1):(z*columns[strata])),c(((z-1)*rows[strata]+1):(z*rows[strata]))] =  
         rcblocks[c(((z-1)*rows[strata]*columns[strata]+1):(z*rows[strata]*columns[strata]))]
+    
       Columns=rep("",nrow(fDesign))
       Plan=as.data.frame(cbind(fDesign,Columns,t(plan)))
       
-      
       names(Plan)[names(Plan) == 'Columns'] = paste('Columns', length(columns))
     }
+    
+    # efficiencies
+    if (isrowcol)     
+        Efficiencies=RowColEfficiencies(Design,Blocks)
+    else
+        Efficiencies=BlockEfficiencies(Design)
+    
+    row.names(Efficiencies)=NULL
+    
     # omit single level row or column strata in row and column designs
     if (isrowcol) Design[c(which(as.numeric(rbind(rows,columns))==1))]= list(NULL) 
     if (isrowcol) Plan[c(which(as.numeric(rbind(rows,columns))==1 ))]= list(NULL) 
-    # efficiencies
-    Efficiencies=A_Efficiencies(Design)
-    row.names(Efficiencies)=NULL
+    
+    
   }
     # treatment replications
     TreatmentsTable=data.frame(table(Design[,"Treatments"]))
