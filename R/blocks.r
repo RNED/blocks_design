@@ -147,12 +147,20 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # ******************************************************************************************************************************************************** 
   # Contrasts for factor NF centered within the levels of factor MF to ensure that NF information is estimated within the levels of factor MF only  
   # ********************************************************************************************************************************************************
-  Contrasts=function(MF,NF) {
+  oldContrasts=function(MF,NF) {
     NM=matrix(0,nrow=length(NF),ncol=nlevels(NF))
     NM[cbind(seq_len(length(NF)),NF)]=1 # factor indicator matrix  
-    for (i in seq_len(nlevels(MF))) 
-      NM[MF==i,]=scale(NM[MF==i,] , center = TRUE, scale = FALSE)
-    NM
+    NM=do.call(rbind,lapply( seq_len(nlevels(MF)) , function(j){  scale(NM[MF==j,] , center = TRUE, scale = FALSE)} ))
+  }
+  
+  # ******************************************************************************************************************************************************** 
+  #  Generates a matrix of centred contrasts for a factor BF omitting last contrast
+  # ********************************************************************************************************************************************************
+  Contrasts=function(BF) {
+    BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
+    BM[cbind(seq_len(length(BF)),BF)]=1 # factor indicator matrix  
+    BM=scale(BM , center = TRUE, scale = FALSE)[,-ncol(BM),drop=FALSE]
+    BM
   }
   # ******************************************************************************************************************************************************** 
   # Updates variance matrix for pairs of swapped treatments using standard matrix updating formula
@@ -185,14 +193,19 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     relD=1
     mainSizes=tabulate(Restrict)
     nSamp=pmin(rep(8,nlevels(Restrict)),mainSizes)
+    
     repeat {
       improved=FALSE
       for (k in seq_len(nlevels(Restrict))) {
         S=sort(sample(seq_len(length(TF))[Restrict==k], nSamp[k])) 
+        
         TB=MTB[TF[S],BF[S],drop=FALSE]-tcrossprod(MTB[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
+        
         dMat=(TB+t(TB)+1)**2-
           (2*MTT[TF[S],TF[S],drop=FALSE]-tcrossprod(MTT[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MTT[cbind(TF[S],TF[S])]) + 1)*
           (2*MBB[BF[S],BF[S],drop=FALSE]-tcrossprod(MBB[cbind(BF[S],BF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MBB[cbind(BF[S],BF[S])]) + 1)
+        
+        
         sampn=which.max(dMat) 
         i=1+(sampn-1)%%nSamp[k]
         j=1+(sampn-1)%/%nSamp[k]
@@ -210,7 +223,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       if (sum(nSamp) < min(length(TF),512)) nSamp=pmin(mainSizes,2*nSamp) else break
     }
     list(MTT=MTT,MBB=MBB,MTB=MTB,TF=TF,relD=relD)
-  }  
+  } 
+  
+
+  
   # ******************************************************************************************************************************************************** 
   #  Number of searches for an optimization with selected number of searches and selected number of junps to escape local optima
   # ********************************************************************************************************************************************************
@@ -303,13 +319,44 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     if (times>999) TF=NULL
     return(TF)
   }  
+  
   # ******************************************************************************************************************************************************** 
-  # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
+  # Optimize the nested Blocks assuming a possible set of Main block constraints Initial randomized starting design. 
+  # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
-  colsOpt=function(TF,Main,Columns,Blocks) { 
-    TF=NonSingular(TF,Main,Columns,Blocks)
+  colsOpt=function(TF,Main,Columns,Rows) { 
+    TF=NonSingular(TF,Main,Columns,Rows)
     if (is.null(TF)) return(TF)
     blevels=nlevels(Columns)%/%nlevels(Main)
+    BM=Contrasts(Main,Columns)[,         rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(Main))     ,drop=FALSE]
+    TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] 
+    V=chol2inv(chol(crossprod(cbind(BM,TM))))
+    MBB=matrix(0,nrow=nlevels(Columns),ncol=nlevels(Columns))
+    MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
+    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Columns))
+    indicb=seq_len(nlevels(Columns)-nlevels(Main))
+    indict=seq_len(nlevels(TF)-1)
+    indicv=seq_len(ncol(V)-nlevels(Columns)+nlevels(Main)) + nlevels(Columns)-nlevels(Main)
+    MBB[indicb,indicb]=V[indicb,indicb,drop=FALSE]
+    MTT[indict,indict]=V[indicv,indicv,drop=FALSE]
+    MTB[indict,indicb]=V[indicv,indicb,drop=FALSE]
+    perm=order(order(seq_len(nlevels(Columns))%%blevels ==0  ))  
+    MTB=MTB[,perm]
+    MBB=MBB[perm,perm] 
+    TF=Optimise(TF,Columns,MTT,MBB,MTB,Rows)
+    return(TF)
+  }  
+  
+  # ******************************************************************************************************************************************************** 
+  # Rows x Columns contrasts allowing shrinkage for Rows.Columns blocks   
+  # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
+  # ********************************************************************************************************************************************************    
+  rowscolsOpt=function(TF,Main,Rows,Columns) { 
+    rowlevs=nlevels(Rows)%/%nlevels(Main)  
+    collevs=nlevels(Columns)%/%nlevels(Main)
+    cRows=Rows[,1:(ncol(Rows)-1)]-Rows[,ncol(Rows)] 
+    cCols=Columns[,1:(ncol(Columns)-1)]-Columns[,ncol(Columns)] 
+    cRowsCols=cRows*cCols
     BM=Contrasts(Main,Columns)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(Main)),drop=FALSE]
     TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] 
     V=chol2inv(chol(crossprod(cbind(BM,TM))))
@@ -325,88 +372,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     perm=order(order(seq_len(nlevels(Columns))%%blevels ==0  ))  
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
-    TF=Optimise(TF,Columns,MTT,MBB,MTB,Blocks)
+    TF=Optimise(TF,Columns,MTT,MBB,MTB,Rows)
     return(TF)
   }  
-  # ******************************************************************************************************************************************************** 
-  # Optimize row-by-column intersection blocks conditional on rows and columns remaining unchanged
-  # ********************************************************************************************************************************************************    
-  rowscolsOpt=function(TF,Rows,Columns,Blocks) { 
-    TF=NonSingular(TF,Rows,Blocks,rep(1,length(TF)))
-    if (is.null(TF)) return(TF)
-    blevels=nlevels(Blocks)%/%nlevels(Rows)
-    BM=Contrasts(Rows,Blocks)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(Rows)),drop=FALSE]
-    TM=Contrasts(Rows,TF)[,-nlevels(TF),drop=FALSE] 
-    V=chol2inv(chol(crossprod(cbind(BM,TM))))
-    MBB=matrix(0,nrow=nlevels(Blocks),ncol=nlevels(Blocks))
-    MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
-    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Blocks))
-    indicb=seq_len(nlevels(Blocks)-nlevels(Rows))
-    indict=seq_len(nlevels(TF)-1)
-    indicv=seq_len(ncol(V)-nlevels(Blocks)+nlevels(Rows)) + nlevels(Blocks)-nlevels(Rows)
-    MBB[indicb,indicb]=V[indicb,indicb,drop=FALSE]
-    MTT[indict,indict]=V[indicv,indicv,drop=FALSE]
-    MTB[indict,indicb]=V[indicv,indicb,drop=FALSE]
-    perm=order(order(seq(nlevels(Blocks))%%blevels ==0))  
-    MTB=MTB[,perm]
-    MBB=MBB[perm,perm] 
-    TF=condOpt(TF,Blocks,MTT,MBB,MTB,Rows)
-    return(TF)
-  }  
-  
-  # ******************************************************************************************************************************************************** 
-  #  Number of searches for an optimization with selected number of searches and selected number of junps to escape local optima
-  # ********************************************************************************************************************************************************
-  condOpt=function(TF,BF,MTT,MBB,MTB,Restrict)  {
-    print(Restrict)
-    print(BF)
-    globrelD=0
-    relD=1
-    globTF=TF
-    treps=tabulate(TF)
-    breps=tabulate(BF)     
-    if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  )
-      bound=upper_bounds(length(TF),nlevels(TF),nlevels(BF)) else bound=NA
-    for (r in seq_len(searches)) {
-      dmax=DMax(MTT,MBB,MTB,TF,BF,Restrict)
-      if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
-        relD=relD*dmax$relD
-        TF=dmax$TF
-        MTT=dmax$MTT
-        MBB=dmax$MBB
-        MTB=dmax$MTB 
-        if (!isTRUE(all.equal(relD,globrelD)) && relD>globrelD) {
-          globTF=TF
-          globrelD=relD
-          if ( !is.na(bound) && bound==optEffics(globTF,BF) ) break
-        }
-      }
-      if (r==searches) break
-      for (iswap in seq_len(jumps)) {
-        counter=0
-        repeat {  
-          counter=counter+1
-          s1=sample(seq_len(length(TF)),1)
-          z=seq_len(length(TF))[Restrict==Restrict[s1] & BF!=BF[s1] & TF!=TF[s1]]
-          if (length(z)==0) next
-          if (length(z)>1) s=c(s1,sample(z,1))  else s=c(s1,z[1])
-          dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
-            (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
-          if (dswap>.1 | counter>1000) break
-        }
-        if (counter>1000) return(globTF) # no non-singular swaps
-        relD=relD*dswap
-        up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
-        MTT=up$MTT
-        MBB=up$MBB
-        MTB=up$MTB
-        TF[c(s[1],s[2])]=TF[c(s[2],s[1])]  
-      } 
-    }
-    globTF
-  } 
-  
-  
   # *******************************************************************************************************************************************************
   # Returns v-1 cyclically generated v x v Latin squares plus the rows array (first) and the columns array (last). If v is prime, the squares are MOLS  
   # ********************************************************************************************************************************************************  
@@ -418,7 +386,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     mols
   }
   # *******************************************************************************************************************************************************
-  # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
+  # Optimize the nested Blocks assuming a possible set of Main block constraints Initial randomized starting design. 
+  # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ******************************************************************************************************************************************************** 
   rowsOpt=function(TF,Main,Blocks) { 
     newlabels=levels(TF)
@@ -468,21 +437,17 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       TF=NonSingular(TF,Main,Blocks,rep(1,length(TF)))
       if (is.null(TF)) return(TF)
       blevels=nlevels(Blocks)%/%nlevels(Main)
-      BM=Contrasts(Main,Blocks)[, rep(c(rep(TRUE,(blevels-1)),FALSE),nlevels(Main)),drop=FALSE]
-      TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] 
+      BM=Contrasts(Blocks)
+      TM=Contrasts(TF)
       V=chol2inv(chol(crossprod(cbind(BM,TM))))
-      MBB=matrix(0,nrow=nlevels(Blocks),ncol=nlevels(Blocks))
-      MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
-      MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Blocks))
-      indicb=seq_len(nlevels(Blocks)-nlevels(Main))
-      indict=seq_len(nlevels(TF)-1)
-      indicv=seq_len(ncol(V)-nlevels(Blocks)+nlevels(Main)) + nlevels(Blocks)-nlevels(Main)
-      MBB[indicb,indicb]=V[indicb,indicb,drop=FALSE]
-      MTT[indict,indict]=V[indicv,indicv,drop=FALSE]
-      MTB[indict,indicb]=V[indicv,indicb,drop=FALSE]
-      perm=order(order(seq(nlevels(Blocks))%%blevels ==0))  
-      MTB=MTB[,perm]
-      MBB=MBB[perm,perm] 
+      indicb=seq_len(nlevels(Blocks)-1)
+      indicv=seq_len(nlevels(TF)-1)+nlevels(Blocks)-1
+      MBB=V[indicb,indicb,drop=FALSE]
+      MTT=V[indicv,indicv,drop=FALSE]
+      MTB=V[indicv,indicb,drop=FALSE]
+      MBB=rbind(  cbind(MBB,rep(0,nrow(MBB))) , rep(0,(ncol(MBB)+1)))
+      MTT=rbind(  cbind(MTT,rep(0,nrow(MTT))) , rep(0,(ncol(MTT)+1)))
+      MTB=rbind(  cbind(MTB,rep(0,nrow(MTB))) , rep(0,(ncol(MTB)+1)))
       TF=Optimise(TF,Blocks,MTT,MBB,MTB,Main)
     }
     return(TF)
@@ -518,11 +483,12 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # ********************************************************************************************************************************************************
   optEffics=function(TF,BF) { 
     k=nlevels(BF)
+    if (k==1) return(c(1,1))
     if (ntrts<=k) 
       e=eigen( (diag(ntrts)-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(ntrts-1)] else    
         e=c(rep(1,(ntrts-k)), 
             eigen((diag(k)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(k-1)])  
-      round(c(mean(e)*prod(e/mean(e))^(1/length(e)),1/mean(1/e)),6)
+      return(round(c(mean(e)*prod(e/mean(e))^(1/length(e)),1/mean(1/e)),6))
   }
   # ******************************************************************************************************************************************************** 
   # Finds efficiency factors for block designs 
@@ -646,6 +612,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     for (i in seq_len(length(rows)-1)) 
       if (rows[i]==2 && columns[i]==2) stop( paste("Cannot have nested sub-blocks within a 2 x 2 semi-Latin square - try a nested sub-blocks design within 4 main blocks"))
   set.seed(seed)
+  
   if (max(replicates)==1) {
     ntrts=sum(treatments)
     treatments=as.factor(sample(ntrts))
@@ -712,8 +679,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         if (isrowcol &&  rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
         if (is.null(TF)) break
         if (isrowcol && columns[i]>1) TF=colsOpt(TF,Blocks[,i],Design[,2*i],Design[,2*i-1])
-        if (is.null(TF)) break
-        if (isrowcol && columns[i]>1 && rows[i]>1) TF=rowscolsOpt(TF, Design[,2*i-1],Design[,2*i],Blocks[,i+1])
         if (is.null(TF)) break
       }
       if (!is.null(TF)) break
