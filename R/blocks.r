@@ -145,15 +145,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     return(TRUE)
   } 
   # ******************************************************************************************************************************************************** 
-  # Contrasts for factor NF centered within the levels of factor MF to ensure that NF information is estimated within the levels of factor MF only  
-  # ********************************************************************************************************************************************************
-  oldContrasts=function(MF,NF) {
-    NM=matrix(0,nrow=length(NF),ncol=nlevels(NF))
-    NM[cbind(seq_len(length(NF)),NF)]=1 # factor indicator matrix  
-    NM=do.call(rbind,lapply( seq_len(nlevels(MF)) , function(j){  scale(NM[MF==j,] , center = TRUE, scale = FALSE)} ))
-  }
-  
-  # ******************************************************************************************************************************************************** 
   #  Generates a matrix of centred contrasts for a factor BF omitting last contrast
   # ********************************************************************************************************************************************************
   Contrasts=function(BF) {
@@ -456,9 +447,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # Finds row and column sizes in each stratum of a design 
   # ********************************************************************************************************************************************************     
   Sizes=function(blocksizes,stratum) {
-    nblocks=length(blocksizes)
     newblocksizes=NULL
-    for (j in seq_len(nblocks)) {
+    for (j in 1:length(blocksizes) ) {
       rowsizes=rep(blocksizes[j]%/%rows[stratum],rows[stratum])
       resid=blocksizes[j]-sum(rowsizes)
       if (resid>0) 
@@ -656,6 +646,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       blocksizes=Sizes(blocksizes,i) 
       if (max(blocksizes) > min(blocksizes)) regular=FALSE
     }
+
     if ( min(fullreplicates)==1 && max(fullreplicates)>1 &&  max(columns)>1 && regular==FALSE )  
       stop("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
     
@@ -695,6 +686,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       fullblocksizes=nunits
       for (i in seq_len(strata))
         fullblocksizes=Sizes(fullblocksizes,i)
+      
       sblocksizes=fullblocksizes-blocksizes
       TF=as.numeric(levels(TF))[TF]
       addTF=rep(1:sum(treatments))[fullreps==1]
