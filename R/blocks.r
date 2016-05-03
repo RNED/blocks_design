@@ -158,7 +158,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # mtb**2-mtt*mbb is > 0 because the swap is a positive element of dMat=(TB+t(TB)+1)**2-TT*BB
   # 2*mtb+mtt+mbb > mtt + mbb + 2*(mtt*mbb)**.5 > 0 because mtb**2 > mtt*mbb   
   # ********************************************************************************************************************************************************
-  UpDate=function(MTT,MBB,MTB,ti,tj,bi,bj) {  
+  
+  UpDate=function(MTT,MBB,MTB,ti,tj,bi,bj) {
+    MBB=rbind(  cbind(MBB,rep(0,nrow(MBB))) , rep(0,(ncol(MBB)+1)))
+    MTT=rbind(  cbind(MTT,rep(0,nrow(MTT))) , rep(0,(ncol(MTT)+1)))
+    MTB=rbind(  cbind(MTB,rep(0,nrow(MTB))) , rep(0,(ncol(MTB)+1)))
     mtt=MTT[ti,ti]+MTT[tj,tj]-2*MTT[tj,ti]
     mbb=MBB[bi,bi]+MBB[bj,bj]-2*MBB[bi,bj]
     mtb=1-MTB[ti,bi]+MTB[tj,bi]+MTB[ti,bj]-MTB[tj,bj]  
@@ -173,14 +177,60 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     MTT = MTT - tcrossprod(Z1) + tcrossprod(W1)
     MBB = MBB - tcrossprod(Z2) + tcrossprod(W2)
     MTB = MTB - tcrossprod(Z1,Z2) + tcrossprod(W1,W2) 
+    MBB=MBB[-nrow(MBB),-ncol(MBB)]
+    MTT=MTT[-nrow(MTT),-ncol(MTT)]
+    MTB=MTB[-nrow(MTB),-ncol(MTB)]
     list(MTT=MTT,MBB=MBB,MTB=MTB)
   }  
- 
   # ******************************************************************************************************************************************************** 
   # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
   # Sampling is used initially when many feasible swaps are available but later a full search is used to ensure steepest ascent optimization.
   # ********************************************************************************************************************************************************
   DMax=function(MTT,MBB,MTB,TF,BF,Restrict) {   
+    B=Contrasts(BF)
+    T=Contrasts(TF)
+    relD=1
+    mainSizes=tabulate(Restrict)
+    CMS=c(0,cumsum(mainSizes))
+    repeat {
+      improved=FALSE 
+        for (z in 1:length(mainSizes)) {
+          Tr=T[ c( (CMS[z]+1):CMS[z+1] ),]
+          Br=B[ c( (CMS[z]+1):CMS[z+1] ),]
+          TB=tcrossprod(crossprod(t(Tr),MTB),Br)
+          TT=tcrossprod(crossprod(t(Tr),MTT),Tr)
+          BB=tcrossprod(crossprod(t(Br),MBB),Br)
+          TT=2*TT-tcrossprod(rep(1,nrow(Tr)),diag(TT))-tcrossprod(diag(TT),rep(1,nrow(Tr)))
+          BB=2*BB-tcrossprod(rep(1,nrow(Br)),diag(BB))-tcrossprod(diag(BB),rep(1,nrow(Br)))
+          TB=TB-tcrossprod(rep(1,nrow(Tr)),diag(TB))
+          dMat=(1+TB+t(TB))**2-TT*BB
+          resn=which.max(dMat) 
+          si=1+(resn-1)%%nrow(Tr)
+          sj=1+(resn-1)%/%nrow(Tr)
+          if ( !isTRUE(all.equal(dMat[si,sj],1)) && dMat[si,sj]>1) {
+            improved=TRUE
+            relD=relD*dMat[si,sj]
+            i=si+CMS[z]
+            j=sj+CMS[z]
+            up=UpDate(MTT,MBB,MTB,TF[i],TF[j],BF[i],BF[j])
+            MTT=up$MTT
+            MBB=up$MBB
+            MTB=up$MTB
+            TF[c(i,j)]=TF[c(j,i)]
+            T[c(i,j),]=T[c(j,i),]
+          }
+        }
+      if (improved) next
+      break
+    }
+    list(MTT=MTT,MBB=MBB,MTB=MTB,TF=TF,relD=relD)
+  } 
+  
+  # ******************************************************************************************************************************************************** 
+  # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
+  # Sampling is used initially when many feasible swaps are available but later a full search is used to ensure steepest ascent optimization.
+  # ********************************************************************************************************************************************************
+  oldDMax=function(MTT,MBB,MTB,TF,BF,Restrict) {   
     relD=1
     mainSizes=tabulate(Restrict)
     nSamp=pmin(rep(8,nlevels(Restrict)),mainSizes)
@@ -189,6 +239,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       for (k in seq_len(nlevels(Restrict))) {
         S=sort(sample(seq_len(length(TF))[Restrict==k], nSamp[k])) 
         TB=MTB[TF[S],BF[S],drop=FALSE]-tcrossprod(MTB[cbind(TF[S],BF[S])],rep(1,nSamp[k]))
+        
         dMat=(TB+t(TB)+1)**2-
           (2*MTT[TF[S],TF[S],drop=FALSE]-tcrossprod(MTT[cbind(TF[S],TF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MTT[cbind(TF[S],TF[S])]) + 1)*
           (2*MBB[BF[S],BF[S],drop=FALSE]-tcrossprod(MBB[cbind(BF[S],BF[S])]+rep(1,nSamp[k]) ) + tcrossprod(MBB[cbind(BF[S],BF[S])]) + 1)
@@ -304,76 +355,30 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     if (times>999) TF=NULL
     return(TF)
   }  
-  
   # ******************************************************************************************************************************************************** 
-  # Optimize the colums Blocks assuming a possible set of Main block constraints Initial randomized starting design. 
-  # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
+  # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
-  colsOpt=function(TF,Main,Columns,Rows) { 
-    TF=NonSingular(TF,Main,Columns,Rows)
+  colsOpt=function(TF,Rows,Columns,Blocks) { 
+    TF=NonSingular(TF,Rows,Columns,Blocks)
     if (is.null(TF)) return(TF)
-    blevels=nlevels(Columns)%/%nlevels(Main)
-    CM=Contrasts(Columns)
     RM=Contrasts(Rows)
-    
+    CM=Contrasts(Columns)
     RCM=do.call(cbind,lapply(1:ncol(RM),function(i) { do.call(cbind,lapply(1:ncol(CM),function(j) { RM[,i]*CM[,j] } ))}))
-    print(RM)
-    print(CM)
-    print(RCM)
     TM=Contrasts(TF)
-    V=chol2inv(chol(crossprod(cbind(CM,TM))))
-    indicb=seq_len(nlevels(Columns)-1)
-    indicv=seq_len(nlevels(TF)-1)+nlevels(Columns)-1
+    V=chol2inv(chol(crossprod(cbind(CM,RCM,TM))))
+    indict=seq_len(ncol(TM))+ncol(CM)+ncol(RCM)
+    MTT=V[indict,indict,drop=FALSE]
+    MTT=rbind(cbind(MTT,rep(0,nrow(MTT))),rep(0,(ncol(MTT)+1)))
+    indicb=seq_len(ncol(CM))
     MBB=V[indicb,indicb,drop=FALSE]
-    MTT=V[indicv,indicv,drop=FALSE]
-    MTB=V[indicv,indicb,drop=FALSE]
-    MBB=rbind(  cbind(MBB,rep(0,nrow(MBB))) , rep(0,(ncol(MBB)+1)))
-    MTT=rbind(  cbind(MTT,rep(0,nrow(MTT))) , rep(0,(ncol(MTT)+1)))
+    MBB=rbind(cbind(MBB,rep(0,nrow(MBB))),rep(0,(ncol(MBB)+1)))
+    MTB=V[indict,indicb,drop=FALSE]
     MTB=rbind(  cbind(MTB,rep(0,nrow(MTB))) , rep(0,(ncol(MTB)+1)))
+    indicv=seq_len(nlevels(TF)-1)+nlevels(Columns)-1
     TF=Optimise(TF,Columns,MTT,MBB,MTB,Rows)
+
     return(TF)
   }  
-  
-  # ******************************************************************************************************************************************************** 
-  # Rows x Columns contrasts allowing shrinkage for Rows.Columns blocks   
-  # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
-  # ********************************************************************************************************************************************************    
-  rowscolsOpt=function(TF,Main,Rows,Columns) { 
-    rowlevs=nlevels(Rows)%/%nlevels(Main)  
-    collevs=nlevels(Columns)%/%nlevels(Main)
-    cRows=Rows[,1:(ncol(Rows)-1)]-Rows[,ncol(Rows)] 
-    cCols=Columns[,1:(ncol(Columns)-1)]-Columns[,ncol(Columns)] 
-    cRowsCols=cRows*cCols
-    CM=Contrasts(Columns)
-    RM=Contrasts(Rows)
-    RCM=function(RM,CM) {do.call(cbind,lapply(1:ncol(RM),function(i) { do.call(cbind,lapply(1:ncol(CM),function(j) { CM[,i]*RM[,j] } ))}))}
-    print(RM)
-    print(CM)
-    print(RCM)
-    TM=Contrasts(TF)
-    V=chol2inv(chol(crossprod(cbind(BM,TM))))
-    
-    
-    
-    MBB=matrix(0,nrow=nlevels(Columns),ncol=nlevels(Columns))
-    MTT=matrix(0,nrow=nlevels(TF),ncol=nlevels(TF))  
-    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Columns))
-    indicb=seq_len(nlevels(Columns)-nlevels(Main))
-    indict=seq_len(nlevels(TF)-1)
-    indicv=seq_len(ncol(V)-nlevels(Columns)+nlevels(Main)) + nlevels(Columns)-nlevels(Main)
-    MBB[indicb,indicb]=V[indicb,indicb,drop=FALSE]
-    MTT[indict,indict]=V[indicv,indicv,drop=FALSE]
-    MTB[indict,indicb]=V[indicv,indicb,drop=FALSE]
-    perm=order(order(seq_len(nlevels(Columns))%%blevels ==0  ))  
-    MTB=MTB[,perm]
-    MBB=MBB[perm,perm] 
-    TF=Optimise(TF,Columns,MTT,MBB,MTB,Rows)
-    return(TF)
-  }  
-  
-  
-  
-  
   # *******************************************************************************************************************************************************
   # Returns v-1 cyclically generated v x v Latin squares plus the rows array (first) and the columns array (last). If v is prime, the squares are MOLS  
   # ********************************************************************************************************************************************************  
@@ -435,18 +440,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     } else {
       TF=NonSingular(TF,Main,Blocks,rep(1,length(TF)))
       if (is.null(TF)) return(TF)
-      blevels=nlevels(Blocks)%/%nlevels(Main)
       BM=Contrasts(Blocks)
       TM=Contrasts(TF)
-      V=chol2inv(chol(crossprod(cbind(BM,TM))))
-      indicb=seq_len(nlevels(Blocks)-1)
-      indicv=seq_len(nlevels(TF)-1)+nlevels(Blocks)-1
+      V=chol2inv(chol(crossprod(cbind(TM,BM))))
+      indicv=seq_len(ncol(TM))
+      indicb=seq_len(ncol(BM))+ncol(TM)
       MBB=V[indicb,indicb,drop=FALSE]
       MTT=V[indicv,indicv,drop=FALSE]
       MTB=V[indicv,indicb,drop=FALSE]
-      MBB=rbind(  cbind(MBB,rep(0,nrow(MBB))) , rep(0,(ncol(MBB)+1)))
-      MTT=rbind(  cbind(MTT,rep(0,nrow(MTT))) , rep(0,(ncol(MTT)+1)))
-      MTB=rbind(  cbind(MTB,rep(0,nrow(MTB))) , rep(0,(ncol(MTB)+1)))
       TF=Optimise(TF,Blocks,MTT,MBB,MTB,Main)
     }
     return(TF)
@@ -676,12 +677,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         if (is.null(TF)) break
         if (isrowcol && rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,Blocks[,i],Design[,2*i-1])
         if (is.null(TF)) break
-        if (isrowcol && columns[i]>1) TF=colsOpt(TF,Blocks[,i],Design[,2*i],Design[,2*i-1])
+        if (isrowcol && columns[i]>1) TF=colsOpt(TF,Design[,2*i-1],Design[,2*i],Blocks[,i+1])
         if (is.null(TF)) break
       }
       if (!is.null(TF)) break
     }
-
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
     # add back single rep treatments for nested stratum blocks only
     replicates=fullreplicates
@@ -693,7 +693,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       fullblocksizes=nunits
       for (i in seq_len(strata))
         fullblocksizes=Sizes(fullblocksizes,i)
-      
       sblocksizes=fullblocksizes-blocksizes
       TF=as.numeric(levels(TF))[TF]
       addTF=rep(1:sum(treatments))[fullreps==1]
