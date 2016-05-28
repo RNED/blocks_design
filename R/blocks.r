@@ -456,7 +456,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       }
       newblocksizes=c(newblocksizes,unlist(rowcolsizes))
     }
-  newblocksizes
+    newblocksizes
   }
   # ******************************************************************************************************************************************************** 
   # Calculates D and A-efficiency factors for treatment factor TF assuming block factor BF
@@ -518,7 +518,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     }
     names=NULL
     for (i in 1:strata)
-    names=c(names,paste("Rows",i),paste("Columns",i),paste("Rows x Columns",i))
+      names=c(names,paste("Rows",i),paste("Columns",i),paste("Rows x Columns",i))
     blocks=NULL
     for (i in 1:strata) 
       blocks=c( blocks,nlevels(Design[,2*(i-1)+1]),nlevels(Design[,2*(i-1)+2]),nlevels(Blocks[,i+1]))
@@ -566,14 +566,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   
   Validate(treatments,replicates,rows,columns,seed,jumps,searches) 
   if (length(columns)==0) columns=rep(1,length(rows))
-    indic=rows*columns
-    if (max(indic)==1) {
-      rows=1
+  indic=rows*columns
+  if (max(indic)==1) {
+    rows=1
     columns=1
-    } else {
+  } else {
     rows=rows[(indic!=1)] 
     columns=columns[(indic!=1)] 
-    }
+  }
   cumcols=cumprod(columns)
   cumrows=cumprod(rows)
   cumblocks=c(1,cumprod(rows*columns))
@@ -661,7 +661,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       }
       if (!is.null(TF)) break
     }
-
+    
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
     # add back single rep treatments for nested stratum blocks only
     replicates=fullreplicates
@@ -726,9 +726,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     
     # efficiencies
     if (isrowcol)     
-        Efficiencies=RowColEfficiencies(Design,Blocks)
+      Efficiencies=RowColEfficiencies(Design,Blocks)
     else
-        Efficiencies=BlockEfficiencies(Design)
+      Efficiencies=BlockEfficiencies(Design)
     
     row.names(Efficiencies)=NULL
     
@@ -738,10 +738,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     
     
   }
-    # treatment replications
-    TreatmentsTable=data.frame(table(Design[,"Treatments"]))
-    TreatmentsTable[]=lapply(TreatmentsTable, as.factor) 
-    colnames(TreatmentsTable)=c("Treatments","Replicates")
-   
+  # treatment replications
+  TreatmentsTable=data.frame(table(Design[,"Treatments"]))
+  TreatmentsTable[]=lapply(TreatmentsTable, as.factor) 
+  colnames(TreatmentsTable)=c("Treatments","Replicates")
+  
   list(Treatments=TreatmentsTable,Efficiencies=Efficiencies,Plan=Plan,Design=Design,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
