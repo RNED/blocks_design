@@ -144,14 +144,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       if ( isTRUE(all.equal(v %% (i-1) , 0)) ||   isTRUE(all.equal(v %% (i+1) , 0)) ) return(FALSE) 
     return(TRUE)
   } 
-  # ******************************************************************************************************************************************************** 
-  # Contrasts for factor NF centered within the levels of factor MF to ensure that NF information is estimated within the levels of factor MF only  
-  # ********************************************************************************************************************************************************
-  Contrasts=function(MF,NF) {
-    NM=matrix(0,nrow=length(NF),ncol=nlevels(NF))
-    NM[cbind(seq_len(length(NF)),NF)]=1 # factor indicator matrix  
-    do.call(rbind,lapply(1:nlevels(MF),function(i) {scale(NM[MF==i,] , center = TRUE, scale = FALSE)}))
-  }
+
   # ******************************************************************************************************************************************************** 
   # Updates variance matrix for pairs of swapped treatments using standard matrix updating formula
   # mtb**2-mtt*mbb is > 0 because the swap is a positive element of dMat=(TB+t(TB)+1)**2-TT*BB
@@ -364,6 +357,15 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     mols=lapply(1:length(mols),function(z){ (z-1)*v+mols[[z]] })
     mols
   }
+  # ******************************************************************************************************************************************************** 
+  # Contrasts for factor NF centered within the levels of factor MF to ensure that NF information is estimated within the levels of factor MF only  
+  # ********************************************************************************************************************************************************
+  Contrasts=function(MF,NF) {
+    NM=matrix(0,nrow=length(NF),ncol=nlevels(NF))
+    NM[cbind(seq_len(length(NF)),NF)]=1 # factor indicator matrix  
+    do.call(rbind,lapply(1:nlevels(MF),function(i) {scale(NM[MF==i,] , center = TRUE, scale = FALSE)}))
+  }
+  
   # *******************************************************************************************************************************************************
   # Optimize the nested Blocks assuming a possible set of Main block constraints Initial randomized starting design. 
   # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
