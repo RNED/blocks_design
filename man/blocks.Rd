@@ -6,7 +6,7 @@
 \usage{
 blocks(treatments, replicates, rows = HCF(replicates), columns = NULL,
   searches = (1 + 10000\%/\%sum(treatments * replicates)),
-  seed = sample(10000, 1), jumps = 1)
+  seed = sample(10000, 1), jumps = 1, weight = 0.5)
 }
 \arguments{
 \item{treatments}{a vector giving a partition of the total required number of treatments into sets of equally replicated treatments.}

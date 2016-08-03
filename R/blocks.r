@@ -122,7 +122,7 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,searches=(1+10000%/%sum(treatments*replicates)),seed=sample(10000,1),jumps=1) { 
+blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,searches=(1+10000%/%sum(treatments*replicates)),seed=sample(10000,1),jumps=1,weight=.5) { 
   
   # ******************************************************************************************************************************************************** 
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)
@@ -207,14 +207,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # ******************************************************************************************************************************************************** 
   #  Searches for an optimization with selected number of searches and selected number of junps to escape local optima
   # ********************************************************************************************************************************************************
-  Optimise=function(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,Mtt,Mbb,Mtb)  {
+  Optimise=function(TF,Main,Rows,Columns,RCBlocks,MTT,MBB,MTB,Mtt,Mbb,Mtb)  {
     if (is.null(Columns)) {
     Restrict=Main
     Blocks=Rows
-    } else if (is.null(Blocks)) {
+    } else {
       Restrict=Rows
       Blocks=Columns
-    } else Restrict=Rows
+    }
     globrelD=0
     relD=1
     globTF=TF
@@ -537,7 +537,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # ******************************************************************************************************************************************************** 
   # Some validation checks
   # ********************************************************************************************************************************************************     
-  Validate=function(treatments,replicates,rows,columns,seed,jumps,searches) {
+  Validate=function(treatments,replicates,rows,columns,seed,jumps,searches,weight) {
     if (missing(treatments) | missing(replicates)) stop(" Treatments or replicates not defined ")   
     if (is.null(treatments) | is.null(replicates)) stop(" Treatments or replicates list is empty ")   
     if (anyNA(treatments) | anyNA(replicates)) stop(" NA values not allowed")
@@ -560,7 +560,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       if (anyNA(jumps) ) stop(" NA jumps values not allowed") 
       if ( !all(is.finite(jumps)) | !all(!is.nan(jumps))) stop(" jumps must be a finite integer ") 
       if (jumps<1)  stop(" Random jumps must be at least one ")   
-      if (jumps>10)  stop(" Too many random jumps ")   
+      if (jumps>10)  stop(" Too many random jumps ") 
+      if (weight<0)  stop(" Weight parameter cannot be non-zero ") 
+      if (weight>1)  stop(" Weight parameter cannot be greater than 1 ")   
     }    
     if (!is.null(seed)) {
       if (anyNA(seed) ) stop(" NA seed values not allowed") 
@@ -572,7 +574,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
   
-  Validate(treatments,replicates,rows,columns,seed,jumps,searches) 
+  Validate(treatments,replicates,rows,columns,seed,jumps,searches,weight) 
   if (length(columns)==0) columns=rep(1,length(rows))
   indic=rows*columns
   if (max(indic)==1) {
@@ -603,7 +605,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     ntrts=sum(treatments)
     treatments=as.factor(sample(ntrts))
     Efficiencies=data.frame("Blocks 1","1",1,1,1)
-    colnames(Efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
+    colnames(EfficiencicolsOptes)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     Design=data.frame(rep(1,ntrts), treatments)  
     Design[]=lapply(Design, as.factor)
     colnames(Design)=c("Blocks","Treatments")
