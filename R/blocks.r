@@ -72,6 +72,9 @@
 #' 
 #' @param jumps  the number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.
 #' 
+#' @param weighted choosing weighted=TRUE for designs with two or more plots in each row.column block improves the row.columns stratum efficiency but may decrease 
+#' the columns stratum efficiency. Choosing weighted=FALSE gives the best possible column blocks efficiency. The default is weighted=TRUE.   
+#' 
 #' @return  
 #' \item{Design}{Data frame giving the optimized block and treatment factors in plot order}
 #' \item{Plan}{Data frame giving a plan view of the treatments design in the bottom stratum of the design classified by rows and columns}
@@ -256,7 +259,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
           is.na(dmat[ dmat<1|is.na(dmat) ] ) = TRUE
           dMat=dMat*dmat
         } 
-        #if (!is.null(Blocks)) sampn=which.max( dMat*weight +(1-weight)*dmat ) else sampn=which.max(dMat)
         sampn=which.max(dMat)
         i=1+(sampn-1)%%nSamp[k]
         j=1+(sampn-1)%/%nSamp[k]
@@ -284,52 +286,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   }  
   
   # ******************************************************************************************************************************************************** 
-  # Optimize the nested columns blocks assuming a possible set of Main block constraints Initial randomized starting design. 
-  # If the row-column intersections contain 2 or more plots a weighted (columns + w*rows.columns) model is fitted for w>=0 and w<1 
-  # ********************************************************************************************************************************************************    
-  colsOpt=function(TF,Main,Rows,Columns,weighted) { 
-    TF=NonSingular(TF,Main,Columns,Rows)
-    if (is.null(TF)) return(TF)
-    main=nlevels(Main)
-    ncol=nlevels(Columns)/main
-    nrow=nlevels(Rows)/main
-    nblocks=nrow*ncol
-    blocks=main*nblocks
-    CM=Contrasts(Main,Columns)[,rep(c(rep(TRUE,(ncol-1)),FALSE),main),drop=FALSE]
-    TM=Contrasts(Main,TF)[,-ntrts,drop=FALSE] 
-    V=chol2inv(chol(crossprod(cbind(CM,TM))))
-    indicv=seq_len(ncol(TM))+ncol(CM)
-    MTT=rbind(cbind(V[indicv,indicv,drop=FALSE],rep(0,(ntrts-1))),rep(0,ntrts))
-    MBB=matrix(0,nrow=nlevels(Columns),ncol=nlevels(Columns))
-    MTB=matrix(0,nrow=ntrts,ncol=nlevels(Columns))
-    MBB[seq_len(ncol(CM)),seq_len(ncol(CM))]=V[seq_len(ncol(CM)),seq_len(ncol(CM)),drop=FALSE]
-    MTB[seq_len(ncol(TM)),seq_len(ncol(CM))]=V[indicv,seq_len(ncol(CM)),drop=FALSE]
-    perm=c(rbind(matrix(seq_len(ncol(CM)),nrow=ncol-1,ncol=main),seq_len(main)+ncol(CM)))
-    MTB=MTB[,perm]
-    MBB=MBB[perm,perm] 
-    Blocks=as.factor((as.numeric(Main)-1)*nblocks + ((as.numeric(Rows)-1)%%nrow)*ncol + (as.numeric(Columns)-1)%%ncol + 1)
-    BM=Contrasts(Main,Blocks)[,rep( c(rep(TRUE,(nblocks-1)),FALSE),main),drop=FALSE]
-    DM=cbind(BM,TM)
-    if ( (length(TF)>=(blocks+nlevels(TF))) && qr(t(DM))$rank==ncol(DM) && isTRUE(weighted))  {
-      V=chol2inv(chol(crossprod(DM)))
-      indicv=seq_len(ncol(TM))+ncol(BM)
-      Mtt=rbind(cbind(V[indicv,indicv,drop=FALSE],rep(0,(ntrts-1))),rep(0,ntrts))
-      Mbb=matrix(0,nrow=blocks,ncol=blocks)
-      Mtb=matrix(0,nrow=ntrts,ncol=blocks)
-      Mbb[seq_len(ncol(BM)),seq_len(ncol(BM))]=V[seq_len(ncol(BM)),seq_len(ncol(BM)),drop=FALSE]
-      Mtb[seq_len(ncol(TM)),seq_len(ncol(BM))]=V[indicv,seq_len(ncol(BM)),drop=FALSE]
-      perm=c(rbind(matrix(seq_len(ncol(BM)),nrow=nblocks-1,ncol=main),seq_len(main)+ncol(BM)))
-      Mtb=Mtb[,perm]
-      Mbb=Mbb[perm,perm] 
-    } else {
-      Mtb=NULL
-      Mtt=NULL
-      Mbb=NULL
-    }
-    TF=Optimise(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,Mtt,Mbb,Mtb,weighted)
-    return(TF)
-  }  
-  # ******************************************************************************************************************************************************** 
   #  Searches for an optimization with selected number of searches and selected number of junps to escape local optima
   # ********************************************************************************************************************************************************
   Optimise=function(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,Mtt,Mbb,Mtb,weighted)  {
@@ -343,6 +299,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       Restrict=Rows
       BF=Columns
     }
+    
     globrelD=0
     relD=1
     globTF=TF
@@ -352,7 +309,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     #bound=upper_bounds(length(TF),nlevels(TF),nlevels(Blocks)) else bound=NA
     for (r in 1:searches) {
       dmax =  DMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks)
-      if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
+      #if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
         relD=relD*dmax$relD
         TF=dmax$TF
         MTT=dmax$MTT
@@ -366,7 +323,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
           globrelD=relD
           #if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF,Blocks)[2]))) break
         }
-      }
+      #}
       if (r==searches) break
       for (iswap in 1:jumps) {
         counter=0
@@ -404,6 +361,53 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     }
     globTF
   } 
+  
+  # ******************************************************************************************************************************************************** 
+  # Optimize the nested columns blocks assuming a possible set of Main block constraints Initial randomized starting design. 
+  # If the row-column intersections contain 2 or more plots a weighted (columns + w*rows.columns) model is fitted for w>=0 and w<1 
+  # ********************************************************************************************************************************************************    
+  colsOpt=function(TF,Main,Rows,Columns,weighted) { 
+    TF=NonSingular(TF,Main,Columns,Rows)
+    if (is.null(TF)) return(TF)
+    main=nlevels(Main)
+    ncol=nlevels(Columns)/main
+    nrow=nlevels(Rows)/main
+    nblocks=nrow*ncol
+    blocks=main*nblocks
+    CM=Contrasts(Main,Columns)[,rep(c(rep(TRUE,(ncol-1)),FALSE),main),drop=FALSE]
+    TM=Contrasts(Main,TF)[,-ntrts,drop=FALSE] 
+    V=chol2inv(chol(crossprod(cbind(CM,TM))))
+    indicv=seq(ncol(CM)+1,ncol(TM)+ncol(CM))
+    MTT=rbind(cbind(V[indicv,indicv,drop=FALSE],rep(0,(ntrts-1))),rep(0,ntrts))
+    MBB=matrix(0,nrow=nlevels(Columns),ncol=nlevels(Columns))
+    MTB=matrix(0,nrow=ntrts,ncol=nlevels(Columns))
+    MBB[seq_len(ncol(CM)),seq_len(ncol(CM))]=V[seq_len(ncol(CM)),seq_len(ncol(CM)),drop=FALSE]
+    MTB[seq_len(ncol(TM)),seq_len(ncol(CM))]=V[indicv,seq_len(ncol(CM)),drop=FALSE]
+    perm=c(rbind(matrix(seq_len(ncol(CM)),nrow=ncol-1,ncol=main),seq_len(main)+ncol(CM)))
+    MTB=MTB[,perm]
+    MBB=MBB[perm,perm] 
+    Blocks=as.factor((as.numeric(Main)-1)*nblocks + ((as.numeric(Rows)-1)%%nrow)*ncol + (as.numeric(Columns)-1)%%ncol + 1)
+    BM=Contrasts(Main,Blocks)[,rep( c(rep(TRUE,(nblocks-1)),FALSE),main),drop=FALSE]
+    DM=cbind(BM,TM)
+    if ( length(TF)>=(blocks+nlevels(TF)) && qr(t(DM))$rank==ncol(DM) && isTRUE(weighted))  {
+      V=chol2inv(chol(crossprod(DM)))
+      indicv=seq_len(ncol(TM))+ncol(BM)
+      Mtt=rbind(cbind(V[indicv,indicv,drop=FALSE],rep(0,(ntrts-1))),rep(0,ntrts))
+      Mbb=matrix(0,nrow=blocks,ncol=blocks)
+      Mtb=matrix(0,nrow=ntrts,ncol=blocks)
+      Mbb[seq_len(ncol(BM)),seq_len(ncol(BM))]=V[seq_len(ncol(BM)),seq_len(ncol(BM)),drop=FALSE]
+      Mtb[seq_len(ncol(TM)),seq_len(ncol(BM))]=V[indicv,seq_len(ncol(BM)),drop=FALSE]
+      perm=c(rbind(matrix(seq_len(ncol(BM)),nrow=nblocks-1,ncol=main),seq_len(main)+ncol(BM)))
+      Mtb=Mtb[,perm]
+      Mbb=Mbb[perm,perm] 
+    } else {
+      Mtb=NULL
+      Mtt=NULL
+      Mbb=NULL
+    }
+    TF=Optimise(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,Mtt,Mbb,Mtb,weighted)
+    return(TF)
+  }  
   # *******************************************************************************************************************************************************
   # Optimize the nested Blocks assuming a possible set of Main block constraints Initial randomized starting design. 
   # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank

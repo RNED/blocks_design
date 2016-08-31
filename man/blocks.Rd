@@ -24,6 +24,9 @@ The \code{rows} and the \code{columns} vectors, if both present, must be of equa
 \item{seed}{an integer initializing the random number generator. The default is a random seed.}
 
 \item{jumps}{the number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.}
+
+\item{weighted}{choosing weighted=TRUE for designs with two or more plots in each row.column block improves the row.columns stratum efficiency but may decrease 
+the columns stratum efficiency. Choosing weighted=FALSE gives the best possible column blocks efficiency. The default is weighted=TRUE.}
 }
 \value{
 \item{Design}{Data frame giving the optimized block and treatment factors in plot order}
