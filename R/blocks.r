@@ -299,17 +299,16 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
       Restrict=Rows
       BF=Columns
     }
-    
     globrelD=0
     relD=1
     globTF=TF
-    #treps=tabulate(TF)
-    #breps=tabulate(Blocks)   
-    #if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  )
-    #bound=upper_bounds(length(TF),nlevels(TF),nlevels(Blocks)) else bound=NA
+    treps=tabulate(TF)
+    breps=tabulate(Blocks)   
+    if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  )
+    bound=upper_bounds(length(TF),nlevels(TF),nlevels(Blocks)) else bound=NA
     for (r in 1:searches) {
       dmax =  DMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks)
-      #if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
+      if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
         relD=relD*dmax$relD
         TF=dmax$TF
         MTT=dmax$MTT
@@ -321,9 +320,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         if (!isTRUE(all.equal(relD,globrelD)) && relD>globrelD) {
           globTF=TF
           globrelD=relD
-          #if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF,Blocks)[2]))) break
+          if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF,Blocks)[2]))) break
         }
-      #}
+      }
       if (r==searches) break
       for (iswap in 1:jumps) {
         counter=0
@@ -343,9 +342,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
           if (Dswap>.1 & dswap>.1 | counter>1000) break
         }
         if (counter>1000) return(globTF) # no non-singular swaps
-        #if (!is.null(Blocks)) maxd= Dswap *weight + (1-weight)*dswap  else maxd=Dswap 
-        maxd=Dswap 
-        relD=relD*maxd
+        relD=relD*Dswap 
         up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
         MTT=up$MTT
         MBB=up$MBB
