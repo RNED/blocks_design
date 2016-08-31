@@ -303,9 +303,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
     relD=1
     globTF=TF
     treps=tabulate(TF)
-    breps=tabulate(Blocks)   
+    breps=tabulate(BF)   
     if (identical(max(treps),min(treps)) && identical(max(breps),min(breps))  )
-    bound=upper_bounds(length(TF),nlevels(TF),nlevels(Blocks)) else bound=NA
+    bound=upper_bounds( length(TF), nlevels(TF), nlevels(BF) ) else bound=NA
     for (r in 1:searches) {
       dmax =  DMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks)
       if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
@@ -320,7 +320,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
         if (!isTRUE(all.equal(relD,globrelD)) && relD>globrelD) {
           globTF=TF
           globrelD=relD
-          if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF,Blocks)[2]))) break
+          if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF,BF)[2]))) break
         }
       }
       if (r==searches) break
