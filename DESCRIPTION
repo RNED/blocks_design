@@ -1,6 +1,6 @@
 Package: blocksdesign
 Type: Package
-Title: Nested Block Designs for Unstructured Treatments
+Title: Nested and Crossed Block Designs for Unstructured Treatment Sets
 Version: 2.1
 Date: 2016-03-26
 Author: R. N. Edmondson
