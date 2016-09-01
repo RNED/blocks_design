@@ -25,8 +25,9 @@ The \code{rows} and the \code{columns} vectors, if both present, must be of equa
 
 \item{jumps}{the number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.}
 
-\item{weighted}{choosing weighted=TRUE for designs with two or more plots in each row.column block improves the row.columns stratum efficiency but may decrease 
-the columns stratum efficiency. Choosing weighted=FALSE gives the best possible column blocks efficiency. The default is weighted=TRUE.}
+\item{weighted}{an option for row-and-column designs with two or more plot in the row.column blocks. \code{weighted}=TRUE
+improves the row.columns blocks efficiency but may decrease the columns blocks efficiency. \code{weighted}=FALSE gives the best column
+blocks efficiency but may give poor row.columns blocks efficiency. The default is weighted=TRUE.}
 }
 \value{
 \item{Design}{Data frame giving the optimized block and treatment factors in plot order}
@@ -76,9 +77,8 @@ of the design are all equal in each stratum of the design.
 
  For row-and-column designs, the algorithm will unconditionally optimize the rows stratum and will then optimise the columns stratum conditional on the row blocks remaining 
  unchanged. Row-and-column designs contain nested blocks in the row-by-column intersections and these blocks may contain two or more plots. If the row-by-column intersection 
- blocks contain useful treatment information and the \code{weighted} option is TRUE (default) the algorithm will optimize the column design conditional on improving swaps between columns
- being improving swaps between blocks. This provides a conditonal optimization of columns which should also ensures a good solution for blocks. If the \code{weighted} option is
- FALSE the column blocks are optimized ignoring blocks.           
+ blocks contain useful treatment information and the \code{weighted} option is TRUE (default) the algorithm will optimize the column design conditional on improving swaps 
+ between columns also being improving swaps between blocks. If the \code{weighted} option is FALSE the column blocks are optimized ignoring blocks.           
  
  For 2 x 2 row-and-column designs with complete replicate rows and complete replicate columns, however, one treatment contrast will always be confounded
   with the row-by-column interaction and for these designs, it is impossible to nest blocks in the row-by-column intersections. 
