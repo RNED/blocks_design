@@ -103,7 +103,7 @@
 #' # 50 treatments x 4 replicates with 4 main rows and 5 nested sub-rows in each main block 
 #' blocks(treatments=50,replicates=4,rows=c(4,5))
 #' 
-#' # as above but with 20 single replicate treatments giving one extra single replicate treatment per sub-block
+#' # as above but with 20 single replicate treatments giving one extra treatment per sub-block
 #' blocks(treatments=c(50,20),replicates=c(4,1),rows=c(4,5))
 #' 
 #' # 64 treatments x 2 replicates with 2 main rows and four succesively nested 2-level factors
@@ -121,15 +121,17 @@
 #' # 64 treatments x 2 replicates with nested 8 x 8 row-and-column designs in two main blocks 
 #' blocks(treatments=64,replicates=2,rows=c(2,8),columns=c(1,8)) 
 #' 
-#' # 64 treatments x 2 replicates with nested 4 x 4 row-and-column designs in two main blocks and weighted=TRUE 
-#' blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4)) 
+#' # 64 treatments x 2 replicates with two main blocks and a 4 x 4 row-and-column design  
+#' # nested in each main block and weighted = TRUE by default.
+#' blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=12) 
 #' 
-#' # 64 treatments x 2 replicates with nested 4 x 4 row-and-column designs in two main blocks and weighted=FALSE 
-#' blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),weighted=FALSE) 
+#' # 64 treatments x 2 replicates with two main blocks and a 4 x 4 row-and-column design  
+#' # nested in each main block. weighted = FALSE
+#' blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),weighted=FALSE,searches=12)
 #' 
 #' # 2**9 treatments x 2 replicates in 2**9 blocks giving a fully saturated block design 
 #' # (requires a considerable time to run!)
-#' \dontrun{ d=blocks(2**9,2,rep(2,9)) }
+#' \dontrun{ d=blocks(2**9,2,rep(2,9),searches=1) }
 #'          
 #' @export
 #' @importFrom stats anova lm
@@ -612,7 +614,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,search
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
-  
+  if (is.matrix(treatments)) {
+    factblocks(treatments,replicates,rows=HCF(replicates),columns=NULL,searches=(1+10000%/%sum(treatments*replicates)),seed=sample(10000,1),jumps=1)
+    stop
+    }
   Validate(treatments,replicates,rows,columns,seed,jumps,searches) 
   if (length(columns)==0) columns=rep(1,length(rows))
   indic=rows*columns
