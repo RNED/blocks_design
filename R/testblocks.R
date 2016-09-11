@@ -26,12 +26,17 @@ testblocks = function(TF,replicates=1,order=NULL) {
     for (i in 1: min(order,ncol(fTF))) 
       combF=combn(ncol(fTF),i)
     
-  TM=model.matrix(  as.formula(paste(" ~ ", paste(colnames(TF), collapse= "*")))  ,TF)
-  colnames(TM)=1:ncol(TM)
+ # TM=model.matrix(  as.formula(paste(" ~ ", paste(colnames(TF), collapse= "*")))  ,TF)
   
-  colnames(TF)=c("a","b","c","d")
   colN=colnames(TF)
-  TM=model.matrix(  as.formula(paste(" ~ ", paste(colN[c(1,2)], collapse= "*")))  ,TF)
+  o0=colN[c(1,2)]
+  o1=colN[c(1,2)]
+  form0=paste(o0, collapse= "+")
+  form1=paste(o1, collapse= "*")
+  TM=model.matrix(  as.formula( paste(" ~ ", form1 ) )  ,TF)
+  #TM=model.matrix(  as.formula(paste(" ~ ", o1, collapse="+"))  ,TF)
+  
+  #TM=model.matrix(  as.formula(paste(" ~ ", paste(c(form0,form1), collapse="+")))  ,TF)
   
 
   if (ncol(pTF)>0) 
