@@ -50,19 +50,29 @@
 #' @export
 #' @importFrom stats anova lm
 #'
-
-factblocks = function(TF,replicates,rows=HCF(replicates),columns=NULL,factorial=NULL,searches=(1+10000%/%nrow(TM)),seed=sample(10000,1),jumps=1) {
+#'
+factblocks = function(TF,replicates=1,rows=NULL,columns=NULL,order=NULL,searches=(1+10000%/%nrow(TM)),seed=sample(10000,1),jumps=1) {
+  options(contrasts=c('contr.sum','contr.poly'))
   if (!is.data.frame(TF)) stop("Treatment factors not in a valid data frame")
-  gen=data.frame(a = as.factor(rep(1:3,4)), b = rep(1:4,each=3),c=as.factor(rep(1:2,6)), d=as.factor(rep(1:2,6)))
-  do.call(interaction,lapply(1:ncol(gen),function(i) {gen[,i]}))
-  
-  
-  
-  
-   
-TM=model.matrix(  as.formula(paste(" ~ ", paste(colnames(TF), collapse= "*")))  ,TF)
-  
+  fInd=sapply(TF, is.factor)
+  fTF=TF[, fInd,drop=FALSE]
+  pTF=TF[,!fInd,drop=FALSE]
 
+  if (ncol(fTF)>0) 
+    for (i in 1: min(order,ncol(fTF))) {
+      comb=combn(ncol(fTF),i)
+      pTF=c(pTF,prod(pTF[,comb]))
+    }
+  
+  #lapply(poly(pTF,degree=4))
+  P=lapply(1:ncol(pTF), function(r){ poly(pTF[,r],degree=min(order,length(unique(pTF[,r]))-1),raw=TRUE)})
+
+  sapply(fTF, nlevels)
+  length(unique(pTF[[]]))
+  
+  model.matrix(~ a * poly(TFP,degree=4) , TF)
+  TM=model.matrix(  as.formula(paste(" ~ ", paste(colnames(TF), collapse= "*")))  ,TF)
+print(TM)
 
   # ********************************************************************************************************************************************************
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)

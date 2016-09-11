@@ -4,9 +4,9 @@
 \alias{factblocks}
 \title{Block designs}
 \usage{
-factblocks(TF, replicates, rows = HCF(replicates), columns = NULL,
-  TM = NULL, searches = (1 + 10000\%/\%nrow(TM)), seed = sample(10000, 1),
-  jumps = 1)
+factblocks(TF, replicates = 1, rows = NULL, columns = NULL,
+  order = NULL, searches = (1 + 10000\%/\%nrow(TM)), seed = sample(10000,
+  1), jumps = 1)
 }
 \arguments{
 \item{replicates}{a vector giving the replication number of each equally replicated treatment set in the \code{treatments} vector.}
