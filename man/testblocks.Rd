@@ -4,7 +4,7 @@
 \alias{testblocks}
 \title{Block designs}
 \usage{
-testblocks(TF, replicates = 1, order = NULL)
+testblocks(TF, replicates = 1, model = model)
 }
 \value{
 
