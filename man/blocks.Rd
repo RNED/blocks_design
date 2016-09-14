@@ -4,8 +4,8 @@
 \alias{blocks}
 \title{Block designs}
 \usage{
-blocks(treatments, replicates, rows = HCF(replicates), columns = NULL,
-  searches = (1 + 10000\%/\%sum(treatments * replicates)),
+blocks(treatments, replicates, model = NULL, rows = HCF(replicates),
+  columns = NULL, searches = (1 + 10000\%/\%sum(treatments * replicates)),
   seed = sample(10000, 1), jumps = 1, weighted = TRUE)
 }
 \arguments{
@@ -106,6 +106,11 @@ of the design are all equal in each stratum of the design.
 }
 }
 \examples{
+
+# Second-order model for two qualitative and two quntitative factors in 4 randomized blocks
+TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
+model=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
+blocks(treatments=TF,replicates=1,model=model,rows=4)
 
 # 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates  
 # the hcf of the replication numbers is 1 therefore the default design is completely randomized 

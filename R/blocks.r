@@ -104,6 +104,11 @@
 #' 
 #' @examples
 #' 
+#' # Second-order model for two qualitative and two quntitative factors in 4 randomized blocks
+#' TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
+#' model=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
+#' blocks(treatments=TF,replicates=1,model=model,rows=4)
+#' 
 #' # 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates  
 #' # the hcf of the replication numbers is 1 therefore the default design is completely randomized 
 #' blocks(treatments=c(3,2,4),replicates=c(2,4,3))
@@ -147,10 +152,13 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,searches=(1+10000%/%sum(treatments*replicates)),seed=sample(10000,1),jumps=1,weighted=TRUE) { 
+blocks = function(treatments,replicates,model=NULL,rows=HCF(replicates),columns=NULL,searches=(1+10000%/%sum(treatments*replicates)),seed=sample(10000,1),jumps=1,weighted=TRUE) { 
   options(contrasts=c('contr.sum','contr.poly'))
   if (is.data.frame(treatments)) {
     TM=model.matrix(  as.formula(model)  ,TF)
+    TM=TM[rep(seq_len(nrow(TM)), replicates), ]
+    rownames(TM) = seq(length=nrow(TM)) 
+    print(TM)
   }
   
   
