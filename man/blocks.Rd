@@ -4,14 +4,14 @@
 \alias{blocks}
 \title{Block designs}
 \usage{
-blocks(treatments, replicates, model = NULL, rows = HCF(replicates),
-  columns = NULL, searches = (1 + 10000\%/\%sum(treatments * replicates)),
-  seed = sample(10000, 1), jumps = 1, weighted = TRUE)
+blocks(treatments, replicates, rows = HCF(replicates), columns = NULL,
+  model = NULL, searches = NULL, seed = sample(10000, 1), jumps = 1,
+  weighted = TRUE)
 }
 \arguments{
-\item{treatments}{a vector giving a partition of the total required number of treatments into sets of equally replicated treatments.}
+\item{treatments}{either a dataframe with columns for the individual factors of the design or a vector giving a partition of the total required number of treatments into sets of equally replicated treatments.}
 
-\item{replicates}{a vector giving the replication number of each equally replicated treatment set in the \code{treatments} vector.}
+\item{replicates}{either a single replication number for a factorial treatment set or a vector giving the replication number of each equally replicated treatment set in the \code{treatments} vector.}
 
 \item{rows}{a vector of factor levels for the row blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
 The default is a single set of main blocks equal to the hcf of the replication numbers.}
@@ -38,7 +38,7 @@ blocks efficiency but may give poor row.columns blocks efficiency. The default i
 \item{jumps}{Number of random treatment swaps to escape a local maxima}
 }
 \description{
-Constructs randomized nested and crossed block designs for unstructured treatment sets where treatments can have any arbitrary levels of replication
+Constructs randomized nested and crossed block designs for factorial and unstructured treatment sets where treatments can have any arbitrary levels of replication
 and blocks can have any arbitrary feasible depth of nesting.
 }
 \details{
@@ -46,21 +46,22 @@ The \code{blocksdesign} package constructs arbitrary block designs with arbitrar
 in each nested stratum. Where one classification of a row-and-column design has a single block level, the design automatically defaults to a simple nested blocks design
 (if both classifications of a stratum have a single level that stratum is dropped from the design).       
 
-The treatments design can be either an unstructured treatment set with arbitrary number of treatments and arbitrary replication or a factorial
-treatment design for an arbitrary combination of quantitative or qualitative level treatment factors.
+The treatments design can be either an unstructured treatment set with an arbitrary number of treatments each with an arbitrary replication or a factorial
+treatment design with an arbitrary combination of quantitative or qualitative level treatment factors.
 
-For an unstructured treatment set, the \code{treatments} parameter must be a numeric vector partitioning the total number of treatments
-into sets of equally replicated treatments. In this mode, the \code{replicates} parameter is a numeric vector that provides
+For unstructured treatment sets, the \code{treatments} parameter must be a numeric vector partitioning the total number of treatments
+into sets of equally replicated treatments. In this mode, the \code{replicates} parameter is a numeric vector giving
 the required replication for each treatment set in the \code{treatments} partition. The \code{treatments} and \code{replicates} parameter vectors must be of equal length and the
 sum of the cross products of the two parameter vectors must be the total number of plots.  
 
-For a factorial treatment set, the \code{treatments} parameter must be a dataframe with columns for the individual factors of the design.
-In this mode, the \code{replicates} parameter is a single number, possibly 1, for the number of replications of the full factorial design. The factorial design must be a fully
-crossed factorial comprising all possible combinations of the levels of the treatment factors. 
+For factorial treatment sets, the \code{treatments} parameter must be a dataframe with a column of treatment levels for each factor of the design where the factorial design
+comprises all possible combinations of the levels of the treatment factors. In this mode, the \code{replicates} parameter is a single number for the number of replications
+of the full factorial design.
 
-The default model for a fully crossed factorial \code{treatments} design is a complete set of factorial effects but a reduced set of factorial effects can be defined by the   
-\code{models} parameter. The model matrix is constructed internally by using the \code{\link[stats]{model.matrix}} package and the \code{models} parameter
-should be defined using the appropriate formulation for that package (see example below). The \code{models} parameter is ignored for unstructured treatment sets.      
+The default model for a fully crossed factorial \code{treatments} design is the full set of factorial effects but the \code{models} parameter can be used to define a model for 
+any feasible reduced set of factorial effects. The \code{models} parameter must be a valid model formulation as defined by the \code{\link[stats]{model.matrix}} package
+and any valid formulation for that package can be used to define a reduced set of factorial effects for the \code{blocksdesign} package. The \code{models} parameter is
+ignored for any unstructured treatment sets.      
 
 The \code{rows} vector, if specified, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
 The first number, if any, is the number of rows in the blocks of the top stratum, the second, if any, is the number of rows in the nested blocks of

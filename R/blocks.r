@@ -2,7 +2,7 @@
 #' 
 #' @description
 #' 
-#' Constructs randomized nested and crossed block designs for unstructured treatment sets where treatments can have any arbitrary levels of replication
+#' Constructs randomized nested and crossed block designs for factorial and unstructured treatment sets where treatments can have any arbitrary levels of replication
 #' and blocks can have any arbitrary feasible depth of nesting.
 #' 
 #' @details
@@ -11,21 +11,22 @@
 #' in each nested stratum. Where one classification of a row-and-column design has a single block level, the design automatically defaults to a simple nested blocks design
 #' (if both classifications of a stratum have a single level that stratum is dropped from the design).       
 #' 
-#' The treatments design can be either an unstructured treatment set with arbitrary number of treatments and arbitrary replication or a factorial
-#' treatment design for an arbitrary combination of quantitative or qualitative level treatment factors.
+#' The treatments design can be either an unstructured treatment set with an arbitrary number of treatments each with an arbitrary replication or a factorial
+#' treatment design with an arbitrary combination of quantitative or qualitative level treatment factors.
 #' 
-#' For an unstructured treatment set, the \code{treatments} parameter must be a numeric vector partitioning the total number of treatments
-#' into sets of equally replicated treatments. In this mode, the \code{replicates} parameter is a numeric vector that provides
+#' For unstructured treatment sets, the \code{treatments} parameter must be a numeric vector partitioning the total number of treatments
+#' into sets of equally replicated treatments. In this mode, the \code{replicates} parameter is a numeric vector giving
 #' the required replication for each treatment set in the \code{treatments} partition. The \code{treatments} and \code{replicates} parameter vectors must be of equal length and the
 #' sum of the cross products of the two parameter vectors must be the total number of plots.  
 #' 
-#' For a factorial treatment set, the \code{treatments} parameter must be a dataframe with columns for the individual factors of the design.
-#' In this mode, the \code{replicates} parameter is a single number, possibly 1, for the number of replications of the full factorial design. The factorial design must be a fully
-#' crossed factorial comprising all possible combinations of the levels of the treatment factors. 
+#' For factorial treatment sets, the \code{treatments} parameter must be a dataframe with a column of treatment levels for each factor of the design where the factorial design
+#' comprises all possible combinations of the levels of the treatment factors. In this mode, the \code{replicates} parameter is a single number for the number of replications
+#' of the full factorial design.
 #' 
-#' The default model for a fully crossed factorial \code{treatments} design is a complete set of factorial effects but a reduced set of factorial effects can be defined by the   
-#' \code{models} parameter. The model matrix is constructed internally by using the \code{\link[stats]{model.matrix}} package and the \code{models} parameter
-#' should be defined using the appropriate formulation for that package (see example below). The \code{models} parameter is ignored for unstructured treatment sets.      
+#' The default model for a fully crossed factorial \code{treatments} design is the full set of factorial effects but the \code{models} parameter can be used to define a model for 
+#' any feasible reduced set of factorial effects. The \code{models} parameter must be a valid model formulation as defined by the \code{\link[stats]{model.matrix}} package
+#' and any valid formulation for that package can be used to define a reduced set of factorial effects for the \code{blocksdesign} package. The \code{models} parameter is
+#' ignored for any unstructured treatment sets.      
 #' 
 #' The \code{rows} vector, if specified, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
 #' The first number, if any, is the number of rows in the blocks of the top stratum, the second, if any, is the number of rows in the nested blocks of
@@ -70,9 +71,9 @@
 #'  \item  Plans showing the allocation of treatments to blocks or to rows and to columns in the bottom stratum of the design. \cr
 #' } 
 #' 
-#' @param treatments  a vector giving a partition of the total required number of treatments into sets of equally replicated treatments.
+#' @param treatments  either a dataframe with columns for the individual factors of the design or a vector giving a partition of the total required number of treatments into sets of equally replicated treatments.
 #' 
-#' @param replicates  a vector giving the replication number of each equally replicated treatment set in the \code{treatments} vector.
+#' @param replicates  either a single replication number for a factorial treatment set or a vector giving the replication number of each equally replicated treatment set in the \code{treatments} vector.
 #' 
 #' @param rows  a vector of factor levels for the row blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
 #' The default is a single set of main blocks equal to the hcf of the replication numbers.
@@ -152,14 +153,8 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments,replicates,model=NULL,rows=HCF(replicates),columns=NULL,searches=(1+10000%/%sum(treatments*replicates)),seed=sample(10000,1),jumps=1,weighted=TRUE) { 
+blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=NULL,searches=NULL,seed=sample(10000,1),jumps=1,weighted=TRUE) { 
   options(contrasts=c('contr.sum','contr.poly'))
-  if (is.data.frame(treatments)) {
-    TM=model.matrix(  as.formula(model)  ,TF)
-    TM=TM[rep(seq_len(nrow(TM)), replicates), ]
-    rownames(TM) = seq(length=nrow(TM)) 
-    print(TM)
-  }
   
   
   # ******************************************************************************************************************************************************** 
@@ -607,10 +602,10 @@ blocks = function(treatments,replicates,model=NULL,rows=HCF(replicates),columns=
   Validate=function(treatments,replicates,rows,columns,seed,jumps,searches) {
     if (missing(treatments) | missing(replicates)) stop(" Treatments or replicates not defined ")   
     if (is.null(treatments) | is.null(replicates)) stop(" Treatments or replicates list is empty ")   
-    if (anyNA(treatments) | anyNA(replicates)) stop(" NA values not allowed")
-    if (any(!is.finite(treatments)) | any(!is.finite(replicates)) | any(is.nan(treatments)) | any(is.nan(replicates))) stop("All inputs must be positive integers")
-    if (length(treatments)!=length(replicates)) stop("The number of treatments sets and the number of replication numbers must match")
-    if (sum(treatments)==1) stop("Designs with only one treatment are not useful for comparative experiments")
+    if ((!is.data.frame(treatments))&&(any(!is.finite(treatments)) | any(!is.finite(replicates)) | any(is.nan(treatments)) | any(is.nan(replicates)))) stop("All inputs must be positive integers")
+    if ((!is.data.frame(treatments))&& (length(treatments)!=length(replicates))) stop("The number of treatments sets and the number of replication numbers must match")
+    if ((!is.data.frame(treatments))&&(sum(treatments)==1)) stop("Designs with only one treatment are not useful for comparative experiments")
+    if ((is.data.frame(treatments))&&(nrow(treatments)==1)) stop("Designs with only one treatment are not useful for comparative experiments")
     if (anyNA(rows) ) stop(" NA rows values not allowed") 
     if (any(!is.finite(rows)) | any(is.nan(rows))) stop(" rows can contain only finite integers ")
     if (min(rows)<1) stop(" All row block parameters must be at least one ")
@@ -638,10 +633,7 @@ blocks = function(treatments,replicates,model=NULL,rows=HCF(replicates),columns=
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
-  if (is.matrix(treatments)) {
-    factblocks(treatments,replicates,rows=HCF(replicates),columns=NULL,searches=(1+10000%/%sum(treatments*replicates)),seed=sample(10000,1),jumps=1)
-    stop
-    }
+  
   Validate(treatments,replicates,rows,columns,seed,jumps,searches) 
   if (length(columns)==0) columns=rep(1,length(rows))
   indic=rows*columns
@@ -656,23 +648,26 @@ blocks = function(treatments,replicates,model=NULL,rows=HCF(replicates),columns=
   cumrows=cumprod(rows)
   cumblocks=c(1,cumprod(rows*columns))
   strata=length(rows)
-  plots=sum(treatments[replicates>1]*replicates[replicates>1])
-  if (cumrows[strata]*2>plots & max(replicates)>1) stop("Too many row blocks for the available plots  - every row block must contain at least two (replicated) treatments")
-  if (cumcols[strata]*2>plots & max(replicates)>1) stop("Too many column blocks for the available plots  - every column block must contain at least two (replicated) plots")
-  if (cumblocks[strata+1]>plots & cumrows[strata]>1 & cumcols[strata]>1 ) stop("Too many blocks - every row-by-column intersection must contain at least one replicated plot")
-  if ( isTRUE( sum(treatments) < 2 ) ) stop(paste("The number of treatments must be at least two "))  
-  if ( isTRUE( sum(treatments*replicates) < (cumrows[strata] + cumcols[strata] + sum(treatments)-2) ) )
+  if (!is.data.frame(treatments)) plots=sum(treatments[replicates>1]*replicates[replicates>1]) else plots=nrow(treatments)
+  searches=1+10000%/%plots
+  if ((!is.data.frame(treatments))&&(cumrows[strata]*2>plots & max(replicates)>1)) stop("Too many row blocks for the available plots  - every row block must contain at least two (replicated) treatments")
+  if ((!is.data.frame(treatments))&&(cumcols[strata]*2>plots & max(replicates)>1)) stop("Too many column blocks for the available plots  - every column block must contain at least two (replicated) plots")
+  if ((!is.data.frame(treatments))&&(cumblocks[strata+1]>plots & cumrows[strata]>1 & cumcols[strata]>1 )) stop("Too many blocks - every row-by-column intersection must contain at least one replicated plot")
+  if ((!is.data.frame(treatments))&&( isTRUE( sum(treatments) < 2 ) )) stop(paste("The number of treatments must be at least two "))  
+ 
+   if (!is.data.frame(treatments)&&(sum(treatments*replicates) < (cumrows[strata] + cumcols[strata] + sum(treatments)-2) ))
     stop(paste("The total number of plots is",sum(treatments*replicates), "whereas the total required number of model parameters is", 
                cumrows[strata] + cumcols[strata] + sum(treatments)-2)) 
-  if (max(replicates)==2 && length(rows)>1 )
+  if ((!is.data.frame(treatments))&&(max(replicates)==2 && length(rows)>1 ))
     for (i in seq_len(length(rows)-1)) 
       if (rows[i]==2 && columns[i]==2) stop( paste("Cannot have nested sub-blocks within a 2 x 2 semi-Latin square - try a nested sub-blocks design within 4 main blocks"))
   set.seed(seed)
-  if (max(replicates)==1) {
+  
+  if ((max(replicates)==1)&&(!is.data.frame(treatments))) {
     ntrts=sum(treatments)
     treatments=as.factor(sample(ntrts))
     Efficiencies=data.frame("Blocks 1","1",1,1,1)
-    colnames(EfficiencicolsOptes)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
+    colnames(Efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     Design=data.frame(rep(1,ntrts), treatments)  
     Design[]=lapply(Design, as.factor)
     colnames(Design)=c("Blocks","Treatments")
@@ -683,11 +678,21 @@ blocks = function(treatments,replicates,model=NULL,rows=HCF(replicates),columns=
     colnames(Plan)=c("Blocks 1","Plots",rep(1:ntrts))
     Plan[]  = lapply(Plan, as.factor)
   } else {
-    # Design factors
+    if( is.data.frame(treatments)) {
+    TM=model.matrix(  as.formula(model)  ,TF)
+    TM=scale( TM[,c(2:ncol(TM))],center = TRUE, scale = FALSE)
+    TM=TM[rep(seq_len(nrow(TM)), replicates), ]
+    rownames(TM) = seq(length=nrow(TM)) 
+    TM=as.matrix(TM)
+    nunits=nrow(TM)
+    } else {
     fulltreatments=treatments
     fullreplicates=replicates
     treatments=treatments[replicates>1]
     replicates=replicates[replicates>1]
+    nunits=sum(treatments*replicates)
+    ntrts=sum(treatments)
+    }
     rowcol=as.numeric(rbind(rows,columns))
     cpblocks=c(1,cumprod(rows*columns))
     cprowcol=cumprod(rowcol)
@@ -702,8 +707,7 @@ blocks = function(treatments,replicates,model=NULL,rows=HCF(replicates),columns=
     #permBlocks will randomise whole blocks in nested strata or will randomize rows and columns in each nested stratum of a crossed design 
     tempDesign=data.frame( do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
     permBlocks=tempDesign[ do.call(order, tempDesign), ][,ncol(tempDesign)]
-    nunits=sum(treatments*replicates)
-    ntrts=sum(treatments)
+    
     # design
     regular=TRUE
     blocksizes=nunits
@@ -811,6 +815,11 @@ blocks = function(treatments,replicates,model=NULL,rows=HCF(replicates),columns=
     if (isrowcol) Design[c(which(as.numeric(rbind(rows,columns))==1))]= list(NULL) 
     if (isrowcol) Plan[c(which(as.numeric(rbind(rows,columns))==1 ))]= list(NULL) 
   }
+  
+  
+  
+  
+  
   # treatment replications
   TreatmentsTable=data.frame(table(Design[,"Treatments"]))
   TreatmentsTable[]=lapply(TreatmentsTable, as.factor) 
