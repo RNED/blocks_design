@@ -424,12 +424,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       perm=c(rbind(matrix(seq_len(ncol(BM)),nrow=nblocks-1,ncol=main),seq_len(main)+ncol(BM)))
       Mtb=Mtb[,perm]
       Mbb=Mbb[perm,perm] 
-    } else {
-      Mtb=NULL
-      Mtt=NULL
-      Mbb=NULL
-    }
-    TF=Optimise(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,Mtt,Mbb,Mtb,weighted)
+      TF=Optimise(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,Mtt,Mbb,Mtb,weighted)
+    } else 
+      TF=Optimise(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,NULL,NULL,NULL,weighted)
     return(TF)
   }  
   # *******************************************************************************************************************************************************
