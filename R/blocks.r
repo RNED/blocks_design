@@ -393,34 +393,32 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # If the row-column intersections contain 2 or more plots a weighted (columns + w*rows.columns) model is fitted for w>=0 and w<1 
   # ********************************************************************************************************************************************************    
   colsOpt=function(TF,Main,Rows,Columns,weighted) { 
-    TF=NonSingular(TF,Main,Columns,Rows)
+    if (is.factor(TF)) TF=NonSingular(TF,Main,Columns,Rows)
     if (is.null(TF)) return(TF)
     main=nlevels(Main)
-    ncol=nlevels(Columns)/main
-    nrow=nlevels(Rows)/main
-    nblocks=nrow*ncol
-    blocks=main*nblocks
-    CM=Contrasts(Main,Columns)[,rep(c(rep(TRUE,(ncol-1)),FALSE),main),drop=FALSE]
-    TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] 
+    ncols=nlevels(Columns)/main
+    nrows=nlevels(Rows)/main
+    nblocks=nrows*ncols
+    CM=Contrasts(Main,Columns)[,rep(c(rep(TRUE,(ncols-1)),FALSE),main),drop=FALSE]
+    if (is.factor(TF)) TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] else TM=TF
     V=chol2inv(chol(crossprod(cbind(CM,TM))))
-    indicv=seq(ncol(CM)+1,ncol(TM)+ncol(CM))
-    MTT=rbind(cbind(V[indicv,indicv,drop=FALSE],rep(0,(nlevels(TF)-1))),rep(0,nlevels(TF)))
+    indicv=seq(ncol(CM)+1, ncol(TM)+ncol(CM))
+    MTT=rbind(          cbind( V[indicv,indicv,drop=FALSE], rep(0,ncol(TM))) ,  rep(0,(ncol(TM)+1)))
     MBB=matrix(0,nrow=nlevels(Columns),ncol=nlevels(Columns))
-    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Columns))
+    MTB=matrix(0,nrow=(ncol(TM)+1),ncol=nlevels(Columns))
     MBB[seq_len(ncol(CM)),seq_len(ncol(CM))]=V[seq_len(ncol(CM)),seq_len(ncol(CM)),drop=FALSE]
     MTB[seq_len(ncol(TM)),seq_len(ncol(CM))]=V[indicv,seq_len(ncol(CM)),drop=FALSE]
-    perm=c(rbind(matrix(seq_len(ncol(CM)),nrow=ncol-1,ncol=main),seq_len(main)+ncol(CM)))
+    perm=c(rbind(matrix(seq_len(ncol(CM)),nrow=ncols-1,ncol=main),seq_len(main)+ncol(CM)))
     MTB=MTB[,perm]
     MBB=MBB[perm,perm] 
-    Blocks=as.factor((as.numeric(Main)-1)*nblocks + ((as.numeric(Rows)-1)%%nrow)*ncol + (as.numeric(Columns)-1)%%ncol + 1)
+    Blocks=as.factor((as.numeric(Main)-1)*nblocks + ((as.numeric(Rows)-1)%%nrows)*ncols + (as.numeric(Columns)-1)%%ncols + 1)
     BM=Contrasts(Main,Blocks)[,rep( c(rep(TRUE,(nblocks-1)),FALSE),main),drop=FALSE]
-    DM=cbind(BM,TM)
-    if ( length(TF)>=(blocks+nlevels(TF)) && qr(t(DM))$rank==ncol(DM) && isTRUE(weighted))  {
-      V=chol2inv(chol(crossprod(DM)))
+    if ( (nunits-1)>=(main*nrows*ncols+ncol(TM)) && qr(t(cbind(BM,TM)))$rank==(ncol(BM)+ncol(TM)) && isTRUE(weighted))  {
+      V=chol2inv(chol(crossprod(cbind(BM,TM))))
       indicv=seq_len(ncol(TM))+ncol(BM)
-      Mtt=rbind(cbind(V[indicv,indicv,drop=FALSE],rep(0,(nlevels(TF)-1))),rep(0,nlevels(TF)))
-      Mbb=matrix(0,nrow=blocks,ncol=blocks)
-      Mtb=matrix(0,nrow=nlevels(TF),ncol=blocks)
+      Mtt=rbind(cbind(V[indicv,indicv,drop=FALSE],rep(0,ncol(TM))) ,rep(0,(ncol(TM)+1) ))
+      Mbb=matrix(0,nrow=main*nblocks,ncol=main*nblocks)
+      Mtb=matrix(0,nrow=(ncol(TM)+1),ncol=main*nblocks)
       Mbb[seq_len(ncol(BM)),seq_len(ncol(BM))]=V[seq_len(ncol(BM)),seq_len(ncol(BM)),drop=FALSE]
       Mtb[seq_len(ncol(TM)),seq_len(ncol(BM))]=V[indicv,seq_len(ncol(BM)),drop=FALSE]
       perm=c(rbind(matrix(seq_len(ncol(BM)),nrow=nblocks-1,ncol=main),seq_len(main)+ncol(BM)))
@@ -487,7 +485,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       TF=NonSingular(TF,Main,Rows,rep(1,length(TF)))
       if (is.null(TF)) return(TF)
       BM=Contrasts(Main,Rows)[, rep(c(rep(TRUE,((blocks/main)-1)),FALSE),main),drop=FALSE]
-      TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] 
+      if (is.factor(TF)) TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] else TM=TF
       V=chol2inv(chol(crossprod(cbind(BM,TM))))
       indicv=seq_len(ncol(TM))+ncol(BM)
       MTT=rbind(cbind(V[indicv,indicv,drop=FALSE],rep(0,(nlevels(TF)-1))),rep(0,nlevels(TF)))
