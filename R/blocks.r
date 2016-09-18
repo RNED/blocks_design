@@ -632,14 +632,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
                 6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6)
       TF=c(seq_len(100),seq_len(100)[order(rep(0:9,10))],seq_len(100)[order(square1)],seq_len(100)[order(square2)])
     }
-    TF
+    TF=as.factor(TF)
   }
   
   # *******************************************************************************************************************************************************
   # Tests for balanced trojan designs and constructs available designs
   # ******************************************************************************************************************************************************** 
-  trojan=function(nunits,r,ntrts,k) { 
-    TF=rep(NA,ntrts*r) 
+  trojan=function(nunits,r,k) { 
+    TF=rep(NA,nunits) 
     if (isPrime(r)) { 
       for (z in 1:k)
         for (y in 0:(r-1)) 
@@ -752,13 +752,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     v=sqrt(sum(treatments))  # dimension of a lattice square
     k=nunits/prod(rows*columns)  # block size 
     r=replicates[1]
+    
     if (regReps && regBlocks && orthoMain && !isrowcol && identical(v,floor(v)) && identical(k,v) && identical(length(rows),as.integer(2))) {
     TF=lattice(v,r)
     if (!all(is.na(TF))) sqrLattice=TRUE
     }
     # given s orthogonal Latin squares of dimension r x r there are r x kr Trojan designs for r replicates of kr treatments in blocks of size k where k<=s
     if (regReps && regBlocks && orthoMain && isrowcol && identical(columns[1],r) && identical(length(rows),as.integer(1)) && identical(length(columns),as.integer(1)) && (k<r)) {
-    TF=trojan(nunits,r,sum(treatments),k)
+    TF=trojan(nunits,r,k)
     if (!all(is.na(TF))) fulltrojan=TRUE
     }
     # Treatment factors and levels ignoring any single replicate treatments
