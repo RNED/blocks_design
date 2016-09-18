@@ -383,31 +383,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # If the row-column intersections contain 2 or more plots a weighted (columns + w*rows.columns) model is fitted for w>=0 and w<1 
   # ********************************************************************************************************************************************************    
   colsOpt=function(TF,Main,Rows,Columns,weighted) { 
-    v=sqrt(nlevels(TF))  # dimension of a lattice square
-    k=nunits/nlevels(Rows)  # block size
-    r=nunits/nlevels(TF) # replication
-    w=sqrt(nlevels(Rows)) # dimension of a set of k Latin squares of dimension nlevels(Rows) * nlevels(Rows) for a Trojanic design
-    trojan = regReps && identical(k,floor(k)) && identical(hcf%%nlevels(Main),0) && identical(r,w)  && (k<w)
-    
-    if (trojan  && isPrime(w) ) {
-      t=rep(NA,k*r*r)
-      for (z in seq_len(k))
-        for (y in 0: (r-1)) 
-          for (x in 0: (r-1)) 
-            t[(x + y*w)*k + z]=(y+x*z)%%w + (z-1)*w +1
-          TF=factor(t,labels=levels(TF))
-    } else if (trojan &&  nlevels(Rows)%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
-      index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==nlevels(Rows))
-      mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])	
-      t=NULL
-      for (i in  seq_len(w))
-        for (j in seq_len(w))
-          for (x in seq_len(k))
-            t=c(t,mols[i,j,x]+(x-1)*w)
-      TF=factor(t,labels=levels(TF))
-      
-    } else {
-    
     if (is.factor(TF)) TF=NonSingular(TF,Main,Columns,Rows)
     if (is.null(TF)) return(TF)
     main=nlevels(Main)
@@ -442,7 +417,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       TF=Optimise(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,Mtt,Mbb,Mtb,weighted)
     } else 
       TF=Optimise(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,NULL,NULL,NULL,weighted)
-    }
     return(TF)
   }  
   # *******************************************************************************************************************************************************
@@ -467,7 +441,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       TF=Optimise(TF,Main,Rows,NULL,NULL,MTT,MBB,MTB,NULL,NULL,NULL,weighted)
     return(TF)
 } 
-
 
   # ******************************************************************************************************************************************************** 
   # Finds row and column sizes in each stratum of a design 
