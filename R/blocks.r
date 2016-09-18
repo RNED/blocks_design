@@ -613,25 +613,24 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # *******************************************************************************************************************************************************
   # Tests for and constructs  balanced lattice designs
   # ******************************************************************************************************************************************************** 
-  lattice=function(v,k,r) { 
-    TF=NULL
+  lattice=function(v,r) { 
+    TF=rep(NA,v*v*r) 
     if ( r<4 || (isPrime(v) && r<(v+2)) ) {
-      TF=factor(rep(seq_len(v*v),r)[order(unlist(cMOLS(v))[1:(r*v*v)])] ,labels=1:(v*v))
+      TF=rep(seq_len(v*v),r)[order(unlist(cMOLS(v))[1:(r*v*v)])]
     } else if (r<(v+2)  && (v*v)%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
-      t=c(seq_len(v*v),seq_len(v*v)[order(rep(0:(v-1),v))]   )
+      TF[1:(2*v*v)]=c(seq_len(v*v),seq_len(v*v)[order(rep(0:(v-1),v))]   )
       if (r>2) {
         index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==(v*v))
         mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])	
-        for (i in seq_len(r-2))
-          t=c(t, seq_len(v*v)[order(as.numeric(mols[,,i]))]) 
+        for (i in 1:(r-2)  )
+          TF[ c( (v*v*(i-1)+1) : (v*v*i)) + 2*v*v  ] = seq_len(v*v)[order(as.numeric(mols[,,i]))]
       }
-      TF=factor(t,labels=1:(v*v))
     } else if (v==10  && r==4) {
       square1=c(1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
                 5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8)
       square2=c(1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
                 6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6)
-      TF=factor(c(seq_len(100),seq_len(100)[order(rep(0:9,10))],seq_len(100)[order(square1)],seq_len(100)[order(square2)]),labels=(1:100))
+      TF=c(seq_len(100),seq_len(100)[order(rep(0:9,10))],seq_len(100)[order(square1)],seq_len(100)[order(square2)])
     }
     TF
   }
@@ -640,21 +639,21 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # Tests for balanced trojan designs and constructs available designs
   # ******************************************************************************************************************************************************** 
   trojan=function(nunits,r,ntrts,k) { 
-    t=rep(NA,ntrts*r) 
-    if (isPrime(r) && k<r ) { 
+    TF=rep(NA,ntrts*r) 
+    if (isPrime(r)) { 
       for (z in 1:k)
         for (y in 0:(r-1)) 
           for (x in 0:(r-1)) 
-            t[(x + y*r)*k + z]=(y+x*z)%%r + (z-1)*r +1
+            TF[(x + y*r)*k + z]=(y+x*z)%%r + (z-1)*r +1
     } else if ((r*r)%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
       index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==(r*r))
       mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])	
       for (i in 1:r)
         for (j in 1:r)
           for (x in 1:k)
-            t[x+(j-1)*k+(i-1)*k*r]=mols[i,j,x]+(x-1)*r
+            TF[x+(j-1)*k+(i-1)*k*r]=mols[i,j,x]+(x-1)*r
     }
-    TF=factor(t,labels=1:ntrts)
+    TF=as.factor(TF)
   }
 
   # ******************************************************************************************************************************************************** 
@@ -741,7 +740,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     }
     if ( min(fullreplicates)==1 && max(fullreplicates)>1 &&  max(columns)>1 && regBlocks==FALSE )  
       stop("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
-
     Design  = data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
     BlocksInStrata  = data.frame(fBlocksInStrata[rep(seq_len(nrow(fBlocksInStrata)),  blocksizes ),]) 
     Design[]= lapply(Design, as.factor) 
@@ -755,17 +753,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     k=nunits/prod(rows*columns)  # block size 
     r=replicates[1]
     if (regReps && regBlocks && orthoMain && !isrowcol && identical(v,floor(v)) && identical(k,v) && identical(length(rows),as.integer(2))) {
-    TF=lattice(v,k,r)
-    if (!is.null(TF)) sqrLattice=TRUE
+    TF=lattice(v,r)
+    if (!all(is.na(TF))) sqrLattice=TRUE
     }
     # given s orthogonal Latin squares of dimension r x r there are r x kr Trojan designs for r replicates of kr treatments in blocks of size k where k<=s
     if (regReps && regBlocks && orthoMain && isrowcol && identical(columns[1],r) && identical(length(rows),as.integer(1)) && identical(length(columns),as.integer(1)) && (k<r)) {
     TF=trojan(nunits,r,sum(treatments),k)
-    if (!is.null(TF)) fulltrojan=TRUE
-    print(TF)
+    if (!all(is.na(TF))) fulltrojan=TRUE
     }
-    print(sqrLattice)
-    print(fulltrojan)
     # Treatment factors and levels ignoring any single replicate treatments
     if ((!sqrLattice) && (!fulltrojan)) { 
     trtReps=rep(fullreplicates,fulltreatments)
