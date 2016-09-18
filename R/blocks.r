@@ -609,7 +609,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     mols=lapply(1:length(mols),function(z){ (z-1)*v+mols[[z]] })
     mols
   }
-  
   # *******************************************************************************************************************************************************
   # Tests for and constructs  balanced lattice designs
   # ******************************************************************************************************************************************************** 
@@ -634,12 +633,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     }
     TF=as.factor(TF)
   }
-  
   # *******************************************************************************************************************************************************
   # Tests for balanced trojan designs and constructs available designs
   # ******************************************************************************************************************************************************** 
-  trojan=function(nunits,r,k) { 
-    TF=rep(NA,nunits) 
+  trojan=function(r,k) { 
+    TF=rep(NA,(r*r*k)) 
     if (isPrime(r)) { 
       for (z in 1:k)
         for (y in 0:(r-1)) 
@@ -655,7 +653,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     }
     TF=as.factor(TF)
   }
-
   # ******************************************************************************************************************************************************** 
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
@@ -752,14 +749,13 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     v=sqrt(sum(treatments))  # dimension of a lattice square
     k=nunits/prod(rows*columns)  # block size 
     r=replicates[1]
-    
     if (regReps && regBlocks && orthoMain && !isrowcol && identical(v,floor(v)) && identical(k,v) && identical(length(rows),as.integer(2))) {
     TF=lattice(v,r)
     if (!all(is.na(TF))) sqrLattice=TRUE
     }
     # given s orthogonal Latin squares of dimension r x r there are r x kr Trojan designs for r replicates of kr treatments in blocks of size k where k<=s
     if (regReps && regBlocks && orthoMain && isrowcol && identical(columns[1],r) && identical(length(rows),as.integer(1)) && identical(length(columns),as.integer(1)) && (k<r)) {
-    TF=trojan(nunits,r,k)
+    TF=trojan(r,k)
     if (!all(is.na(TF))) fulltrojan=TRUE
     }
     # Treatment factors and levels ignoring any single replicate treatments
@@ -780,11 +776,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       }
       if (!is.null(TF)) break
     }
-    }
-   
-    
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
-    
+    }
     # add back single rep treatments for nested stratum blocks only
     if ( min(fullreplicates)==1 && max(fullreplicates)>1  && ( max(columns)==1 || regBlocks==TRUE ) ) {
       replicates=fullreplicates
@@ -807,7 +800,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       Design[]= lapply(Design, as.factor) 
       BlocksInStrata[]= lapply(BlocksInStrata, as.factor) 
     }
-    
     # Randomize
     D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
     D[]=lapply(D, as.factor)
@@ -856,9 +848,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     if (isrowcol) Plan[c(which(as.numeric(rbind(rows,columns))==1 ))]= list(NULL) 
     }
   }
-  
-  
-  
   
   # treatment replications
   TreatmentsTable=data.frame(table(Design[,"Treatments"]))
