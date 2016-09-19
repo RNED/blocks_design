@@ -585,8 +585,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # *******************************************************************************************************************************************************
   # Tests for and constructs  balanced lattice designs
   # ******************************************************************************************************************************************************** 
-  lattice=function(v,r) { 
-    TF=rep(NA,v*v*r) 
+  lattice=function(TF,v,r) { 
     if ( r<4 || (isPrime(v) && r<(v+2)) ) {
       TF=rep(seq_len(v*v),r)[order(unlist(cMOLS(v))[1:(r*v*v)])]
     } else if (r<(v+2)  && (v*v)%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
@@ -609,8 +608,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # *******************************************************************************************************************************************************
   # Tests for balanced trojan designs and constructs available designs
   # ******************************************************************************************************************************************************** 
-  trojan=function(r,k) { 
-    TF=rep(NA,(r*r*k)) 
+  trojan=function(TF,r,k) { 
     if (isPrime(r)) { 
       for (z in 1:k)
         for (y in 0:(r-1)) 
@@ -710,29 +708,24 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     }
     if ( min(fullreplicates)==1 && max(fullreplicates)>1 &&  max(columns)>1 && regBlocks==FALSE )  
       stop("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
+    TF=rep(NA,sum(treatments*replicates)) 
     Design  = data.frame(fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),])  
     BlocksInStrata  = data.frame(fBlocksInStrata[rep(seq_len(nrow(fBlocksInStrata)),  blocksizes ),]) 
     Design[]= lapply(Design, as.factor) 
     BlocksInStrata[]= lapply(BlocksInStrata, as.factor) 
     hcf=HCF(replicates)
-    sqrLattice=FALSE 
-    fulltrojan=FALSE
     regReps=identical(length(replicates),as.integer(1))
     orthoMain=(regReps && (replicates[1]==rows[1]))
     v=sqrt(sum(treatments))  # dimension of a lattice square
     k=nunits/prod(rows*columns)  # block size 
     r=replicates[1]
-    if (regReps && regBlocks && orthoMain && !isrowcol && identical(v,floor(v)) && identical(k,v) && identical(length(rows),as.integer(2))) {
-    TF=lattice(v,r)
-    if (!all(is.na(TF))) sqrLattice=TRUE
-    }
+    if (regReps && regBlocks && orthoMain && !isrowcol && identical(v,floor(v)) && identical(k,v) && identical(length(rows),as.integer(2))) 
+    TF=lattice(TF,v,r)
     # given s orthogonal Latin squares of dimension r x r there are r x kr Trojan designs for r replicates of kr treatments in blocks of size k where k<=s
-    if (regReps && regBlocks && orthoMain && isrowcol && identical(columns[1],r) && identical(length(rows),as.integer(1)) && identical(length(columns),as.integer(1)) && (k<r)) {
-    TF=trojan(r,k)
-    if (!all(is.na(TF))) fulltrojan=TRUE
-    }
+    if (regReps && regBlocks && orthoMain && isrowcol && identical(columns[1],r) && identical(length(rows),as.integer(1)) && identical(length(columns),as.integer(1)) && (k<r)) 
+    TF=trojan(TF,r,k)
     # Treatment factors and levels ignoring any single replicate treatments
-    if ((!sqrLattice) && (!fulltrojan)) { 
+    if (all(is.na(TF))) { 
     trtReps=rep(fullreplicates,fulltreatments)
     TrtLabels=rep(1:sum(fulltreatments))[trtReps>1]
     for ( z in seq_len(10)) {
