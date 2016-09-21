@@ -203,30 +203,18 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # ******************************************************************************************************************************************************** 
   # Random swaps
   # ********************************************************************************************************************************************************    
-  Swaps=function(TF,MF,BF,pivot,rank,n,Restrict) {
+  Swaps=function(TF,MF,BF,pivot,rank,n,Restrict,factorial) {
     candidates=NULL
     while (isTRUE(all.equal(length(candidates),0))) {
       if (rank<(n-1)) s1=sample(pivot[(1+rank):n],1) else s1=pivot[n]
-      candidates = seq_len(n)[ MF==MF[s1] & Restrict==Restrict[s1] & BF!=BF[s1] & TF!=TF[s1] ]
+      if (factorial) altTF=apply(  sapply(1:ncol(TF),function(i) {TF[,i]==TF[s1,i]}),1,prod)==0 
+      else altTF=TF!=TF[s1]
+      candidates = seq_len(n)[ MF==MF[s1] & Restrict==Restrict[s1] & BF!=BF[s1] & altTF]
     }
     if ( length(candidates)>1 )
       s2=sample(candidates,1) else s2=candidates[1] 
       s=c(s1,s2)
-  }
-  
-  # ******************************************************************************************************************************************************** 
-  # Random factorial swaps
-  # ********************************************************************************************************************************************************    
-  factSwaps=function(TF,MF,BF,pivot,rank,n,Restrict,TM) {
-    candidates=NULL
-    while (isTRUE(all.equal(length(candidates),0))) {
-      if (rank<(n-1)) s1=sample(pivot[(1+rank):n],1) else s1=pivot[n]
-      altTF=apply(  sapply(1:ncol(TF),function(i) {  TF[,i]==TF[s1,i]   }),1,prod)==0 
-      candidates = seq_len(n)[ MF==MF[s1] & Restrict==Restrict[s1] & BF!=BF[s1] & altTF ]
-    }
-    if ( length(candidates)>1 )
-      s2=sample(candidates,1) else s2=candidates[1] 
-      s=c(s1,s2)
+      return(s)
   }
   
   # ******************************************************************************************************************************************************** 
@@ -245,7 +233,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     n=length(TF)
     while (rank<fullrank & times<1000) {
       times=times+1
-      s=Swaps(TF,MF,BF,pivot,rank,n,Restrict)
+      s=Swaps(TF,MF,BF,pivot,rank,n,Restrict,FALSE)
       rindex=seq_len(length(TF))
       rindex[c(s[1],s[2])]=rindex[c(s[2],s[1])]
       newQ=qr(t(cbind(BM,TM[rindex,])))
@@ -259,7 +247,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     if (times>999) TF=NULL
     return(TF)
   } 
-  
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
@@ -274,7 +261,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     n=nrow(TM)
     while (rank<fullrank & times<1000) {
       times=times+1
-      s=factSwaps(TF,MF,BF,pivot,rank,n,Restrict,TM)
+      s=Swaps(TF,MF,BF,pivot,rank,n,Restrict,TRUE)
       rindex=seq_len(length(TF))
       rindex[c(s[1],s[2])]=rindex[c(s[2],s[1])]
       newQ=qr(t(cbind(BM,TM[rindex,])))
@@ -347,7 +334,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     }
     list(MTT=MTT,MBB=MBB,MTB=MTB,Mtt=Mtt,Mbb=Mbb,Mtb=Mtb,TF=TF,relD=relD)
   }  
-  
   # ******************************************************************************************************************************************************** 
   #  Searches for an optimization with selected number of searches and selected number of junps to escape local optima
   # ********************************************************************************************************************************************************
@@ -382,7 +368,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         if (!isTRUE(all.equal(relD,globrelD)) && relD>globrelD) {
           globTF=TF
           globrelD=relD
-          
           if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF,BF)[2]))) break
         }
       }
@@ -421,7 +406,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     }
     globTF
   } 
-  
   # ******************************************************************************************************************************************************** 
   # Optimize the nested columns blocks assuming a possible set of Main block constraints Initial randomized starting design. 
   # If the row-column intersections contain 2 or more plots a weighted (columns + w*rows.columns) model is fitted for w>=0 and w<1 
