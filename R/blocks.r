@@ -203,65 +203,38 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # ******************************************************************************************************************************************************** 
   # Random swaps
   # ********************************************************************************************************************************************************    
-  Swaps=function(TF,MF,BF,pivot,rank,n,Restrict,factorial) {
+  Swaps=function(TF,MF,BF,pivot,rank,nunits,Restrict) {
     candidates=NULL
     while (isTRUE(all.equal(length(candidates),0))) {
-      if (rank<(n-1)) s1=sample(pivot[(1+rank):n],1) else s1=pivot[n]
-      if (factorial) altTF=apply(  sapply(1:ncol(TF),function(i) {TF[,i]==TF[s1,i]}),1,prod)==0 
+      if (rank<(nunits-1)) s1=sample(pivot[(1+rank):nunits],1) else s1=pivot[nunits]
+      if (is.data.frame(TF)) altTF=apply(  sapply(1:ncol(TF),function(i) {TF[,i]==TF[s1,i]}),1,prod)==0 
       else altTF=TF!=TF[s1]
-      candidates = seq_len(n)[ MF==MF[s1] & Restrict==Restrict[s1] & BF!=BF[s1] & altTF]
+      candidates = seq_len(nunits)[ MF==MF[s1] & Restrict==Restrict[s1] & BF!=BF[s1] & altTF==TRUE ]
     }
     if ( length(candidates)>1 )
       s2=sample(candidates,1) else s2=candidates[1] 
       s=c(s1,s2)
       return(s)
   }
-  
   # ******************************************************************************************************************************************************** 
   # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ********************************************************************************************************************************************************    
-  NonSingular=function(TF,MF,BF,Restrict) { 
+  NonSingular=function(TF,MF,BF,Restrict,TM) {
     BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
     BM[cbind(1:length(BF),BF)]=1
-    fullrank=nlevels(TF)+nlevels(BF)-1
-    TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
-    TM[cbind(seq_len(length(TF)),TF)]=1
-    Q=qr(t(cbind(BM,TM)))
-    rank=Q$rank
-    pivot=Q$pivot
-    times=0
-    n=length(TF)
-    while (rank<fullrank & times<1000) {
-      times=times+1
-      s=Swaps(TF,MF,BF,pivot,rank,n,Restrict,FALSE)
-      rindex=seq_len(length(TF))
-      rindex[c(s[1],s[2])]=rindex[c(s[2],s[1])]
-      newQ=qr(t(cbind(BM,TM[rindex,])))
-      if (isTRUE(all.equal(newQ$rank,rank)) || newQ$rank>rank) { 
-        TF=TF[rindex]
-        TM=TM[rindex,]
-        rank=newQ$rank
-        pivot=newQ$pivot
-      } 
+    if (is.null(TM)) {
+      TM=matrix(0,nrow=length(TF),ncol=nlevels(TF))
+      TM[cbind(seq_len(length(TF)),TF)]=1
+      TM=scale(TM,center = TRUE, scale = FALSE)[,-1]
     }
-    if (times>999) TF=NULL
-    return(TF)
-  } 
-  # ******************************************************************************************************************************************************** 
-  # Initial randomized starting design. If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
-  # ********************************************************************************************************************************************************    
-  factNonSingular=function(TM,MF,BF,Restrict,TF) { 
-    BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
-    BM[cbind(1:length(BF),BF)]=1
-    Q=qr(t(cbind(BM,TM)))
     fullrank=ncol(BM)+ncol(TM)
+    Q=qr(t(cbind(BM,TM)))
     rank=Q$rank
     pivot=Q$pivot
     times=0
-    n=nrow(TM)
     while (rank<fullrank & times<1000) {
       times=times+1
-      s=Swaps(TF,MF,BF,pivot,rank,n,Restrict,TRUE)
+      s=Swaps(TF,MF,BF,pivot,rank,nunits,Restrict)
       rindex=seq_len(length(TF))
       rindex[c(s[1],s[2])]=rindex[c(s[2],s[1])]
       newQ=qr(t(cbind(BM,TM[rindex,])))
@@ -339,7 +312,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # ********************************************************************************************************************************************************
   Optimise=function(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,Mtt,Mbb,Mtb,weighted)  {
     if (is.null(Rows)) {
-      Restrict=rep(1,length(TF)) 
+      Restrict=rep(1,length(Main)) 
       BF=Main 
     } else if (is.null(Columns)) {
       Restrict=Main
@@ -348,6 +321,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       Restrict=Rows
       BF=Columns
     }
+
     globrelD=0
     relD=1
     globTF=TF
@@ -410,8 +384,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # Optimize the nested columns blocks assuming a possible set of Main block constraints Initial randomized starting design. 
   # If the row-column intersections contain 2 or more plots a weighted (columns + w*rows.columns) model is fitted for w>=0 and w<1 
   # ********************************************************************************************************************************************************    
-  colsOpt=function(TF,Main,Rows,Columns,weighted) { 
-    if (is.factor(TF)) TF=NonSingular(TF,Main,Columns,Rows)
+  colsOpt=function(TF,model,Main,Rows,Columns,weighted,TM) { 
+    print(TF)
+    if (is.factor(TF)) TF=NonSingular(TF,Main,Columns,Rows,NULL)
+    print(TF)
     if (is.null(TF)) return(TF)
     main=nlevels(Main)
     ncols=nlevels(Columns)/main
@@ -445,14 +421,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       TF=Optimise(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,Mtt,Mbb,Mtb,weighted)
     } else 
       TF=Optimise(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,NULL,NULL,NULL,weighted)
-    return(TF)
+    list(TF=TF,TM=TM)
   }  
   # *******************************************************************************************************************************************************
   # Optimize the nested Blocks assuming a possible set of Main block constraints Initial randomized starting design. 
   # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ******************************************************************************************************************************************************** 
-  rowsOpt=function(TF,Main,Rows,weighted) { 
-      TF=NonSingular(TF,Main,Rows,rep(1,length(TF)))
+  rowsOpt=function(TF,model,Main,Rows,weighted,TM) { 
+      TF=NonSingular(TF,Main,Rows,rep(1,length(Main)),TM)
       if (is.null(TF)) return(TF)
       BM=Contrasts(Main,Rows)[, rep(c(rep(TRUE,((nlevels(Rows)/nlevels(Main))-1)),FALSE),nlevels(Main)),drop=FALSE]
       if (is.factor(TF)) TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] else TM=TF
@@ -467,7 +443,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       MTB=MTB[,perm]
       MBB=MBB[perm,perm] 
       TF=Optimise(TF,Main,Rows,NULL,NULL,MTT,MBB,MTB,NULL,NULL,NULL,weighted)
-    return(TF)
+      list(TF=TF,TM=TM)
 } 
 
   # ******************************************************************************************************************************************************** 
@@ -652,28 +628,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     TF=as.factor(TF)
   }
   
-  # *******************************************************************************************************************************************************
-  # Optimize the nested Blocks assuming a possible set of Main block constraints Initial randomized starting design. 
-  # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
-  # ******************************************************************************************************************************************************** 
-  rowsfactOpt=function(TM,Model,Main,Rows,TF) { 
-    TF=NonSingular(TF,Main,Rows,rep(1,length(TF)))
-    if (is.null(TF)) return(TF)
-    BM=Contrasts(Main,Rows)[, rep(c(rep(TRUE,((nlevels(Rows)/nlevels(Main))-1)),FALSE),nlevels(Main)),drop=FALSE]
-    if (is.factor(TF)) TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] else TM=TF
-    V=chol2inv(chol(crossprod(cbind(BM,TM))))
-    indicv=seq_len(ncol(TM))+ncol(BM)
-    MTT=rbind(cbind(V[indicv,indicv,drop=FALSE],rep(0,(nlevels(TF)-1))),rep(0,nlevels(TF)))
-    MBB=matrix(0,nrow=nlevels(Rows),ncol=nlevels(Rows))
-    MTB=matrix(0,nrow=nlevels(TF),ncol=nlevels(Rows))
-    MBB[seq_len(ncol(BM)),seq_len(ncol(BM))]=V[seq_len(ncol(BM)),seq_len(ncol(BM)),drop=FALSE]
-    MTB[seq_len(ncol(TM)),seq_len(ncol(BM))]=V[indicv,seq_len(ncol(BM)),drop=FALSE]
-    perm=c(rbind(matrix(seq_len(ncol(BM)),nrow=nlevels(Rows)/nlevels(Main)-1,ncol=nlevels(Main)),seq_len(nlevels(Main))+ncol(BM)))
-    MTB=MTB[,perm]
-    MBB=MBB[perm,perm] 
-    TF=Optimise(TF,Main,Rows,NULL,NULL,MTT,MBB,MTB,NULL,NULL,NULL,weighted)
-    return(TF)
-  } 
   
   # ******************************************************************************************************************************************************** 
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
@@ -737,23 +691,32 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   Design[]= lapply(Design, as.factor) 
   BlocksInStrata[]= lapply(BlocksInStrata, as.factor) 
 
-  
   if (is.data.frame(treatments)) {
     TM=model.matrix(  as.formula(model)  ,TF)
-    TM=scale( TM[,c(2:ncol(TM))],center = TRUE, scale = FALSE)
+    TM=scale(TM,center = TRUE, scale = FALSE)[,-1]
     TM=TM[rep(seq_len(nrow(TM)), replicates), ]
     rownames(TM) = seq(length=nrow(TM))
     TF=TF[rep(seq_len(nrow(TF)), replicates), ]
     rownames(TF) = seq(length=nrow(TF))
     for ( i in seq_len(strata)) {
-      if (!isrowcol && rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsfactOpt(TM,Model,BlocksInStrata[,i],Design[,i],TF)
+      if (!isrowcol && rows[i]>1) {
+        T1=rowsOpt(TF,Model,BlocksInStrata[,i],Design[,i],weighted,TM)
+        TM=T1$TM
+        TF=T1$TF
+        if (is.null(TF)) break
+      }
+      if (isrowcol &&  rows[i]>1) {
+        T2=rowsOpt(TF,Model,BlocksInStrata[,i],Design[,2*i-1],weighted,TM)
+        TM=T2$TM
+        TF=T2$TF
+        if (is.null(TF)) break
+      }
+      if (isrowcol && columns[i]>1) {
+        T3=colsOpt(TF,Model,BlocksInStrata[,i],Design[,2*i-1],Design[,2*i],weighted,TM)
+        TM=T3$TM
+        TF=T3$TF
       if (is.null(TF)) break
-      if (isrowcol &&  rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,BlocksInStrata[,i],Design[,2*i-1],weighted)
-      if (is.null(TF)) break
-      if (isrowcol && columns[i]>1) TF=colsOpt(TF,BlocksInStrata[,i],Design[,2*i-1],Design[,2*i],weighted)
-      if (is.null(TF)) break
-      TM=newOpt$TM
-      TF=newOpt$TF
+      }
     }
     
   } else if (!is.data.frame(treatments) && (max(replicates)==1)) {
@@ -791,14 +754,29 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       TF=rep(rep(TrtLabels,trtReps[trtReps>1]/hcf),hcf)
       rand=sample(nunits)      
       TF=as.factor( TF[rand][order(rep(seq_len(hcf),each=nunits/hcf)[rand])] )
-      for ( i in seq_len(strata)) {
-        if (!isrowcol && rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,BlocksInStrata[,i],Design[,i],weighted)
-        if (is.null(TF)) break
-        if (isrowcol &&  rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) TF=rowsOpt(TF,BlocksInStrata[,i],Design[,2*i-1],weighted)
-        if (is.null(TF)) break
-        if (isrowcol && columns[i]>1) TF=colsOpt(TF,BlocksInStrata[,i],Design[,2*i-1],Design[,2*i],weighted)
-        if (is.null(TF)) break
+
+        for ( i in seq_len(strata)) {
+          if (!isrowcol && rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) {
+            T1=rowsOpt(TF,NULL,BlocksInStrata[,i],Design[,i],weighted,NULL)
+            TM=T1$TM
+            TF=T1$TF
+            if (is.null(TF)) break
+          }
+          if (isrowcol &&  rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) {
+            T2=rowsOpt(TF,NULL,BlocksInStrata[,i],Design[,2*i-1],weighted,NULL)
+            TM=T2$TM
+            TF=T2$TF
+            if (is.null(TF)) break
+          }
+          if (isrowcol && columns[i]>1) {
+            T3=colsOpt(TF,NULL,BlocksInStrata[,i],Design[,2*i-1],Design[,2*i],weighted,NULL)
+            TM=T3$TM
+            TF=T3$TF
+            if (is.null(TF)) break
+          }
       }
+      
+      
       if (!is.null(TF)) break
     }
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
