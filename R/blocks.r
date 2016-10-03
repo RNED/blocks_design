@@ -970,19 +970,22 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   colnames(Plan)=c("Blocks 1","Plots",rep(1:treatments))
   Plan[]  = lapply(Plan, as.factor)
   } else {
+    
     # Randomize
     rdf=data.frame(do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })))
-    Design =data.frame(rdf[rep(seq_len(nrow(rdf)),blocksizes ),])
-    Design =data.frame(Design, seq_len(nrow(Design)),TF)
-    Design=Design[ do.call(order, Design), ][,-(ncol(rdf)+1)]
-    
+    rDesign =data.frame(rdf[rep(seq_len(nrow(rdf)),blocksizes ),])
+    rDesign =data.frame(rDesign,seq_len(nrow(rDesign)),TF)
+    rDesign=rDesign[ do.call(order, rDesign), ][,-(ncol(rdf)+1)] 
+    blocksizes=table(rDesign[,ncol(rdf)])[unique(rDesign[,ncol(rdf)])]
+    Design  = data.frame( fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),], rDesign[,c( (ncol(fDesign)+1): ncol(rDesign))])  # rename factor levels in ascending order
     if (isrowcol) 
       stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Rows",i), paste("Columns", i) )})) else
         stratumnames=unlist(lapply(1:strata, function(i) {paste("Blocks",i)}))
-    
-    
+    if (!is.data.frame(treatments))
     colnames(Design)=c(stratumnames,"Treatments")
+    else  colnames(Design)=c(stratumnames,colnames(treatments))
     rownames(Design)=NULL
+
     #Plan
     V=split(Design[,ncol(Design)],rep(1:cumblocks[strata+1],blocksizes))
     if (!isrowcol| columns[length(columns)]==1  | rows[length(rows)]==1  ) {
@@ -1006,8 +1009,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       names(Plan)[names(Plan) == 'Columns'] = paste('Columns', length(columns))
     }
   }
-  print(Design)
-  print(BlocksInStrata)
+  
     # efficiencies
     if (isrowcol) Efficiencies=RowColEfficiencies(Design,BlocksInStrata)
     else if (!is.data.frame(treatments)) Efficiencies=BlockEfficiencies(Design)
