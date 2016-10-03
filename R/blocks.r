@@ -449,14 +449,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         }
       } 
     }
-    Y=NULL
-    for ( i in 0:3) {
-      X=globTF[rep((i*4+1):((i+1)*4)),]
-      X[]=lapply(X, as.numeric) 
-      y=apply(X,2,sum)
-      Y=rbind(Y,y)
-    }
-print(Y)
     globTF
   } 
   # *******************************************************************************************************************************************************
@@ -979,21 +971,16 @@ print(Y)
   Plan[]  = lapply(Plan, as.factor)
   } else {
     # Randomize
-    #permBlocks will randomise whole blocks in nested strata or will randomize rows and columns in each nested stratum of a crossed design 
-    randomizedDesign=data.frame( do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })) , seq_len(nrow(fDesign)   ))
-    permBlocks=randomizedDesign[ do.call(order, randomizedDesign), ][,ncol(randomizedDesign)]
-    D=as.data.frame(cbind(rep(1:length(blocksizes),blocksizes),sample(seq_len(nunits)),TF))
-    D[]=lapply(D, as.factor)
-    D[,1] = factor(D[,1],levels(D[,1])[permBlocks])
-    TF=D[ do.call(order, D),][,ncol(D)]
-    blocksizes=blocksizes[permBlocks]
+    rdf=data.frame(do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })))
+    Design =data.frame(rdf[rep(seq_len(nrow(rdf)),blocksizes ),])
+    Design =data.frame(Design, seq_len(nrow(Design)),TF)
+    Design=Design[ do.call(order, Design), ][,-(ncol(rdf)+1)]
+    
     if (isrowcol) 
       stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Rows",i), paste("Columns", i) )})) else
         stratumnames=unlist(lapply(1:strata, function(i) {paste("Blocks",i)}))
-    colnames(fDesign)=stratumnames
-    Design =fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),]
-    Design =as.data.frame(cbind( Design ,TF) ) 
-    Design[]  = lapply(Design, as.factor)
+    
+    
     colnames(Design)=c(stratumnames,"Treatments")
     rownames(Design)=NULL
     #Plan
@@ -1019,11 +1006,13 @@ print(Y)
       names(Plan)[names(Plan) == 'Columns'] = paste('Columns', length(columns))
     }
   }
+  print(Design)
+  print(BlocksInStrata)
     # efficiencies
     if (isrowcol) Efficiencies=RowColEfficiencies(Design,BlocksInStrata)
     else if (!is.data.frame(treatments)) Efficiencies=BlockEfficiencies(Design)
-    else  factEff=factEfficiencies(Design,TM)
-  
+    else  Efficiencies=factEfficiencies(Design,TM)
+
     row.names(Efficiencies)=NULL
     # omit single level row or column strata in row and column designs
     if (isrowcol) Design[c(which(as.numeric(rbind(rows,columns))==1))]= list(NULL) 
