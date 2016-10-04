@@ -234,9 +234,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     MTB = MTB - tcrossprod(Z1,Z2) + tcrossprod(W1,W2) 
     list(MTT=MTT,MBB=MBB,MTB=MTB)
   }  
-  
 
-  
   # ******************************************************************************************************************************************************** 
   # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
   # Sampling is used initially when many feasible swaps are available but later a full search is used to ensure steepest ascent optimization.
@@ -363,7 +361,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     breps=tabulate(BF)   
     if ( regReps && identical(max(breps),min(breps))  && !is.data.frame(TF))
     bound=upper_bounds( length(TF), nlevels(TF), nlevels(BF) ) else bound=NA
-    
     for (r in 1:searches) {
       if (is.data.frame(TF)) 
         dmax =factDMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks,TM,BM,RCM) 
@@ -457,8 +454,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # ******************************************************************************************************************************************************** 
   rowsOpt=function(TF,model,Main,BF,weighted,TM) { 
     if (!is.data.frame(TF)) 
-      TM=Contrasts(as.factor(rep(1,length(TF))),TF)
+      TM=Contrasts(Main,TF)
+    TM=TM[,-ncol(TM),drop=FALSE] # drops last treatment contrast
     BM=Contrasts(Main,BF)
+    BM=BM[,-seq(nlevels(BF)/nlevels(Main),nlevels(BF),nlevels(BF)/nlevels(Main)),drop=FALSE] # drops last contrast in each nested block
     nonsing=NonSingular(TF,Main,BF,TM,BM)
     TF=nonsing$TF
     TM=nonsing$TM
@@ -489,8 +488,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # ********************************************************************************************************************************************************    
   colsOpt=function(TF,model,Main,Rows,Columns,weighted,TM) { 
     if (!is.data.frame(TF)) 
-      TM=Contrasts(as.factor(rep(1,length(TF))),TF) # treatments nested in overall mean
+      TM=Contrasts(Main,TF) # treatments nested in overall mean
+    TM=TM[,-ncol(TM),drop=FALSE] # drops last treatment contrast
     CM=Contrasts(Main,Columns) # columns nested in main blocks
+    CM=CM[,-seq(nlevels(Columns)/nlevels(Main),nlevels(Columns),nlevels(Columns)/nlevels(Main)),drop=FALSE] # drops last contrast in each nested block
     nonsing=NonSingular(TF,Rows,Columns,TM,CM)
     TF=nonsing$TF
     TM=nonsing$TM
@@ -518,6 +519,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     }  
     Blocks=as.factor((as.numeric(Main)-1)*nblocks + ((as.numeric(Rows)-1)%%nrows)*ncols + (as.numeric(Columns)-1)%%ncols + 1)
     BM=Contrasts(Main,Blocks) 
+    BM=BM[,-seq(nlevels(Blocks)/nlevels(Main),nlevels(Blocks),nlevels(Blocks)/nlevels(Main)),drop=FALSE] # drops last contrast in each nested block
     indicv=seq( (ncol(BM)+1), (ncol(BM)+ncol(TM))  )
     if ( nunits>=(main*nrows*ncols+ncol(TM)+1) && qr(t(cbind(BM,TM)))$rank==(ncol(BM)+ncol(TM)) && isTRUE(weighted))  {
       V = chol2inv(chol(crossprod(cbind(BM,TM))))
@@ -550,7 +552,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     NM=matrix(0,nrow=length(NF),ncol=nlevels(NF))
     NM[cbind(seq_len(length(NF)),NF)]=1 # factor indicator matrix  
     NM=do.call(rbind,lapply(1:nlevels(MF),function(i) {scale(NM[MF==i,] , center = TRUE, scale = FALSE)}))
-    NM=NM[,(1:nlevels(NF))%%(nlevels(NF)/nlevels(MF))>0,drop=FALSE] # drops last column of each nested set of contrasts 
   }
   # ******************************************************************************************************************************************************** 
   # Random swaps
@@ -633,7 +634,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # Finds efficiency factors for block designs 
   # ********************************************************************************************************************************************************     
   BlockEfficiencies=function(Design) {
-    strata=ncol(Design)-1
+    strata=ncol(Design)-2
     effics=matrix(NA,nrow=strata,ncol=2)
     for (i in seq_len(strata))    
       effics[i,]=optEffics(Design$Treatments,Design[,i])  
@@ -906,7 +907,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       TF=rep(rep(TrtLabels,trtReps[trtReps>1]/hcf),hcf)
       rand=sample(nunits)      
       TF=as.factor( TF[rand][order(rep(seq_len(hcf),each=nunits/hcf)[rand])] )
-
         for ( i in seq_len(strata)) {
           if (!isrowcol && rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) {
             T1=rowsOpt(TF,NULL,BlocksInStrata[,i],Design[,i],weighted,NULL)
@@ -972,25 +972,26 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   } else {
     
     # Randomize
-    rdf=data.frame(do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] })))
-    rDesign =data.frame(rdf[rep(seq_len(nrow(rdf)),blocksizes ),])
-    rDesign =data.frame(rDesign,seq_len(nrow(rDesign)),TF)
-    rDesign=rDesign[ do.call(order, rDesign), ][,-(ncol(rdf)+1)] 
+    plots=seq_len(nunits)
+    rdf=do.call(cbind,lapply(1:ncol(fDesign), function(r){ sample(nlevels(fDesign[,r]))[fDesign[,r]] }))
+    rDesign =data.frame(rdf[rep(1:length(blocksizes),blocksizes),],plots,TF)
+    rDesign=rDesign[ do.call(order, rDesign), ]
     blocksizes=table(rDesign[,ncol(rdf)])[unique(rDesign[,ncol(rdf)])]
-    Design  = data.frame( fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),], rDesign[,c( (ncol(fDesign)+1): ncol(rDesign))])  # rename factor levels in ascending order
+    Design  = data.frame( fDesign[rep(1:length(blocksizes),blocksizes),],plots,rDesign[,c((ncol(fDesign)+2):ncol(rDesign))])  # rebuild factor levels
     if (isrowcol) 
       stratumnames=unlist(lapply(1:strata, function(i) { c(paste("Rows",i), paste("Columns", i) )})) else
         stratumnames=unlist(lapply(1:strata, function(i) {paste("Blocks",i)}))
     if (!is.data.frame(treatments))
-    colnames(Design)=c(stratumnames,"Treatments")
-    else  colnames(Design)=c(stratumnames,colnames(treatments))
+    colnames(Design)=c(stratumnames,"Plots","Treatments")
+    else  colnames(Design)=c(stratumnames,"Plots",colnames(treatments))
     rownames(Design)=NULL
 
     #Plan
     V=split(Design[,ncol(Design)],rep(1:cumblocks[strata+1],blocksizes))
+    colnames(fDesign)=stratumnames[1:ncol(fDesign)]
     if (!isrowcol| columns[length(columns)]==1  | rows[length(rows)]==1  ) {
-      Plots=rep("",length(V))
-      Plan=as.data.frame(cbind(fDesign,Plots , do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
+      PlotsInBlocks=rep("",length(V))
+      Plan=as.data.frame(cbind(fDesign,PlotsInBlocks, do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
     } else {
       if(strata>1) {
         fDesign=do.call(cbind,lapply(1:(2*(strata-1)),function(i) {gl(rowcol[i],cprowcol[2*(strata-1)]/cprowcol[i], cprowcol[2*(strata-1)])}))
@@ -1009,12 +1010,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       names(Plan)[names(Plan) == 'Columns'] = paste('Columns', length(columns))
     }
   }
-  
     # efficiencies
     if (isrowcol) Efficiencies=RowColEfficiencies(Design,BlocksInStrata)
     else if (!is.data.frame(treatments)) Efficiencies=BlockEfficiencies(Design)
     else  Efficiencies=factEfficiencies(Design,TM)
-
     row.names(Efficiencies)=NULL
     # omit single level row or column strata in row and column designs
     if (isrowcol) Design[c(which(as.numeric(rbind(rows,columns))==1))]= list(NULL) 
