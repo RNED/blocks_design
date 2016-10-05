@@ -56,7 +56,8 @@ sum of the cross products of the two parameter vectors must be the total number 
 
 For factorial treatment sets, the \code{treatments} parameter must be a dataframe with a column of treatment levels for each factor of the design where the factorial design
 comprises all possible combinations of the levels of the treatment factors. In this mode, the \code{replicates} parameter is a single number for the number of replications
-of the full factorial design.
+of the full factorial design. Only designs with a single blocks stratum, possibly resolved into complete replicate blocks for replicated treatment sets, 
+are available for factorial designs.   
 
 The default model for a fully crossed factorial \code{treatments} design is the full set of factorial effects but the \code{models} parameter can be used to define a model for 
 any feasible reduced set of factorial effects. The \code{models} parameter must be a valid model formulation as defined by the \code{\link[stats]{model.matrix}} package
