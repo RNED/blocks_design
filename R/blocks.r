@@ -983,12 +983,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     rdf=data.frame(do.call(cbind,lapply(1:ncol(rowDesign), function(r){ sample(nlevels(rowDesign[,r]))[rowDesign[,r]] })))
     rDesign =data.frame(rdf,seq_len(nunits),TF)    
     rDesign=rDesign[ do.call(order, rDesign), ] # Randomize
-    blocksizes=table(rDesign[,ncol(rowDesign)])[unique(rDesign[,ncol(rowDesign)])]
-  #or
     blocksizes=table(rDesign[,ncol(rdf)])[unique(rDesign[,ncol(rdf)])]
-    Design  = data.frame( fDesign[rep(seq_len(nrow(fDesign)),  blocksizes ),], rDesign[,c( (ncol(fDesign)+1): ncol(rDesign))])  # rename factor levels in ascending order
-#or
-    Design  = data.frame( rowDesign,seq_len(nunits),rDesign[,c((ncol(rowDesign)+2):ncol(rDesign))])  # rebuild factor levels
+    Design  = data.frame(rowdesign[rep(seq_len(nrow(rowdesign)),  blocksizes ),],seq_len(nunits), rDesign[,ncol(rDesign)])  # rename factor levels in ascending order
     rownames(Design)=NULL
     colnames(Design)=c(stratumnames,"Plots","Treatments")
     V=split(Design[,ncol(Design)],rep(1:cumblocks[strata+1],blocksizes))
