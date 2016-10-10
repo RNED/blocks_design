@@ -247,7 +247,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     repeat {
       improved=FALSE
       for (k in 1: nlevels(Restrict)) {
-        s=sort(sample( seq_len(length(TF)) [Restrict==k], nSamp[k])) 
+        s=sort(sample( seq_len(length(TF)) [Restrict==levels(Restrict)[k]], nSamp[k])) 
         TB=MTB[TF[s],BF[s],drop=FALSE]-tcrossprod(MTB[cbind(TF[s],BF[s])],rep(1,nSamp[k]))
         dMat=(TB+t(TB)+1)**2-
           (2*MTT[TF[s],TF[s],drop=FALSE]- tcrossprod(MTT[cbind(TF[s],TF[s])]+rep(1,nSamp[k])) + tcrossprod(MTT[cbind(TF[s],TF[s])]) + 1)*
@@ -281,6 +281,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
           TF[c(s[i],s[j])]=TF[c(s[j],s[i])]
         }
       } 
+      
       if (improved) next
       if (sum(nSamp) < min(length(TF),512)) nSamp=pmin(mainSizes,2*nSamp) else break
     }
@@ -459,7 +460,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     TM=TM[,-ncol(TM),drop=FALSE] # drops last treatment contrast
     BM=Contrasts(Main,BF)
     BM=BM[,-seq(nlevels(BF)/nlevels(Main),nlevels(BF),nlevels(BF)/nlevels(Main)),drop=FALSE] # drops last contrast in each nested block
-    print("OK")
     nonsing=NonSingular(TF,Main,BF,TM,BM)
     TF=nonsing$TF
     TM=nonsing$TM
@@ -846,24 +846,32 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     stop("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
       
   blkdesign=as.data.frame(lapply(1:(strata+1),
-  function(i) {gl( cumblocks[i], (cumblocks[strata+1]/cumblocks[i]),labels=unlist(lapply(1:cumblocks[i], function(j) {paste0("Block_",j)})))}))
+  function(i) {gl( cumblocks[i], (cumblocks[strata+1]/cumblocks[i]),labels=unlist(lapply(1:cumblocks[i], function(j) {paste0("Main_",j)})))}))
   colnames(blkdesign)=1:ncol(blkdesign)
+
+ 
+  if (!isrowcol) {
+    rowdesign=as.data.frame(lapply(1:strata,function(i) {gl( (cumrows[i+1]), (cumblocks[strata+1]/cumblocks[i+1]), labels=unlist(lapply(1:cumrows[i+1], function(j) {paste0("Block_",j)})))}))
+    colnames(rowdesign)=unlist(lapply(1:ncol(rowdesign), function(j) {paste0("Stratum_",j)}))
+  }
   
-  if (isrowcol) rowdesign=as.data.frame(lapply(1:strata,
-        function(i) {gl( (rows[i]), (cumblocks[strata+1]/cumblocks[i]/rows[i]), labels=unlist(lapply(1:rows[i], function(j) {paste0("Row_",j)}))) }))
-  else  rowdesign=as.data.frame(lapply(1:strata,
-       function(i) {gl( (rows[i]), (cumblocks[strata+1]/cumblocks[i]/rows[i]), labels=unlist(lapply(1:rows[i], function(j) {paste0("Block_",j)}))) }))
-  colnames(rowdesign)=1:ncol(rowdesign)
+  if (isrowcol) {
+    rowdesign=as.data.frame(lapply(1:strata,function(i) {gl( (cumrows[i+1]), (cumblocks[strata+1]/cumblocks[i+1]), labels=unlist(lapply(1:cumrows[i+1], function(j) {paste0("Row_",j)}))) }))
+  
+  
   coldesign=as.data.frame(lapply(1:strata,
   function(i) {gl( columns[i], (cumblocks[strata+1]/cumblocks[i+1]), cumblocks[strata+1],labels=unlist(lapply(1:columns[i], function(j) {paste0("Col_",j)}))) }))
   colnames(coldesign)=1:ncol(coldesign)
+  colstratumnames=colnames(coldesign)
+  coldesign=data.frame(lapply(1:ncol(coldesign), function(i){ interaction(blkdesign[,i], coldesign[,i], sep = ":", lex.order = TRUE) }))
+  colDesign=data.frame(coldesign[rep(seq_len(length(blocksizes)),  blocksizes ),])  
+   }
+  
   blkstratumnames=colnames(blkdesign)
   rowstratumnames=colnames(rowdesign)
-  colstratumnames=colnames(coldesign)
   rowDesign=data.frame(rowdesign[rep(seq_len(length(blocksizes)),  blocksizes ),])  
-  colDesign=data.frame(coldesign[rep(seq_len(length(blocksizes)),  blocksizes ),])  
   blkDesign=data.frame(blkdesign[rep(seq_len(length(blocksizes)),  blocksizes ),])  
-  
+
   regReps=identical(length(replicates),as.integer(1))
   orthoMain=(regReps && (replicates[1]==rows[1]))
   if (is.data.frame(treatments)) {
