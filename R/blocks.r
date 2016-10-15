@@ -299,8 +299,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     repeat {
       improved=FALSE
       for (k in 1: nlevels(Main)) {
-        s=sort(sample( seq_len(length(TF)) [Main==k], nSamp[k])) 
-
+        s=sort(sample( seq_len(nrow(TF)) [Main==levels(Main)[k]], nSamp[k])) 
         TMB=crossprod(t(crossprod(t(TM),MTB)),t(BM))
         TMT=crossprod(t(crossprod(t(TM),MTT)),t(TM))
         BMB=crossprod(t(crossprod(t(BM),MBB)),t(BM))
@@ -340,7 +339,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         }
       } 
       if (improved) next
-      if (sum(nSamp) < min(length(TF),512)) nSamp=pmin(mainSizes,2*nSamp) else break
+      if (sum(nSamp) < min(nrow(TF),512)) nSamp=pmin(mainSizes,2*nSamp) else break
     }
     list(MTT=MTT,MBB=MBB,MTB=MTB,Mtt=Mtt,Mbb=Mbb,Mtb=Mtb,TF=TF,relD=relD)
   }  
@@ -358,6 +357,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       Restrict=Rows
       BF=Columns
     }
+    
     globrelD=0
     relD=1
     globTF=TF
@@ -777,10 +777,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # ******************************************************************************************************************************************************** 
   # Calculates D and A-efficiency factors for treatment factor TF assuming block factor BF
   # ********************************************************************************************************************************************************
- factEffics=function(TM,BF) { 
-   BM=matrix(0,nrow=length(BF),ncol=nlevels(BF))
-   BM[cbind(1:length(BF),BF)]=1
-   BM=scale(BM,center = TRUE, scale = FALSE)[,-1]
+ factEffics=function(TM,BM) { 
    TT=crossprod(TM)
    BBI=solve(crossprod(BM))
    BT=crossprod(BM,TM)
@@ -788,16 +785,26 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
    DU=det(TT)
    e=DA/DU
     e
-  }
-  
+ }
+ # ******************************************************************************************************************************************************** 
+ # Efficiency factors for unreplicated randomized designs 
+ # ********************************************************************************************************************************************************     
+ UnrepEfficiencies=function() {
+   efficiencies=data.frame(cbind("Stratum_1",1,1,1,1))
+   colnames(efficiencies)=c("Strata","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
+   efficiencies
+ }
+ 
   # ******************************************************************************************************************************************************** 
   # Finds efficiency factors for block designs 
   # ********************************************************************************************************************************************************     
-  factEfficiencies=function(Design,TM) {
-    strata=ncol(Design)-1
+
+ factEfficiencies=function(TM,Main,BF) {
+   BM=Contrasts(Main,BF)[, -c(1:nlevels(Main))*(nlevels(BF)/nlevels(Main)) ,drop=FALSE]
+    strata=1
     effics=matrix(NA,nrow=strata,ncol=2)
     for (i in seq_len(strata))    
-      effics[i,]=factEffics(TM,Design[,i])  
+      effics[i,]=factEffics(TM,BM)  
     effics
   }
   # ******************************************************************************************************************************************************** 
@@ -886,7 +893,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         TF=T1$TF
         if (is.null(TF)) break
       }
-      
       if (isrowcol) {
       if (rows[i]>1) {
         T2=rowsOpt(TF,Model,blkDesign[,i],rowDesign[,i],weighted,TM)
@@ -959,7 +965,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       for (i in seq_len(strata))
         fullblocksizes=Sizes(fullblocksizes,i)
       sblocksizes=fullblocksizes-blocksizes
-      singleTF=     split(rep(1:sum(treatments))[fullreps==1],rep( 1:length(sblocksizes),sblocksizes))
+      singleTF=split(rep(1:sum(treatments))[fullreps==1],rep( 1:length(sblocksizes),sblocksizes))
       TrtsInBlocks= split(as.numeric(levels(TF))[TF],         rep(1:length(blocksizes),blocksizes))
       addBlocks=which(sblocksizes>0)
       for (i in 1:length(addBlocks)) 
@@ -971,6 +977,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       Design[]= lapply(Design, as.factor) 
       BlocksInStrata[]= lapply(BlocksInStrata, as.factor) 
     }
+  
   if (!is.data.frame(treatments) && (max(replicates)==1) ) {
     if (treatments>1) TF=as.factor(sample(treatments)) else TF=1
     Efficiencies=data.frame("Blocks 1","1",1,1,1)
@@ -982,9 +989,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     Treatments[]=lapply(Treatments, as.factor) 
     colnames(Treatments)=c("Treatments","Replicates")
     Plan=as.data.frame(cbind(1,"",matrix(TF,nrow=1,ncol=treatments)))
-  colnames(Plan)=c("Blocks 1","Plots",rep(1:treatments))
-  Plan[]  = lapply(Plan, as.factor)
+    colnames(Plan)=c("Blocks 1","Plots",rep(1:treatments))
+    Plan[]  = lapply(Plan, as.factor)
+    rownames(Plan)=NULL
   } 
+  
   if (!is.data.frame(treatments) && (max(replicates)>1) && !isrowcol ) {
     rDesign=data.frame(do.call(cbind,lapply(1:ncol(rowDesign), function(r){ sample(nlevels(rowDesign[,r]))[rowDesign[,r]] }))) # Randomize
     rDesign=data.frame(rDesign,as.factor(seq_len(nrow(rDesign))),TF) 
@@ -996,6 +1005,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     V=split(Design[,ncol(Design)],Design[,(ncol(Design)-2)])
     PlotsInBlocks=rep("",length(V))
     Plan=as.data.frame(cbind(rowdesign,PlotsInBlocks, do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
+    rownames(Plan)=NULL
   }
   if (!is.data.frame(treatments) && (max(replicates)>1) && isrowcol ) {
     rdf = data.frame(rowdesign,coldesign,blkdesign[,c(2:ncol(blkdesign))])[c(rbind(1:strata,(strata+1):(2*strata),(2*strata+1):(3*strata)))]
@@ -1016,25 +1026,39 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     rownames(plan)=NULL
     Columns=rep("",nrow(plan))
     Plan=as.data.frame(cbind(plan,Columns, do.call(rbind, lapply(V, function(x){ length(x) =columns[strata]; x }))))
+  }
     rownames(Plan)=NULL
   }
-  }
+  
     # efficiencies
     if (isrowcol) Efficiencies=RowColEfficiencies(Design)
+    else if (!is.data.frame(treatments) && (max(replicates)==1)) Efficiencies=UnrepEfficiencies()
     else if (!is.data.frame(treatments)) Efficiencies=BlockEfficiencies(Design)
-    else  Efficiencies=factEfficiencies(Design,TM)
+    else  Efficiencies=factEfficiencies(TM,blkDesign[,1],rowDesign[,1])
     row.names(Efficiencies)=NULL
     
     # omit single level row or column strata in row and column designs
-    if (isrowcol) {
+    if (isrowcol && !is.data.frame(treatments) ) {
     Design=Design[,-c((1:strata)*3)]
     Design[c(which(as.numeric(rbind(rows,columns))==1))]= list(NULL) 
     Plan[c(which(as.numeric(rbind(rows,columns))==1 ))]= list(NULL) 
+    } else {
+      Plan=NULL
+      Design=TF
     }
     
   # treatment replications
+    if (!is.data.frame(treatments) ) {
   TreatmentsTable=data.frame(table(Design[,ncol(Design)]))
   TreatmentsTable[]=lapply(TreatmentsTable, as.factor) 
   colnames(TreatmentsTable)=c("Treatments","Replicates")
+    } else TreatmentsTable=NULL
+  
+ print( table(rowDesign[,1],TF[,1]))  
+ print( table(rowDesign[,1],TF[,2]))    
+ print( table(rowDesign[,1],TF[,3]))  
+ print( table(rowDesign[,1],TF[,4]))  
+ print( table(rowDesign[,1],TF[,5]))  
+ 
   list(Treatments=TreatmentsTable,Efficiencies=Efficiencies,Plan=Plan,Design=Design,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
