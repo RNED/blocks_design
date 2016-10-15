@@ -949,7 +949,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
     }
   }
-
     # add back single rep treatments for nested stratum blocks only
     if ( min(fullreplicates)==1 && !is.data.frame(treatments) && max(fullreplicates)>1  && ( max(columns)==1 || regBlocks==TRUE ) ) {
       replicates=fullreplicates
@@ -972,7 +971,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       Design[]= lapply(Design, as.factor) 
       BlocksInStrata[]= lapply(BlocksInStrata, as.factor) 
     }
-
   if (!is.data.frame(treatments) && (max(replicates)==1) ) {
     if (treatments>1) TF=as.factor(sample(treatments)) else TF=1
     Efficiencies=data.frame("Blocks 1","1",1,1,1)
@@ -995,13 +993,12 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     Design  = data.frame(rowdesign[rep(seq_len(length(blocksizes)),  blocksizes ),],seq_len(nunits), rDesign[,ncol(rDesign)])  # rebuild factor levels in order
     rownames(Design)=NULL
     colnames(Design)=c(colnames(rowdesign),"Plots","Treatments")
-    V=split(Design[,ncol(Design)],rep(seq_len(length(blocksizes)),blocksizes))
+    V=split(Design[,ncol(Design)],Design[,(ncol(Design)-2)])
     PlotsInBlocks=rep("",length(V))
     Plan=as.data.frame(cbind(rowdesign,PlotsInBlocks, do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
   }
-
   if (!is.data.frame(treatments) && (max(replicates)>1) && isrowcol ) {
-    rdf = data.frame( cbind(rowdesign,coldesign,blkdesign[,c(2:ncol(blkdesign))])[c(rbind(1:strata,(strata+1):(2*strata),(2*strata+1):(3*strata)))])
+    rdf = data.frame(rowdesign,coldesign,blkdesign[,c(2:ncol(blkdesign))])[c(rbind(1:strata,(strata+1):(2*strata),(2*strata+1):(3*strata)))]
     rDesign=data.frame(rdf[rep(seq_len(length(blocksizes)), blocksizes),], as.factor(1:nunits), TF)
     rDesign=data.frame(lapply(1:ncol(rDesign), function(r){ sample(nlevels(rDesign[,r]))[rDesign[,r]]})) # Randomize
     rDesign=rDesign[do.call(order, rDesign), ] # re-order
@@ -1009,9 +1006,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     Design  = data.frame(rdf[rep(seq_len(length(blocksizes)), blocksizes),],as.factor(rDesign[,ncol(rDesign)])) # rebuild factor levels in order
     colnames(Design)[ncol(Design)]="Treatments"
     rownames(Design)=NULL
-
   if (max(blocksizes)>1) {
-    V=split(Design[,ncol(Design)],rep(seq_len(length(blocksizes)),blocksizes))
+    V=split(Design[,ncol(Design)],Design[,(ncol(Design)-1)])
     Plots_In_Blocks=rep("",length(V))
     Plan=as.data.frame(cbind(rdf[,-c(1:strata)*3],Plots_In_Blocks, do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
   } else {
@@ -1023,7 +1019,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     rownames(Plan)=NULL
   }
   }
-
     # efficiencies
     if (isrowcol) Efficiencies=RowColEfficiencies(Design)
     else if (!is.data.frame(treatments)) Efficiencies=BlockEfficiencies(Design)
