@@ -286,7 +286,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       if (improved) next
       if (sum(nSamp) < min(length(TF),512)) nSamp=pmin(mainSizes,2*nSamp) else break
     }
-    list(MTT=MTT,MBB=MBB,MTB=MTB,Mtt=Mtt,Mbb=Mbb,Mtb=Mtb,TF=TF,relD=relD)
+    list(MTT=MTT,MBB=MBB,MTB=MTB,Mtt=Mtt,Mbb=Mbb,Mtb=Mtb,TF=TF,relD=relD,TM=NULL)
   }  
   # ******************************************************************************************************************************************************** 
   # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
@@ -341,7 +341,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       if (improved) next
       if (sum(nSamp) < min(nrow(TF),512)) nSamp=pmin(mainSizes,2*nSamp) else break
     }
-    list(MTT=MTT,MBB=MBB,MTB=MTB,Mtt=Mtt,Mbb=Mbb,Mtb=Mtb,TF=TF,relD=relD)
+    list(MTT=MTT,MBB=MBB,MTB=MTB,Mtt=Mtt,Mbb=Mbb,Mtb=Mtb,TF=TF,relD=relD,TM=TM)
   }  
   # ******************************************************************************************************************************************************** 
   #  Searches for an optimization with selected number of searches and selected number of junps to escape local optima
@@ -357,7 +357,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       Restrict=Rows
       BF=Columns
     }
-    
     globrelD=0
     relD=1
     globTF=TF
@@ -372,6 +371,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
         relD=relD*dmax$relD
         TF=dmax$TF
+        TM=dmax$TM
         MTT=dmax$MTT
         MBB=dmax$MBB
         MTB=dmax$MTB 
@@ -756,7 +756,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # *******************************************************************************************************************************************************
   # Tests for balanced trojan designs and constructs available designs
   # ******************************************************************************************************************************************************** 
-  
   trojan=function(TF,r,k) { 
     if (isPrime(r)) { 
       for (z in 1:k)
@@ -783,8 +782,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
    BT=crossprod(BM,TM)
    DA=det(TT-crossprod(BT,crossprod(BBI,BT)))
    DU=det(TT)
-   e=DA/DU
-    e
+   e=(DA/DU)**(1/ncol(TM))
+   e
  }
  # ******************************************************************************************************************************************************** 
  # Efficiency factors for unreplicated randomized designs 
@@ -799,7 +798,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # Finds efficiency factors for block designs 
   # ********************************************************************************************************************************************************     
 
- factEfficiencies=function(TM,Main,BF) {
+ factEfficiencies=function(TF,Main,BF) {
+   TM=model.matrix(  as.formula(model)  ,TF)
+   TM=scale(TM,center = TRUE, scale = FALSE)[,-1]
+   TM=TM[rep(seq_len(nrow(TM)), replicates), ]
+   rownames(TM) = seq(length=nrow(TM))
    BM=Contrasts(Main,BF)[, -c(1:nlevels(Main))*(nlevels(BF)/nlevels(Main)) ,drop=FALSE]
     strata=1
     effics=matrix(NA,nrow=strata,ncol=2)
@@ -891,6 +894,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         T1=rowsOpt(TF,Model,blkDesign[,i],rowDesign[,i],weighted,TM)
         TM=T1$TM
         TF=T1$TF
+        print(TF)
+        print(TM)
         if (is.null(TF)) break
       }
       if (isrowcol) {
@@ -1031,10 +1036,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   }
   
     # efficiencies
-    if (isrowcol) Efficiencies=RowColEfficiencies(Design)
+    if (!is.data.frame(treatments) && isrowcol) Efficiencies=RowColEfficiencies(Design)
     else if (!is.data.frame(treatments) && (max(replicates)==1)) Efficiencies=UnrepEfficiencies()
     else if (!is.data.frame(treatments)) Efficiencies=BlockEfficiencies(Design)
-    else  Efficiencies=factEfficiencies(TM,blkDesign[,1],rowDesign[,1])
+    else  Efficiencies=factEfficiencies(TF,blkDesign[,1],rowDesign[,1])
     row.names(Efficiencies)=NULL
     
     # omit single level row or column strata in row and column designs
@@ -1059,6 +1064,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
  print( table(rowDesign[,1],TF[,3]))  
  print( table(rowDesign[,1],TF[,4]))  
  print( table(rowDesign[,1],TF[,5]))  
- 
+
+ print(TF)
+ print(TM)
   list(Treatments=TreatmentsTable,Efficiencies=Efficiencies,Plan=Plan,Design=Design,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
