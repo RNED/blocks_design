@@ -119,7 +119,7 @@ TF=data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl
 model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)"
 blocks(treatments=TF,replicates=1,model=model,rows=4)
 
-# Second-order model for two qualitative and two quntitative factors in 4 randomized blocks
+# Second-order model for two qualitative and two quantitative factors in 4 randomized blocks
 TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
 model=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
 blocks(treatments=TF,replicates=1,model=model,rows=4)

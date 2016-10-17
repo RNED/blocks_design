@@ -116,7 +116,7 @@
 #' model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)"
 #' blocks(treatments=TF,replicates=1,model=model,rows=4)
 #' 
-#' # Second-order model for two qualitative and two quntitative factors in 4 randomized blocks
+#' # Second-order model for two qualitative and two quantitative factors in 4 randomized blocks
 #' TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
 #' model=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
 #' blocks(treatments=TF,replicates=1,model=model,rows=4)
@@ -166,7 +166,7 @@
 #' 
 blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=NULL,searches=NULL,seed=sample(10000,1),jumps=1,weighted=TRUE) { 
   options(contrasts=c('contr.sum','contr.poly'))
-
+  
   # ******************************************************************************************************************************************************** 
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)
   # ********************************************************************************************************************************************************
@@ -176,17 +176,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       while (!isTRUE(all.equal(replicates[i]%%replicates[1],0))) replicates[c(1,i)] = c(replicates[i]%%replicates[1], replicates[1])
       replicates[1]
   }   
-  # ******************************************************************************************************************************************************** 
-  # Tests a given number for primality and returns TRUE or FALSE
-  # ********************************************************************************************************************************************************
-  isPrime=function(v) {
-    if (v < 4) return(TRUE) 
-    if ( isTRUE(all.equal(v %% 2,0)) ||  isTRUE(all.equal(v %% 3,0)) ) return(FALSE) 
-    if (v<25) return(TRUE)
-    for(i in  6*seq_len(length(floor((sqrt(v)+1)/6)))        )
-      if ( isTRUE(all.equal(v %% (i-1) , 0)) ||   isTRUE(all.equal(v %% (i+1) , 0)) ) return(FALSE) 
-    return(TRUE)
-  } 
   # ********************************************************************************************************************************************************
   # Updates variance matrix for pairs of swapped treatments using standard matrix updating formula
   # mtb**2-mtt*mbb is > 0 because the swap is a positive element of dMat=(TB+t(TB)+1)**2-TT*BB
@@ -235,7 +224,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     MTB = MTB - tcrossprod(Z1,Z2) + tcrossprod(W1,W2) 
     list(MTT=MTT,MBB=MBB,MTB=MTB)
   }  
-
   # ******************************************************************************************************************************************************** 
   # Maximises the design matrix using the matrix function dMat=TB**2-TT*BB to compare and choose the best swap for D-efficiency improvement.
   # Sampling is used initially when many feasible swaps are available but later a full search is used to ensure steepest ascent optimization.
@@ -310,11 +298,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         
         dMat=(1+cTMB+t(cTMB))**2 - (cTMT + t(cTMT))*(cBMB + t(cBMB))
         is.na(dMat[ dMat<0.00001|is.na(dMat) ] ) = TRUE
-       
+        
         sampn=which.max(dMat)
         i=1+(sampn-1)%%nrow(dMat)
         j=1+(sampn-1)%/%nrow(dMat)
-
+        
         if  ( dMat[i,j]>1  &&  !isTRUE(all.equal(dMat[i,j],1))  ) {
           improved=TRUE
           relD=relD*dMat[i,j]
@@ -362,7 +350,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     globTF=TF
     breps=tabulate(BF)   
     if ( regReps && identical(max(breps),min(breps))  && !is.data.frame(TF))
-    bound=upper_bounds( length(TF), nlevels(TF), nlevels(BF) ) else bound=NA
+      bound=upper_bounds( length(TF), nlevels(TF), nlevels(BF) ) else bound=NA
     for (r in 1:searches) {
       if (is.data.frame(TF)) 
         dmax =factDMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks,TM,BM,RCM) 
@@ -396,22 +384,22 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
           if (length(z)==0) next
           if (length(z)>1) s=c(s1,sample(z,1))  else s=c(s1,z[1])
           if (is.data.frame(TF)) {
-          TMB12=crossprod(t(crossprod(TM[s[1],],MTB)),BM[s[2],])
-          TMB21=crossprod(t(crossprod(TM[s[2],],MTB)),BM[s[1],])
-          TMB11=crossprod(t(crossprod(TM[s[1],],MTB)),BM[s[1],])
-          TMB22=crossprod(t(crossprod(TM[s[2],],MTB)),BM[s[2],])
-          
-          TMT12=crossprod(t(crossprod(TM[s[1],],MTT)),TM[s[2],])
-          TMT11=crossprod(t(crossprod(TM[s[1],],MTT)),TM[s[1],])
-          TMT22=crossprod(t(crossprod(TM[s[2],],MTT)),TM[s[2],])
-          
-          BMB12=crossprod(t(crossprod(BM[s[1],],MBB)),BM[s[2],])
-          BMB11=crossprod(t(crossprod(BM[s[1],],MBB)),BM[s[1],])
-          BMB22=crossprod(t(crossprod(BM[s[2],],MBB)),BM[s[2],])
-          Dswap=(1+TMB12+TMB21-TMB11-TMB22)**2-(2*TMT12-TMT11-TMT22)*(2*BMB12-BMB11-BMB22)
+            TMB12=crossprod(t(crossprod(TM[s[1],],MTB)),BM[s[2],])
+            TMB21=crossprod(t(crossprod(TM[s[2],],MTB)),BM[s[1],])
+            TMB11=crossprod(t(crossprod(TM[s[1],],MTB)),BM[s[1],])
+            TMB22=crossprod(t(crossprod(TM[s[2],],MTB)),BM[s[2],])
+            
+            TMT12=crossprod(t(crossprod(TM[s[1],],MTT)),TM[s[2],])
+            TMT11=crossprod(t(crossprod(TM[s[1],],MTT)),TM[s[1],])
+            TMT22=crossprod(t(crossprod(TM[s[2],],MTT)),TM[s[2],])
+            
+            BMB12=crossprod(t(crossprod(BM[s[1],],MBB)),BM[s[2],])
+            BMB11=crossprod(t(crossprod(BM[s[1],],MBB)),BM[s[1],])
+            BMB22=crossprod(t(crossprod(BM[s[2],],MBB)),BM[s[2],])
+            Dswap=(1+TMB12+TMB21-TMB11-TMB22)**2-(2*TMT12-TMT11-TMT22)*(2*BMB12-BMB11-BMB22)
           } else {
-          Dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
-            (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
+            Dswap = (1+MTB[TF[s[1]],BF[s[2]]]+MTB[TF[s[2]],BF[s[1]]]-MTB[TF[s[1]],BF[s[1]]]-MTB[TF[s[2]],BF[s[2]]])**2-
+              (2*MTT[TF[s[1]],TF[s[2]]]-MTT[TF[s[1]],TF[s[1]]]-MTT[TF[s[2]],TF[s[2]]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
           }
           
           if (!is.null(Mbb)&&isTRUE(weighted)) 
@@ -421,15 +409,14 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
             dswap=1
           if (Dswap>.1 & dswap>.1 | counter>1000) break
         }
-        
         if (counter>1000) return(globTF) # no non-singular swaps
         relD=relD*Dswap 
         if (is.data.frame(TF)) {
-        t=TM[s[1],]-TM[s[2],]
-        b=BM[s[2],]-BM[s[1],]
-        up=factUpDate(MTT,MBB,MTB,t,b)
+          t=TM[s[1],]-TM[s[2],]
+          b=BM[s[2],]-BM[s[1],]
+          up=factUpDate(MTT,MBB,MTB,t,b)
         } else {
-        up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
+          up=UpDate(MTT,MBB,MTB,TF[s[1]],TF[s[2]], BF[s[1]], BF[s[2]])
         }
         MTT=up$MTT
         MBB=up$MBB
@@ -445,7 +432,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
           TF[c(s[1],s[2]),]=TF[c(s[2],s[1]),]  
           TM[c(s[1],s[2]),]=TM[c(s[2],s[1]),]  
         } else {
-        TF[c(s[1],s[2])]=TF[c(s[2],s[1])]  
+          TF[c(s[1],s[2])]=TF[c(s[2],s[1])]  
         }
       } 
     }
@@ -455,9 +442,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # Optimize the nested Blocks assuming a possible set of Main block constraints Initial randomized starting design. 
   # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ******************************************************************************************************************************************************** 
-   rowsOpt=function(TF,model,Main,BF,weighted,TM) { 
+  rowsOpt=function(TF,model,Main,BF,weighted,TM) { 
     if (!is.data.frame(TF)) 
-    TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] # drops last treatment contrast
+      TM=Contrasts(Main,TF)[,-nlevels(TF),drop=FALSE] # drops last treatment contrast
     BM=Contrasts(Main,BF)[, -c(1:nlevels(Main))*(nlevels(BF)/nlevels(Main)) ,drop=FALSE]
     nonsing=NonSingular(TF,Main,BF,TM,BM)
     TF=nonsing$TF
@@ -594,7 +581,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     if (times>999) TF=NULL
     list(TF=TF,TM=TM)
   }  
- 
+  
   # ******************************************************************************************************************************************************** 
   # Finds row and column sizes in each stratum of a design 
   # ********************************************************************************************************************************************************     
@@ -687,123 +674,37 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies
   }
-  # ******************************************************************************************************************************************************** 
-  # Some validation checks
-  # ********************************************************************************************************************************************************     
-  Validate=function(treatments,replicates,rows,columns,seed,jumps,searches) {
-    if (missing(treatments) | missing(replicates)) stop(" Treatments or replicates not defined ")  
-    if (is.null(treatments) | is.null(replicates)) stop(" Treatments or replicates list is empty ")   
-    if ((!is.data.frame(treatments))&&(any(!is.finite(treatments)) | any(!is.finite(replicates)) | any(is.nan(treatments)) | any(is.nan(replicates)))) stop("All inputs must be positive integers")
-    if ((!is.data.frame(treatments))&& (length(treatments)!=length(replicates))) stop("The number of treatments sets and the number of replication numbers must match")
-    if ((!is.data.frame(treatments))&&(sum(treatments)==1)) stop("Designs with only one treatment are not useful for comparative experiments")
-    if ((is.data.frame(treatments))&&(nrow(treatments)==1)) stop("Designs with only one treatment are not useful for comparative experiments")
-    if (anyNA(rows) ) stop(" NA rows values not allowed") 
-    if (any(!is.finite(rows)) | any(is.nan(rows))) stop(" rows can contain only finite integers ")
-    if (min(rows)<1) stop(" All row block parameters must be at least one ")
-    if (anyNA(columns) ) stop(" NA columns values not allowed") 
-    if (any(!is.finite(columns)) | any(is.nan(columns)) ) stop("All column block parameters must be finite integers ")
-    if (length(columns)>0 && length(columns)!=length(rows)  ) stop("The rows parameter and the columns parameter must be the same length (same number of crossed-blocks strata)")
-    if (length(columns)>0 && min(columns)<1) stop("All column block parameters must be at least one ")
-    if (!is.null(searches)) {
-      if (anyNA(searches) ) stop(" NA searches values not allowed") 
-      if ( any(!is.finite(searches)) | any(is.nan(searches))) stop(" Searches must be a finite integer ") 
-      if (searches<1) stop(" Repeats must be at least one ") 
-    }  
-    if (!is.null(jumps)) {
-      if (anyNA(jumps) ) stop(" NA jumps values not allowed") 
-      if ( !all(is.finite(jumps)) | !all(!is.nan(jumps))) stop(" jumps must be a finite integer ") 
-      if (jumps<1)  stop(" Random jumps must be at least one ")   
-      if (jumps>10)  stop(" Too many random jumps ") 
-    }    
-    if (!is.null(seed)) {
-      if (anyNA(seed) )  stop(" NA seed values not allowed") 
-      if (any(!is.finite(seed)) | any(is.nan(seed))) stop(" Seed must be a finite integer ") 
-    } 
-  } 
-  # *******************************************************************************************************************************************************
-  # Returns v-1 cyclically generated v x v Latin squares plus the rows array (first) and the columns array (last). If v is prime, the squares are MOLS  
-  # ********************************************************************************************************************************************************  
-  cMOLS=function(v) {
-    mols=lapply(0:(v-1),function(z){do.call(rbind, lapply(0:(v-1), function(j){ (rep(0:(v-1))*z +j)%%v} ))})
-    mols[[v+1]]=t(mols[[1]])
-    mols=mols[c(1,length(mols),2:(length(mols)-1))]
-    mols=lapply(1:length(mols),function(z){ (z-1)*v+mols[[z]] })
-    mols
-  }
-  # *******************************************************************************************************************************************************
-  # Tests for and constructs  balanced lattice designs
-  # ******************************************************************************************************************************************************** 
-  lattice=function(TF,v,r) { 
-    if ( r<4 || (isPrime(v) && r<(v+2)) ) {
-      TF=rep(seq_len(v*v),r)[order(unlist(cMOLS(v))[1:(r*v*v)])]
-    } else if (r<(v+2)  && (v*v)%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
-      TF[1:(2*v*v)]=c(seq_len(v*v),seq_len(v*v)[order(rep(0:(v-1),v))]   )
-      if (r>2) {
-        index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==(v*v))
-        mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])	
-        for (i in 1:(r-2)  )
-          TF[ c( (v*v*(i-1)+1) : (v*v*i)) + 2*v*v  ] = seq_len(v*v)[order(as.numeric(mols[,,i]))]
-      }
-    } else if (v==10  && r==4) {
-      square1=c(1, 8, 9, 4, 0, 6, 7, 2, 3, 5, 8, 9, 1, 0, 3, 4, 5, 6, 7, 2, 9, 5, 0, 7, 1, 2, 8, 3, 4, 6, 2, 0, 4, 5, 6, 8, 9, 7, 1, 3, 0, 1, 2, 3, 8, 9, 6, 4, 5, 7, 
-                5, 6, 7, 8, 9, 3, 0, 1, 2, 4, 3, 4, 8, 9, 7, 0, 2, 5, 6, 1, 6, 2, 5, 1, 4, 7, 3, 8, 9, 0, 4, 7, 3, 6, 2, 5, 1, 0, 8, 9, 7, 3, 6, 2, 5, 1, 4, 9, 0, 8)
-      square2=c(1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 3, 0, 4, 9, 6, 7, 2, 1, 8, 5, 5, 4, 8, 6, 7, 3, 0, 2, 1, 9, 4, 1, 6, 7, 0, 5, 9, 3, 2, 8, 2, 6, 7, 5, 9, 8, 4, 0, 3, 1, 
-                6, 7, 9, 8, 1, 4, 3, 5, 0, 2, 7, 8, 1, 2, 4, 0, 6, 9, 5, 3, 8, 9, 5, 0, 3, 2, 1, 4, 6, 7, 9, 5, 0, 3, 2, 1, 8, 6, 7, 4, 0, 3, 2, 1, 8, 9, 5, 7, 4, 6)
-      TF=c(seq_len(100),seq_len(100)[order(rep(0:9,10))],seq_len(100)[order(square1)],seq_len(100)[order(square2)])
-    }
-    TF=as.factor(TF)
-  }
-  # *******************************************************************************************************************************************************
-  # Tests for balanced trojan designs and constructs available designs
-  # ******************************************************************************************************************************************************** 
-  trojan=function(TF,r,k) { 
-    if (isPrime(r)) { 
-      for (z in 1:k)
-        for (y in 0:(r-1)) 
-          for (x in 0:(r-1)) 
-            TF[(x + y*r)*k + z]=(y+x*z)%%r + (z-1)*r +1
-    } else if ((r*r)%in% c(16,64,256,1024,4096,16384,81,729,6561,625,2401)) {
-      index=which(c(16,64,256,1024,4096,16384,81,729,6561,625,2401)==(r*r))
-      mols=crossdes::MOLS(c(2,2,2,2,2,2,3,3,3,5,7)[index],c(2,3,4,5,6,7,2,3,4,2,2)[index])	
-      for (i in 1:r)
-        for (j in 1:r)
-          for (x in 1:k)
-            TF[x+(j-1)*k+(i-1)*k*r]=mols[i,j,x]+(x-1)*r
-    }
-    TF=as.factor(TF)
-  }
-  
+
   # ******************************************************************************************************************************************************** 
   # Calculates D and A-efficiency factors for treatment factor TF assuming block factor BF
   # ********************************************************************************************************************************************************
- factEffics=function(TM,BM) { 
-   TT=crossprod(TM)
-   BBI=solve(crossprod(BM))
-   BT=crossprod(BM,TM)
-   DA=det(TT-crossprod(BT,crossprod(BBI,BT)))
-   DU=det(TT)
-   e=(DA/DU)**(1/ncol(TM))
-   e
- }
- # ******************************************************************************************************************************************************** 
- # Efficiency factors for unreplicated randomized designs 
- # ********************************************************************************************************************************************************     
- UnrepEfficiencies=function() {
-   efficiencies=data.frame(cbind("Stratum_1",1,1,1,1))
-   colnames(efficiencies)=c("Strata","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
-   efficiencies
- }
- 
+  factEffics=function(TM,BM) { 
+    TT=crossprod(TM)
+    BBI=solve(crossprod(BM))
+    BT=crossprod(BM,TM)
+    DA=det(TT-crossprod(BT,crossprod(BBI,BT)))
+    DU=det(TT)
+    e=(DA/DU)**(1/ncol(TM))
+    e
+  }
+  # ******************************************************************************************************************************************************** 
+  # Efficiency factors for unreplicated randomized designs 
+  # ********************************************************************************************************************************************************     
+  UnrepEfficiencies=function() {
+    efficiencies=data.frame(cbind("Stratum_1",1,1,1,1))
+    colnames(efficiencies)=c("Strata","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
+    efficiencies
+  }
+  
   # ******************************************************************************************************************************************************** 
   # Finds efficiency factors for block designs 
   # ********************************************************************************************************************************************************     
-
- factEfficiencies=function(TF,Main,BF) {
-   TM=model.matrix(  as.formula(model)  ,TF)
-   TM=scale(TM,center = TRUE, scale = FALSE)[,-1]
-   TM=TM[rep(seq_len(nrow(TM)), replicates), ]
-   rownames(TM) = seq(length=nrow(TM))
-   BM=Contrasts(Main,BF)[, -c(1:nlevels(Main))*(nlevels(BF)/nlevels(Main)) ,drop=FALSE]
+  factEfficiencies=function(TF,Main,BF) {
+    TM=model.matrix(  as.formula(model)  ,TF)
+    TM=scale(TM,center = TRUE, scale = FALSE)[,-1]
+    TM=TM[rep(seq_len(nrow(TM)), replicates), ]
+    rownames(TM) = seq(length=nrow(TM))
+    BM=Contrasts(Main,BF)[, -c(1:nlevels(Main))*(nlevels(BF)/nlevels(Main)) ,drop=FALSE]
     strata=1
     effics=matrix(NA,nrow=strata,ncol=2)
     for (i in seq_len(strata))    
@@ -814,50 +715,30 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
-  Validate(treatments,replicates,rows,columns,seed,jumps,searches) 
 
   if (length(columns)==0) columns=rep(1,length(rows))
-  indic=rows*columns
-  if (max(indic)==1) {
-    rows=1
-    columns=1
-  } else {  
-    rows=rows[indic>1] 
-    columns=columns[indic>1] 
-  }
   cumcols=c(1,cumprod(columns))
   cumrows=c(1,cumprod(rows))
   cumblocks=c(1,cumprod(rows*columns))
   strata=length(rows)
-  fullreplicates=replicates
-  if (max(replicates)>1 && !is.data.frame(treatments) ) {
-    # remove any single replicate treatments
-    fulltreatments=treatments
-    treatments=treatments[replicates>1]
-    replicates=replicates[replicates>1]
-  }
-  if (!is.data.frame(treatments)) nunits=sum(treatments*replicates) else nunits=nrow(treatments)*replicates
+  trtReps=rep(replicates,treatments)
+  if (!is.data.frame(treatments) ) {
+    if (max(replicates)>1) {
+
+      treatments=treatments[replicates>1]
+      replicates=replicates[replicates>1]
+    }
+    nunits=sum(treatments*replicates) 
+    } else nunits=nrow(treatments)*replicates
+
   if (is.null(searches)) searches=1+10000%/%nunits
-  if (!is.data.frame(treatments) && cumrows[strata]*2>nunits && max(replicates)>1) stop("Too many row blocks for the available plots  - every row block must contain at least two (replicated) treatments")
-  if (!is.data.frame(treatments) && cumcols[strata]*2>nunits && max(replicates)>1) stop("Too many column blocks for the available plots  - every column block must contain at least two (replicated) plots")
-  if (!is.data.frame(treatments) && cumblocks[strata+1]>nunits & cumrows[strata]>1 & cumcols[strata]>1 ) stop("Too many blocks - every row-by-column intersection must contain at least one replicated plot")
-  if (!is.data.frame(treatments) && sum(treatments) < 2 ) stop(paste("The number of treatments must be at least two "))  
-  if (!is.data.frame(treatments) && sum(treatments*replicates) < (cumrows[strata] + cumcols[strata] + sum(treatments)-2)) stop(paste("The total number of plots is",
-     sum(treatments*replicates), "whereas the total required number of model parameters is", cumrows[strata] + cumcols[strata] + sum(treatments)-2)) 
-  if (!is.data.frame(treatments) && max(replicates)==2 && length(rows)>1)
-    for (i in seq_len(length(rows)-1)) 
-      if (rows[i]==2 && columns[i]==2) stop( paste("Cannot have nested sub-blocks within a 2 x 2 semi-Latin square - try a nested sub-blocks design within 4 main blocks"))
   set.seed(seed)
   isrowcol=max(columns)>1
   blocksizes=nunits
-
   for (i in seq_len(strata)) 
     blocksizes=Sizes(blocksizes,i) 
-
   if (max(blocksizes) > min(blocksizes)) regBlocks=FALSE else regBlocks=TRUE
-  if ( min(fullreplicates)==1 && max(fullreplicates)>1 &&  max(columns)>1 && regBlocks==FALSE )  
-    stop("The algorithm cannot deal with irregular row-and-column designs containing single replicate treatments ")
-      
+  
   blkdesign=as.data.frame(lapply(1:(strata+1),function(i) {gl( cumblocks[i], (cumblocks[strata+1]/cumblocks[i]), labels=unlist(lapply(1:cumblocks[i], function(j) {paste0("Block_",j)})))}))
   colnames(blkdesign)=unlist(lapply(0:(ncol(blkdesign)-1), function(j) {paste0("Stratum_",j,":Blocks")}))
 
@@ -868,20 +749,18 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     rowdesign=as.data.frame(lapply(1:strata,function(i) {gl( (rows[i]), (cumblocks[strata+1]/cumblocks[i]/rows[i]),cumblocks[strata+1],
                                                              labels=unlist(lapply(1:rows[i], function(j) {paste0("Row_",j)}))) }))
     coldesign=as.data.frame(lapply(1:strata,function(i) {gl( columns[i], (cumblocks[strata+1]/cumblocks[i+1]), cumblocks[strata+1],
-                   labels=unlist(lapply(1:columns[i], function(j) {paste0("Col_",j)}))) }))
-    
+                                                             labels=unlist(lapply(1:columns[i], function(j) {paste0("Col_",j)}))) }))
     rowdesign=data.frame(lapply(1:ncol(rowdesign), function(i){ interaction(blkdesign[,i], rowdesign[,i], sep = ":", lex.order = TRUE) }))
     coldesign=data.frame(lapply(1:ncol(coldesign), function(i){ interaction(blkdesign[,i], coldesign[,i], sep = ":", lex.order = TRUE) }))
-    
     colnames(rowdesign)=unlist(lapply(1:ncol(rowdesign), function(j) {paste0("Stratum_",j,":Rows")}))
     colnames(coldesign)=unlist(lapply(1:ncol(coldesign), function(j) {paste0("Stratum_",j,":Cols")}))
     colDesign=data.frame(coldesign[rep(seq_len(length(blocksizes)),  blocksizes ),])  
   }
-  
   rowDesign=data.frame(rowdesign[rep(seq_len(length(blocksizes)),  blocksizes ),])  
   blkDesign=data.frame(blkdesign[rep(seq_len(length(blocksizes)),  blocksizes ),])  
   regReps=identical(length(replicates),as.integer(1))
   orthoMain=(regReps && (replicates[1]==rows[1]))
+  
   if (is.data.frame(treatments)) {
     TM=model.matrix(  as.formula(model)  ,TF)
     TM=scale(TM,center = TRUE, scale = FALSE)[,-1]
@@ -894,45 +773,36 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         T1=rowsOpt(TF,Model,blkDesign[,i],rowDesign[,i],weighted,TM)
         TM=T1$TM
         TF=T1$TF
-        print(TF)
-        print(TM)
         if (is.null(TF)) break
       }
       if (isrowcol) {
-      if (rows[i]>1) {
-        T2=rowsOpt(TF,Model,blkDesign[,i],rowDesign[,i],weighted,TM)
-        TM=T2$TM
-        TF=T2$TF
-        if (is.null(TF)) break
+        if (rows[i]>1) {
+          T2=rowsOpt(TF,Model,blkDesign[,i],rowDesign[,i],weighted,TM)
+          TM=T2$TM
+          TF=T2$TF
+          if (is.null(TF)) break
+        }
+        if (columns[i]>1) {
+          T3=colsOpt(TF,Model,blkDesign[,i],rowDesign[,i],colDesign[,i],blkDesign[,i+1],weighted,TM)
+          TM=T3$TM
+          TF=T3$TF
+          if (is.null(TF)) break
+        }
       }
-      if (columns[i]>1) {
-        T3=colsOpt(TF,Model,blkDesign[,i],rowDesign[,i],colDesign[,i],blkDesign[,i+1],weighted,TM)
-        TM=T3$TM
-        TF=T3$TF
-      if (is.null(TF)) break
-      }
-    }
     }
   } else if (!is.data.frame(treatments) && (max(replicates)>1)) {
     v=sqrt(sum(treatments))  # dimension of a lattice square
     k=nunits/prod(rows*columns)  # block size 
     r=replicates[1]
     TF=rep(NA,sum(treatments*replicates))
-    if (regReps && regBlocks && orthoMain && !isrowcol && identical(v,floor(v)) && identical(k,v) && identical(length(rows),as.integer(2))) 
-      TF=lattice(TF,v,r)
-    # given s orthogonal Latin squares of dimension r x r there are r x kr Trojan designs for r replicates of kr treatments in blocks of size k where k<=s
-    if (regReps && regBlocks && orthoMain && isrowcol && identical(columns[1],r) && identical(length(rows),as.integer(1)) && identical(length(columns),as.integer(1)) && (k<r)) 
-      TF=trojan(TF,r,k)
     # Treatment factors and levels ignoring any single replicate treatments
     if (all(is.na(TF))) { 
-    trtReps=rep(fullreplicates,fulltreatments)
-    TrtLabels=rep(1:sum(fulltreatments))[trtReps>1]
-    hcf=HCF(replicates)
-    
-    for ( z in seq_len(5)) {
-      TF=rep(rep(TrtLabels,trtReps[trtReps>1]/hcf),hcf)
-      rand=sample(nunits)      
-      TF=as.factor( TF[rand][order(rep(seq_len(hcf),each=nunits/hcf)[rand])] )
+      TrtLabels=rep(1:sum(treatments))[trtReps>1]
+      hcf=HCF(replicates)
+      for ( z in seq_len(5)) {
+        TF=rep(rep(TrtLabels,trtReps[trtReps>1]/hcf),hcf)
+        rand=sample(nunits)      
+        TF=as.factor(TF[rand][order(rep(seq_len(hcf),each=nunits/hcf)[rand])])
         for ( i in seq_len(strata)) {
           if (!isrowcol && rows[i]>1 && !all(hcf%%cumprod(rows[1:i])==0)) {
             T1=rowsOpt(TF,NULL,blkDesign[,i],rowDesign[,i],weighted,NULL)
@@ -954,54 +824,18 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
               if (is.null(TF)) break
             }
           }
+        }
+        if (!is.null(TF)) break
       }
-      if (!is.null(TF)) break
-    }
-    if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
+      if (is.null(TF)) stop("Unable to find a non-singular solution for this design - please try a simpler block or treatment design")
     }
   }
-    # add back single rep treatments for nested stratum blocks only
-    if ( min(fullreplicates)==1 && !is.data.frame(treatments) && max(fullreplicates)>1  && ( max(columns)==1 || regBlocks==TRUE ) ) {
-      replicates=fullreplicates
-      treatments=fulltreatments
-      fullreps=rep(replicates,treatments)
-      nunits=sum(treatments*replicates)
-      fullblocksizes=nunits
-      for (i in seq_len(strata))
-        fullblocksizes=Sizes(fullblocksizes,i)
-      sblocksizes=fullblocksizes-blocksizes
-      singleTF=split(rep(1:sum(treatments))[fullreps==1],rep( 1:length(sblocksizes),sblocksizes))
-      TrtsInBlocks= split(as.numeric(levels(TF))[TF],         rep(1:length(blocksizes),blocksizes))
-      addBlocks=which(sblocksizes>0)
-      for (i in 1:length(addBlocks)) 
-        TrtsInBlocks[[addBlocks[i]]]=sample(append( TrtsInBlocks[[addBlocks[i]]] ,  singleTF[[i]]))
-      TF=as.factor(unlist(TrtsInBlocks))
-      blocksizes=fullblocksizes
-      Design  = data.frame(rowDesign[rep(seq_len(nrow(rowDesign)),  blocksizes ),])  
-      BlocksInStrata  = data.frame(fBlocksInStrata[rep(seq_len(nrow(fBlocksInStrata)),  blocksizes ),]) 
-      Design[]= lapply(Design, as.factor) 
-      BlocksInStrata[]= lapply(BlocksInStrata, as.factor) 
-    }
-  
-  if (!is.data.frame(treatments) && (max(replicates)==1) ) {
-    if (treatments>1) TF=as.factor(sample(treatments)) else TF=1
-    Efficiencies=data.frame("Blocks 1","1",1,1,1)
-    colnames(Efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
-    Design=data.frame( rep(1,treatments), TF)  
-    Design[]=lapply(Design, as.factor) 
-    colnames(Design)=c("Blocks","Treatments")
-    Treatments=data.frame(table(Design[,"Treatments"]))
-    Treatments[]=lapply(Treatments, as.factor) 
-    colnames(Treatments)=c("Treatments","Replicates")
-    Plan=as.data.frame(cbind(1,"",matrix(TF,nrow=1,ncol=treatments)))
-    colnames(Plan)=c("Blocks 1","Plots",rep(1:treatments))
-    Plan[]  = lapply(Plan, as.factor)
-    rownames(Plan)=NULL
-  } 
-  
+ 
+ 
   if (!is.data.frame(treatments) && (max(replicates)>1) && !isrowcol ) {
+    rowDesign=data.frame(rowDesign,as.factor(seq_len(nunits))) 
     rDesign=data.frame(do.call(cbind,lapply(1:ncol(rowDesign), function(r){ sample(nlevels(rowDesign[,r]))[rowDesign[,r]] }))) # Randomize
-    rDesign=data.frame(rDesign,as.factor(seq_len(nrow(rDesign))),TF) 
+    rDesign=data.frame(rDesign,TF) 
     rDesign=rDesign[do.call(order, rDesign), ] # re-order
     blocksizes=table(rDesign[,ncol(rDesign)-2])[unique(rDesign[,ncol(rDesign)-2])]
     Design  = data.frame(rowdesign[rep(seq_len(length(blocksizes)),  blocksizes ),],seq_len(nunits), rDesign[,ncol(rDesign)])  # rebuild factor levels in order
@@ -1012,60 +846,54 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     Plan=as.data.frame(cbind(rowdesign,PlotsInBlocks, do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
     rownames(Plan)=NULL
   }
+
   if (!is.data.frame(treatments) && (max(replicates)>1) && isrowcol ) {
     rdf = data.frame(rowdesign,coldesign,blkdesign[,c(2:ncol(blkdesign))])[c(rbind(1:strata,(strata+1):(2*strata),(2*strata+1):(3*strata)))]
-    rDesign=data.frame(rdf[rep(seq_len(length(blocksizes)), blocksizes),], as.factor(1:nunits), TF)
+    rDesign=data.frame(rdf[rep(seq_len(length(blocksizes)), blocksizes),],as.factor(seq_len(nunits)))
     rDesign=data.frame(lapply(1:ncol(rDesign), function(r){ sample(nlevels(rDesign[,r]))[rDesign[,r]]})) # Randomize
+    rDesign=data.frame(rDesign, TF)
     rDesign=rDesign[do.call(order, rDesign), ] # re-order
     blocksizes=table(rDesign[,(ncol(rDesign)-2)])[unique(rDesign[,(ncol(rDesign)-2)])]
     Design  = data.frame(rdf[rep(seq_len(length(blocksizes)), blocksizes),],as.factor(rDesign[,ncol(rDesign)])) # rebuild factor levels in order
     colnames(Design)[ncol(Design)]="Treatments"
     rownames(Design)=NULL
-  if (max(blocksizes)>1) {
-    V=split(Design[,ncol(Design)],Design[,(ncol(Design)-1)])
-    Plots_In_Blocks=rep("",length(V))
-    Plan=as.data.frame(cbind(rdf[,-c(1:strata)*3],Plots_In_Blocks, do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
-  } else {
-    V=split(Design[,ncol(Design)],Design[,(ncol(Design)-3)] )
-    plan=rdf[c(1:rows[strata])*columns[strata],-c( ncol(rdf)-1, ncol(rdf)),drop=FALSE]
-    rownames(plan)=NULL
-    Columns=rep("",nrow(plan))
-    Plan=as.data.frame(cbind(plan,Columns, do.call(rbind, lapply(V, function(x){ length(x) =columns[strata]; x }))))
-  }
+    if (max(blocksizes)>1) {
+      V=split(Design[,ncol(Design)],Design[,(ncol(Design)-1)])
+      Plots_In_Blocks=rep("",length(V))
+      Plan=as.data.frame(cbind(rdf[,-c(1:strata)*3],Plots_In_Blocks, do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
+    } else {
+      V=split(Design[,ncol(Design)],Design[,(ncol(Design)-3)] )
+      plan=rdf[c(1:rows[strata])*columns[strata],-c( ncol(rdf)-1, ncol(rdf)),drop=FALSE]
+      rownames(plan)=NULL
+      Columns=rep("",nrow(plan))
+      Plan=as.data.frame(cbind(plan,Columns, do.call(rbind, lapply(V, function(x){ length(x) =columns[strata]; x }))))
+    }
     rownames(Plan)=NULL
   }
+
+  # efficiencies
+  if (!is.data.frame(treatments) && isrowcol) Efficiencies=RowColEfficiencies(Design)
+  else if (!is.data.frame(treatments) && (max(replicates)==1)) Efficiencies=UnrepEfficiencies()
+  else if (!is.data.frame(treatments)) Efficiencies=BlockEfficiencies(Design)
+  else  Efficiencies=factEfficiencies(TF,blkDesign[,1],rowDesign[,1])
+  row.names(Efficiencies)=NULL
   
-    # efficiencies
-    if (!is.data.frame(treatments) && isrowcol) Efficiencies=RowColEfficiencies(Design)
-    else if (!is.data.frame(treatments) && (max(replicates)==1)) Efficiencies=UnrepEfficiencies()
-    else if (!is.data.frame(treatments)) Efficiencies=BlockEfficiencies(Design)
-    else  Efficiencies=factEfficiencies(TF,blkDesign[,1],rowDesign[,1])
-    row.names(Efficiencies)=NULL
-    
-    # omit single level row or column strata in row and column designs
-    if (isrowcol && !is.data.frame(treatments) ) {
+  # omit single level row or column strata in row and column designs
+  if (isrowcol && !is.data.frame(treatments) ) {
     Design=Design[,-c((1:strata)*3)]
     Design[c(which(as.numeric(rbind(rows,columns))==1))]= list(NULL) 
     Plan[c(which(as.numeric(rbind(rows,columns))==1 ))]= list(NULL) 
-    } else {
-      Plan=NULL
-      Design=TF
-    }
-    
-  # treatment replications
-    if (!is.data.frame(treatments) ) {
-  TreatmentsTable=data.frame(table(Design[,ncol(Design)]))
-  TreatmentsTable[]=lapply(TreatmentsTable, as.factor) 
-  colnames(TreatmentsTable)=c("Treatments","Replicates")
-    } else TreatmentsTable=NULL
-  
- print( table(rowDesign[,1],TF[,1]))  
- print( table(rowDesign[,1],TF[,2]))    
- print( table(rowDesign[,1],TF[,3]))  
- print( table(rowDesign[,1],TF[,4]))  
- print( table(rowDesign[,1],TF[,5]))  
+  } 
 
- print(TF)
- print(TM)
+  # treatment replications
+  if (!is.data.frame(treatments) ) {
+    TreatmentsTable=data.frame(table(Design[,ncol(Design)]))
+    TreatmentsTable[]=lapply(TreatmentsTable, as.factor) 
+    colnames(TreatmentsTable)=c("Treatments","Replicates")
+  } else {
+    TreatmentsTable=NULL
+    Plan=NULL
+    Design=NULL
+  }
   list(Treatments=TreatmentsTable,Efficiencies=Efficiencies,Plan=Plan,Design=Design,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
