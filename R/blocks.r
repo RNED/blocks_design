@@ -679,26 +679,27 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # Calculates D and A-efficiency factors for treatment factors TF assuming block factor BF
   # ********************************************************************************************************************************************************
   factEffics=function(Design) { 
-
     TF=Design[, c( (ncol(Design)-ncol(TF)+1):ncol(Design))]
     TX=model.matrix(as.formula(model),TF)[,-1,drop=FALSE] # drops mean contrast
     names =unlist(lapply(1:strata, function(j) {paste0("Stratum_",j)}))
     blocks=unlist(lapply(1:strata, function(j) {nlevels(Design[,j])}))
     effics=NULL
     Design=data.frame(as.factor(rep(1,nrow(Design))),Design)
-    print(Design)
     for (i in seq_len(strata)) { 
       MF=Design[,i]
       BF=Design[,i+1]
       TM=do.call(rbind,lapply(1:nlevels(MF),function(i) {scale(TX[MF==levels(MF)[i],] , center = TRUE, scale = FALSE)}))
       BM=Contrasts(MF,BF)[, -seq( nlevels(BF)/nlevels(MF), nlevels(BF) , by=nlevels(BF)/nlevels(MF) ) ,drop=FALSE]
-      R=solve(chol(crossprod(TM)))
-      Q=solve(chol(crossprod(BM)))
-      U=crossprod(crossprod(R,t(BM)),Q)
-      effics=c(effics,det( diag(ncol(TM))-crossprod(U))**(1/ncol(TM)))
+      RI=backsolve(  chol(crossprod(TM)) ,diag(ncol(TM)))
+      QI=backsolve(chol(crossprod(BM)),diag(ncol(BM)))
+      TB=crossprod(TM,BM)
+      A=crossprod(RI,TB)
+      U=crossprod(t(A),QI)
+      effics=c(effics,det( diag(ncol(TM))-tcrossprod(U))**(1/ncol(TM)))
     }
     efficiencies=data.frame(cbind(names,blocks,effics))
     colnames(efficiencies)=c("Strata","Blocks","D-Efficiencies")
+    efficiencies
   }
   # ******************************************************************************************************************************************************** 
   # Efficiency factors for unreplicated randomized designs 
