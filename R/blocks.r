@@ -326,7 +326,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
             Mbb=up$MBB
             Mtb=up$MTB
           }
-
           TF[c(s[i],s[j]),]=TF[c(s[j],s[i]),]
           TM[c(s[i],s[j]),]=TM[c(s[j],s[i]),]
         }
@@ -362,7 +361,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         dmax =factDMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks,TM,BM,RCM) 
       else
         dmax =  DMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks)
- 
       if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
         relD=relD*dmax$relD
         TF=dmax$TF
@@ -448,19 +446,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     NM=matrix(0,nrow=length(NF),ncol=nlevels(NF))
     NM[cbind(seq_len(length(NF)),NF)]=1 # factor indicator matrix  
     NM=do.call(rbind,lapply(1:length(levels(MF)),function(i) {scale(NM[MF==levels(MF)[i],] , center = TRUE, scale = FALSE)}))
-  }
-  
-  # ******************************************************************************************************************************************************** 
-  # Calculates D and A-efficiency factors for treatment factor TF assuming block factor BF
-  # ********************************************************************************************************************************************************
-  optEffics=function(TF,BF) {
-    k=nlevels(BF)
-    if (k==1) return(c(1,1))
-    if (nlevels(TF)<=k) 
-      e=eigen( (diag(nlevels(TF))-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nlevels(TF)-1)] else    
-        e=c(rep(1,(nlevels(TF)-k)), 
-            eigen((diag(k)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(k-1)])  
-      return(round(c(mean(e)*prod(e/mean(e))^(1/length(e)),1/mean(1/e)),6))
   }
   
   # *******************************************************************************************************************************************************
@@ -633,8 +618,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # Finds efficiency factors for block designs 
   # ********************************************************************************************************************************************************     
   BlockEfficiencies=function(Design) {
-
-    strata=ncol(Design)-2
     effics=matrix(NA,nrow=strata,ncol=2)
     for (i in seq_len(strata))    
       effics[i,]=optEffics(Design[,ncol(Design)],Design[,i])  
@@ -644,12 +627,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       for (i in seq_len(strata))  
         if ( nunits%%nlevels(Design[,i])==0 ) 
           bounds[i]=upper_bounds(nunits,nlevels(Design[,ncol(Design)]),nlevels(Design[,i]) )
-    names=NULL
-    for (i in 1:strata)
-      names=c(names,paste0("Stratum_",i))
-    blocks=NULL
-    for (i in 1:strata) 
-      blocks=c( blocks,nlevels(Design[,i]))
+  
+    names =unlist(lapply(1:strata, function(j) {paste0("Stratum_",j)}))
+    blocks=unlist(lapply(1:strata, function(j) {nlevels(Design[,j])}))
     efficiencies=data.frame(cbind(names,blocks,effics,bounds))
     colnames(efficiencies)=c("Strata","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies
@@ -675,28 +655,50 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
           bounds[3*(i-1)+3]=upper_bounds(nunits,nlevels(Design[,ncol(Design)]),nlevels(Design[,3*(i-1)+3]))
       }
     }
-    names=NULL
-    for (i in 1:strata)
-      names=c(names,paste("Rows",i),paste("Columns",i),paste("Rows x Columns",i))
-    blocks=NULL
-    for (i in 1:strata) 
-      blocks=c( blocks,nlevels(Design[,3*(i-1)+1]),nlevels(Design[,3*(i-1)+2]),nlevels(Design[,3*(i-1)+3]))
+    names =unlist(lapply(1:strata, function(j) {c(paste("Rows",j),paste("Columns",j),paste("Rows x Columns",j))}))
+    blocks=unlist(lapply(1:strata, function(j) {c( nlevels(Design[,3*(j-1)+1]),nlevels(Design[,3*(j-1)+2]),nlevels(Design[,3*(j-1)+3]))}))
     efficiencies=data.frame(cbind(names,blocks,effics,bounds))
     colnames(efficiencies)=c("Stratum","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies
   }
-
+  
   # ******************************************************************************************************************************************************** 
   # Calculates D and A-efficiency factors for treatment factor TF assuming block factor BF
   # ********************************************************************************************************************************************************
-  factEffics=function(TM,BM) { 
-    TT=crossprod(TM)
-    BBI=solve(crossprod(BM))
-    BT=crossprod(BM,TM)
-    DA=det(TT-crossprod(BT,crossprod(BBI,BT)))
-    DU=det(TT)
-    e=(DA/DU)**(1/ncol(TM))
-    e
+  optEffics=function(TF,BF) {
+    k=nlevels(BF)
+    if (k==1) return(c(1,1))
+    if (nlevels(TF)<=k) 
+      e=eigen( (diag(nlevels(TF))-crossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(nlevels(TF)-1)] else    
+        e=c(rep(1,(nlevels(TF)-k)), 
+            eigen((diag(k)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(k-1)])  
+      return(round(c(mean(e)*prod(e/mean(e))^(1/length(e)),1/mean(1/e)),6))
+  }
+  
+  # ******************************************************************************************************************************************************** 
+  # Calculates D and A-efficiency factors for treatment factors TF assuming block factor BF
+  # ********************************************************************************************************************************************************
+  factEffics=function(Design) { 
+
+    TF=Design[, c( (ncol(Design)-ncol(TF)+1):ncol(Design))]
+    TX=model.matrix(as.formula(model),TF)[,-1,drop=FALSE] # drops mean contrast
+    names =unlist(lapply(1:strata, function(j) {paste0("Stratum_",j)}))
+    blocks=unlist(lapply(1:strata, function(j) {nlevels(Design[,j])}))
+    effics=NULL
+    Design=data.frame(as.factor(rep(1,nrow(Design))),Design)
+    print(Design)
+    for (i in seq_len(strata)) { 
+      MF=Design[,i]
+      BF=Design[,i+1]
+      TM=do.call(rbind,lapply(1:nlevels(MF),function(i) {scale(TX[MF==levels(MF)[i],] , center = TRUE, scale = FALSE)}))
+      BM=Contrasts(MF,BF)[, -seq( nlevels(BF)/nlevels(MF), nlevels(BF) , by=nlevels(BF)/nlevels(MF) ) ,drop=FALSE]
+      R=solve(chol(crossprod(TM)))
+      Q=solve(chol(crossprod(BM)))
+      U=crossprod(crossprod(R,t(BM)),Q)
+      effics=c(effics,det( diag(ncol(TM))-crossprod(U))**(1/ncol(TM)))
+    }
+    efficiencies=data.frame(cbind(names,blocks,effics))
+    colnames(efficiencies)=c("Strata","Blocks","D-Efficiencies")
   }
   # ******************************************************************************************************************************************************** 
   # Efficiency factors for unreplicated randomized designs 
@@ -705,22 +707,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     efficiencies=data.frame(cbind("Stratum_1",1,1,1,1))
     colnames(efficiencies)=c("Strata","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies
-  }
-  
-  # ******************************************************************************************************************************************************** 
-  # Finds efficiency factors for block designs 
-  # ********************************************************************************************************************************************************     
-  factEfficiencies=function(TF,Main,BF) {
-    TM=model.matrix(  as.formula(model)  ,TF)
-    TM=scale(TM,center = TRUE, scale = FALSE)[,-1]
-    TM=TM[rep(seq_len(nrow(TM)), replicates), ]
-    rownames(TM) = seq(length=nrow(TM))
-    BM=Contrasts(Main,BF)[, -c(1:nlevels(Main))*(nlevels(BF)/nlevels(Main)) ,drop=FALSE]
-    strata=1
-    effics=matrix(NA,nrow=strata,ncol=2)
-    for (i in seq_len(strata))    
-      effics[i,]=factEffics(TM,BM)  
-    effics
   }
   
   # ******************************************************************************************************************************************************** 
@@ -752,7 +738,8 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     model=" ~ Treatments"
     } else TF=treatments[rep(seq_len(nrow(treatments)), replicates), ,drop=FALSE]
   if (is.null(model)) model=paste("~",paste0(colnames(TF), collapse="*"))
-  TF=data.frame(do.call(rbind,lapply(1:hcf,function(i) {TF[ sample( (1+(i-1)*nrow(TF)/hcf):(i*nrow(TF)/hcf) ), ,drop=FALSE]}))) #drop=FALSE???
+  TF=data.frame(do.call(rbind,lapply(1:hcf,function(i) {TF[ sample( (1+(i-1)*nrow(TF)/hcf):(i*nrow(TF)/hcf) ), ,drop=FALSE]}))) 
+  fnames=colnames(TF)
   rownames(TF) = seq(length=nrow(TF))
   nunits=nrow(TF)    
   if (length(columns)==0) columns=rep(1,length(rows))
@@ -796,17 +783,20 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       if ( isrowcol && rows[i]>1) TF=rowsOpt(TF,blkDesign[,i],rowDesign[,i+1],weighted,TM)
       if ( isrowcol && cols[i]>1) TF=colsOpt(TF,Model,blkDesign[,i],rowDesign[,i+1],colDesign[,i+1],blkDesign[,i+1],weighted,TM)
     }
-  if (max(replicates)>1 && !isrowcol ) {
+  colnames(TF)=fnames
+  if (  (max(replicates)>1 | is.data.frame(treatments))   && !isrowcol ) {
     rDesign=data.frame(do.call(cbind,lapply(1:ncol(rowDesign), function(r){ sample(nlevels(rowDesign[,r]))[rowDesign[,r]] }))) # Randomize
     rDesign=data.frame(rDesign,TF) 
     rDesign=rDesign[do.call(order, rDesign), ] # re-order
-    blocksizes=table(rDesign[,ncol(rDesign)-2])[unique(rDesign[,ncol(rDesign)-2])]
-    Design  = data.frame(rowdesign[rep(seq_len(length(blocksizes)),  blocksizes ),],seq_len(nunits), rDesign[,ncol(rDesign)])  # rebuild factor levels in order
+    blocksizes=table(rDesign[,ncol(rDesign)-ncol(TF)-1])[unique(rDesign[,ncol(rDesign)-ncol(TF)-1])]
+    Design  = data.frame(rowdesign[rep(seq_len(length(blocksizes)),  blocksizes ),],seq_len(nunits), rDesign[,c((ncol(rDesign)-ncol(TF)+1):ncol(rDesign))])  # rebuild factor levels in order
     rownames(Design)=NULL
-    colnames(Design)=c(colnames(rowdesign),"Plots","Treatments")
-    V=split(Design[,ncol(Design)],Design[,(ncol(Design)-2)])
+    if (!is.data.frame(treatments)) colnames(Design)=c(colnames(rowdesign),"Plots","Treatments") else
+      colnames(Design)=c(colnames(rowdesign),"Plots",fnames)
+    V=split(Design[,c((ncol(Design)-ncol(TF)+1):ncol(Design))],Design[,(ncol(Design)-ncol(TF)-1)])
     PlotsInBlocks=rep("",length(V))
-    Plan=as.data.frame(cbind(rowdesign,PlotsInBlocks, do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
+    if (is.data.frame(treatments)) Plan=do.call(rbind, V)
+    else Plan=as.data.frame(cbind(rowdesign,PlotsInBlocks, do.call(rbind, lapply(V, function(x){ length(x) =max(blocksizes); x }))))
     rownames(Plan)=NULL
   }
   if (max(replicates)>1 && isrowcol ) {
@@ -817,6 +807,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     rDesign=rDesign[do.call(order, rDesign), ] # re-order
     blocksizes=table(rDesign[,(ncol(rDesign)-2)])[unique(rDesign[,(ncol(rDesign)-2)])]
     Design  = data.frame(rdf[rep(seq_len(length(blocksizes)), blocksizes),],as.factor(rDesign[,ncol(rDesign)])) # rebuild factor levels in order
+    
     colnames(Design)[ncol(Design)]="Treatments"
     rownames(Design)=NULL
     if (max(blocksizes)>1) {
@@ -838,9 +829,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   else if (!is.data.frame(treatments) && (max(replicates)==1)) Efficiencies=UnrepEfficiencies()
   else if (!is.data.frame(treatments)) Efficiencies=BlockEfficiencies(Design)
   else if (is.data.frame(treatments) && isrowcol) Efficiencies=BlockEfficiencies(Design)
-  else if (is.data.frame(treatments) && !isrowcol) Efficiencies=BlockEfficiencies(Design)
+  else if (is.data.frame(treatments) && !isrowcol) Efficiencies=factEffics(Design)
   row.names(Efficiencies)=NULL
-  
+
   # omit single level row or column strata in row and column designs
   if (isrowcol && !is.data.frame(treatments) ) {
     Design=Design[,-c((1:strata)*3)]
@@ -855,7 +846,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   } else {
     TreatmentsTable=NULL
     Plan=NULL
-    Design=NULL
   }
   list(Treatments=TreatmentsTable,Efficiencies=Efficiencies,Plan=Plan,Design=Design,Seed=seed,Searches=searches,Jumps=jumps) 
 } 
