@@ -117,6 +117,11 @@
 #' blocks(treatments=TF,replicates=1,model=model,rows=4)
 #' blocks(treatments=TF,replicates=1,model=model,rows=c(2,2))
 #' 
+#' # Second-order design for four qualitative three level factors in 9 randomized blocks
+#' TF=data.frame( F1=gl(3,27), F2=gl(3,9,81),  F3=gl(3,3,81), F4=gl(3,1,81)  )
+#' model=" ~ (F1+F2+F3+F4)*(F1+F2+F3+F4)" # main effects and 2-factor interactions
+#' blocks(treatments=TF,replicates=1,model=model,rows=9)
+#' 
 #' # Second-order model for two qualitative and two quantitative factors in 4 randomized blocks
 #' TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
 #' model=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
@@ -210,8 +215,6 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   }
   # ******************************************************************************************************************************************************** 
   # Updates variance matrix for pairs of swapped treatments using standard matrix updating formula
-  # mtb**2-mtt*mbb is > 0 because the swap is a positive element of dMat=(TB+t(TB)+1)**2-TT*BB
-  # 2*mtb+mtt+mbb > mtt + mbb + 2*(mtt*mbb)**.5 > 0 because mtb**2 > mtt*mbb   
   # ********************************************************************************************************************************************************
   UpDate=function(MTT,MBB,MTB,ti,tj,bi,bj) { 
     mtt=MTT[ti,ti]+MTT[tj,tj]-2*MTT[tj,ti]
@@ -252,16 +255,15 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
           dmat=(Tb+t(Tb)+1)**2-
             (2*Mtt[TF[s,1],TF[s,1],drop=FALSE]-tcrossprod(Mtt[cbind(TF[s,1],TF[s,1])] + rep(1,nSamp[k]) ) + tcrossprod(Mtt[cbind(TF[s,1], TF[s,1])]) + 1)*
             (2*Mbb[Blocks[s],Blocks[s],drop=FALSE]-tcrossprod(Mbb[cbind(Blocks[s],Blocks[s])]+ rep(1,nSamp[k]) ) + tcrossprod(Mbb[cbind(Blocks[s],Blocks[s])]) + 1)
-          is.na(dmat[ dmat<1|is.na(dmat) ] ) = TRUE
+          is.na(dmat[ dmat<tol|is.na(dmat) ] ) = TRUE
           dMat=dMat*dmat
         } 
         sampn=which.max(dMat)
         i=1+(sampn-1)%%nSamp[k]
         j=1+(sampn-1)%/%nSamp[k]
-        maxd=dMat[i,j]
-        if  (  maxd>1  && dMat[i,j]>1  &&  !isTRUE(all.equal(dMat[i,j],1))  ) {
+        if  (dMat[i,j]>tol) {
           improved=TRUE
-          relD=relD*maxd
+          relD=relD*dMat[i,j]
           up=UpDate(MTT,MBB,MTB,TF[s[i],1],TF[s[j],1],BF[s[i]],BF[s[j]])
           MTT=up$MTT
           MBB=up$MBB
@@ -296,18 +298,15 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         TMB=crossprod(t(crossprod(t(TM[s,]),MTB)),t(BM[s,]))
         TMT=crossprod(t(crossprod(t(TM[s,]),MTT)),t(TM[s,]))
         BMB=crossprod(t(crossprod(t(BM[s,]),MBB)),t(BM[s,]))
-        
-        cTMB=TMB-tcrossprod(diag(TMB),rep(1,nrow(TMB)))
-        cTMT=TMT-tcrossprod(diag(TMT),rep(1,nrow(TMT)))
-        cBMB=BMB-tcrossprod(diag(BMB),rep(1,nrow(BMB)))
-
-        dMat=(1+cTMB+t(cTMB))**2 - (cTMT + t(cTMT))*(cBMB + t(cBMB))
+        TMB=sweep(TMB,1,diag(TMB))
+        TMT=sweep(TMT,1,diag(TMT))
+        BMB=sweep(BMB,1,diag(BMB))
+        dMat=(1+TMB+t(TMB))**2 - (TMT + t(TMT))*(BMB + t(BMB))
         is.na(dMat[ dMat<0.00001|is.na(dMat) ] ) = TRUE
         sampn=which.max(dMat)
         i=1+(sampn-1)%%nrow(dMat)
         j=1+(sampn-1)%/%nrow(dMat)
-        
-        if  ( dMat[i,j]>1  &&  !isTRUE(all.equal(dMat[i,j],1))  ) {
+        if  ( dMat[i,j]>tol) {
           improved=TRUE
           relD=relD*dMat[i,j]
           t=TM[s[i],]-TM[s[j],]
@@ -361,7 +360,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         dmax =factDMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks,TM,BM,RCM) 
       else
         dmax =  DMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks)
-      if ( !isTRUE(all.equal(dmax$relD,1)) && dmax$relD>1) {
+      if (dmax$relD>tol) {
         relD=relD*dmax$relD
         TF=dmax$TF
         TM=dmax$TM
@@ -390,17 +389,10 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
           if (length(z)>1) s=c(s1,sample(z,1))  else s=c(s1,z[1])
 
           if (is.data.frame(treatments)) {
-            TMB12=crossprod(t(crossprod(TM[s[1],],MTB)),BM[s[2],])
-            TMB21=crossprod(t(crossprod(TM[s[2],],MTB)),BM[s[1],])
-            TMB11=crossprod(t(crossprod(TM[s[1],],MTB)),BM[s[1],])
-            TMB22=crossprod(t(crossprod(TM[s[2],],MTB)),BM[s[2],])
-            TMT12=crossprod(t(crossprod(TM[s[1],],MTT)),TM[s[2],])
-            TMT11=crossprod(t(crossprod(TM[s[1],],MTT)),TM[s[1],])
-            TMT22=crossprod(t(crossprod(TM[s[2],],MTT)),TM[s[2],])
-            BMB12=crossprod(t(crossprod(BM[s[1],],MBB)),BM[s[2],])
-            BMB11=crossprod(t(crossprod(BM[s[1],],MBB)),BM[s[1],])
-            BMB22=crossprod(t(crossprod(BM[s[2],],MBB)),BM[s[2],])
-            Dswap=(1+TMB12+TMB21-TMB11-TMB22)**2-(2*TMT12-TMT11-TMT22)*(2*BMB12-BMB11-BMB22)
+            TMB=crossprod(t(crossprod(TM[s[1],]-TM[s[2],],MTB)),BM[s[2],]-BM[s[1],] )
+            TMT=crossprod(t(crossprod(TM[s[1],]-TM[s[2],],MTT)),TM[s[2],]-TM[s[1],])
+            BMB=crossprod(t(crossprod(BM[s[1],]-BM[s[2],],MBB)),BM[s[2],]-BM[s[1],])
+            Dswap=(1+TMB)**2-TMT*BMB
           } else 
             Dswap = (1+MTB[TF[s[1],],BF[s[2]]]+MTB[TF[s[2],],BF[s[1]]]-MTB[TF[s[1],],BF[s[1]]]-MTB[TF[s[2],],BF[s[2]]])**2-
               (2*MTT[TF[s[1],],TF[s[2],]]-MTT[TF[s[1],],TF[s[1],]]-MTT[TF[s[2],],TF[s[2],]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
@@ -634,6 +626,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
     colnames(efficiencies)=c("Strata","Blocks","D-Efficiencies","A-Efficiencies", "A-Bounds")
     efficiencies
   }
+  
   # ******************************************************************************************************************************************************** 
   # Finds efficiency factors for row-and-column designs 
   # ********************************************************************************************************************************************************     
@@ -679,7 +672,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # Calculates D and A-efficiency factors for treatment factors TF assuming block factor BF
   # ********************************************************************************************************************************************************
   factEffics=function(Design) { 
-    TF=Design[, c( (ncol(Design)-ncol(TF)+1):ncol(Design))]
+    TF=Design[, c( (ncol(Design)-ncol(TF)+1):ncol(Design)),drop=FALSE]
     TX=model.matrix(as.formula(model),TF)[,-1,drop=FALSE] # drops mean contrast
     names =unlist(lapply(1:strata, function(j) {paste0("Stratum_",j)}))
     blocks=unlist(lapply(1:strata, function(j) {nlevels(Design[,j])}))
@@ -690,12 +683,11 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
       BF=Design[,i+1]
       TM=do.call(rbind,lapply(1:nlevels(MF),function(i) {scale(TX[MF==levels(MF)[i],] , center = TRUE, scale = FALSE)}))
       BM=Contrasts(MF,BF)[, -seq( nlevels(BF)/nlevels(MF), nlevels(BF) , by=nlevels(BF)/nlevels(MF) ) ,drop=FALSE]
+      TB=crossprod(TM,BM)
       RI=backsolve(  chol(crossprod(TM)) ,diag(ncol(TM)))
       QI=backsolve(chol(crossprod(BM)),diag(ncol(BM)))
-      TB=crossprod(TM,BM)
-      A=crossprod(RI,TB)
-      U=crossprod(t(A),QI)
-      effics=c(effics,det( diag(ncol(TM))-tcrossprod(U))**(1/ncol(TM)))
+      U=crossprod(t(crossprod(RI,TB)),QI)
+      effics=round(c(effics,det( diag(ncol(TM))-tcrossprod(U))**(1/ncol(TM))),4)
     }
     efficiencies=data.frame(cbind(names,blocks,effics))
     colnames(efficiencies)=c("Strata","Blocks","D-Efficiencies")
@@ -734,6 +726,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
   hcf=HCF(replicates)
+  tol=1.000001
   if (!is.data.frame(treatments)) {
     TF=data.frame(Treatments=as.factor(rep(rep(rep(1:sum(treatments)),rep(replicates,treatments)/hcf),hcf)))  
     model=" ~ Treatments"
