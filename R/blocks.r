@@ -111,6 +111,17 @@
 #' model=" ~ (F1+F2+F3+F4+F5)"
 #' blocks(treatments=TF,replicates=1,model=model,rows=4)
 #' 
+#' linear regression model for six level factor in 2 randomized blocks
+#' TF=data.frame(X=c(1:6) )
+#' model=" ~ (X)"
+#' blocks(treatments=TF,replicates=1,model=model,rows=2)
+#' 
+#' linear regression model for six level factor in 2 randomized blocks
+#' TF=data.frame(X=c(1:6) )
+#' model=" ~ (X + I(X^2)+ I(X^3))"
+#' 
+#' blocks(treatments=TF,replicates=1,model=model,rows=2) 
+#' 
 #' # Second-order model for five qualitative two level factors in 4 randomized blocks
 #' TF=data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32)  )
 #' model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)"
@@ -255,13 +266,13 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
           dmat=(Tb+t(Tb)+1)**2-
             (2*Mtt[TF[s,1],TF[s,1],drop=FALSE]-tcrossprod(Mtt[cbind(TF[s,1],TF[s,1])] + rep(1,nSamp[k]) ) + tcrossprod(Mtt[cbind(TF[s,1], TF[s,1])]) + 1)*
             (2*Mbb[Blocks[s],Blocks[s],drop=FALSE]-tcrossprod(Mbb[cbind(Blocks[s],Blocks[s])]+ rep(1,nSamp[k]) ) + tcrossprod(Mbb[cbind(Blocks[s],Blocks[s])]) + 1)
-          is.na(dmat[ dmat<tol|is.na(dmat) ] ) = TRUE
+          is.na(dmat[ dmat<(1+tol)|is.na(dmat) ] ) = TRUE
           dMat=dMat*dmat
         } 
         sampn=which.max(dMat)
         i=1+(sampn-1)%%nSamp[k]
         j=1+(sampn-1)%/%nSamp[k]
-        if  (dMat[i,j]>tol) {
+        if  (dMat[i,j]>(1+tol)) {
           improved=TRUE
           relD=relD*dMat[i,j]
           up=UpDate(MTT,MBB,MTB,TF[s[i],1],TF[s[j],1],BF[s[i]],BF[s[j]])
@@ -306,7 +317,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         sampn=which.max(dMat)
         i=1+(sampn-1)%%nrow(dMat)
         j=1+(sampn-1)%/%nrow(dMat)
-        if  ( dMat[i,j]>tol) {
+        if  ( dMat[i,j]>(1+tol) ) {
           improved=TRUE
           relD=relD*dMat[i,j]
           t=TM[s[i],]-TM[s[j],]
@@ -360,7 +371,7 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
         dmax =factDMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks,TM,BM,RCM) 
       else
         dmax =  DMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks)
-      if (dmax$relD>tol) {
+      if (dmax$relD>(1+tol)) {
         relD=relD*dmax$relD
         TF=dmax$TF
         TM=dmax$TM
@@ -673,7 +684,9 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # ********************************************************************************************************************************************************
   factEffics=function(Design) { 
     TF=Design[, c( (ncol(Design)-ncol(TF)+1):ncol(Design)),drop=FALSE]
+    print(TF)
     TX=model.matrix(as.formula(model),TF)[,-1,drop=FALSE] # drops mean contrast
+    print(TX)
     names =unlist(lapply(1:strata, function(j) {paste0("Stratum_",j)}))
     blocks=unlist(lapply(1:strata, function(j) {nlevels(Design[,j])}))
     effics=NULL
@@ -726,12 +739,19 @@ blocks = function(treatments,replicates,rows=HCF(replicates),columns=NULL,model=
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
   hcf=HCF(replicates)
-  tol=1.000001
+  tol=0.000001
   if (!is.data.frame(treatments)) {
-    TF=data.frame(Treatments=as.factor(rep(rep(rep(1:sum(treatments)),rep(replicates,treatments)/hcf),hcf)))  
+    TF=data.frame(Treatments=as.factor(rep(rep(1:sum(treatments),rep(replicates/hcf,treatments)),hcf)))  
     model=" ~ Treatments"
-    } else TF=treatments[rep(seq_len(nrow(treatments)), replicates), ,drop=FALSE]
-  if (is.null(model)) model=paste("~",paste0(colnames(TF), collapse="*"))
+  } else {
+    TF=treatments[rep( 1:nrow(treatments) , replicates), ,drop=FALSE]
+    if (is.null(model)) {
+      names=colnames(TF)
+      for (i in 1:ncol(TF)) 
+        if (!is.factor(TF[,i])) names[i]=paste0("poly(",names[i],",(",length(unique(TF[,i])), "-1))" )
+      model=paste0("~ ",paste0(names, collapse="*"))
+    }
+  }
   TF=data.frame(do.call(rbind,lapply(1:hcf,function(i) {TF[ sample( (1+(i-1)*nrow(TF)/hcf):(i*nrow(TF)/hcf) ), ,drop=FALSE]}))) 
   fnames=colnames(TF)
   rownames(TF) = seq(length=nrow(TF))
