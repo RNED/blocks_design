@@ -520,8 +520,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     candidates=NULL
     while (is.null(candidates)) {
       if (rank<(nunits-1)) s1=sample(pivot[(1+rank):nunits],1) else s1=pivot[nunits]
-      available=!apply( sapply(1:ncol(TF),function(i) {TF[,i]==TF[s1,i]}),1,all)
-      candidates = (1:nunits)[ MF==MF[s1] & restrict==restrict[s1] & BF!=BF[s1] & available ]
+      candidates = (1:nunits)[ MF==MF[s1] & restrict==restrict[s1] & BF!=BF[s1] ]
     }
     if ( length(candidates)>1 ) s2=sample(candidates,1) else s2=candidates[1] 
     return(c(s1,s2))
@@ -584,7 +583,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   # Optimize the nested Blocks assuming a possible set of Main block constraints Initial randomized starting design. 
   # If the initial design is rank deficient, random swaps with positive selection are used to to increase design rank
   # ******************************************************************************************************************************************************** 
-  blocksOpt=function(TF,MF,BF,restrict,rcF) { 
+  blocksOpt=function(TF,MF,BF,restrict) { 
     BM=Contrasts(MF,BF)[, -seq( nlevels(BF)/nlevels(MF), nlevels(BF) , by=nlevels(BF)/nlevels(MF) ) ,drop=FALSE]
     TM=model.matrix(as.formula(model),TF)[,-1,drop=FALSE] # drops mean contrast
     TM=do.call(rbind,lapply(1:length(levels(MF)),function(i) {scale(TM[MF==levels(MF)[i],] , center = TRUE, scale = FALSE)}))
@@ -696,7 +695,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   # Finds efficiency factors for row-and-column designs 
   # ********************************************************************************************************************************************************     
   RowColEfficiencies=function(Design) {
-    Design=Design[,-(ncol(Design)-2)]
+    Design=Design[,-(ncol(Design)-1)]
     effics=matrix(NA,nrow=(3*strata),ncol=2)
     for (i in 1:strata) {
       effics[3*(i-1)+1,]=optEffics(Design[,ncol(Design)],Design[,3*(i-1)+1])  
@@ -813,7 +812,6 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
-  print("check")
   if (missing(treatments)||is.null(treatments)) stop(" Treatments missing or not defined ") 
   if (anyNA(replicates)||any(is.nan(replicates))||any(!is.finite(replicates))||any(replicates%%1!=0)||any(replicates<1)||is.null(replicates)) stop(" invalid replicates parameter") 
   if (is.null(columns) && is.null(rows)) {rows=1 ; columns=1}
@@ -884,7 +882,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   Mean=factor(rep(1,sum(blocksizes)))
   rowDesign=data.frame(Mean, rowdesign[rep(1:length(blocksizes),blocksizes),]) 
   if (isrowcol)  colDesign=data.frame(Mean, coldesign[rep(1:length(blocksizes),  blocksizes ),])
-  if (isrowcol)  blkDesign=data.frame(Mean, blkdesign[rep(1:length(blocksizes),  blocksizes ),])  
+  if (isrowcol)  blkDesign=data.frame(blkdesign[rep(1:length(blocksizes),  blocksizes ),])  
   TF=NULL
   orthoSize=nunits/hcf
   # check for algebraic solution
@@ -898,15 +896,15 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     else if (regReps && regBlocks && orthoMain && isrowcol && identical(columns[1],replicates[1]) && length(rows)==1 && length(columns)==1 && (k<replicates[1])) #?? identical(rows[1],r)
       TF=trojan(replicates[1],k)
   }
-  
+ 
   if (is.null(TF) || all(TF==FALSE)) {
     for ( z in seq_len(5)) {
       TF=data.frame(do.call(rbind,lapply(1:hcf,function(i) {treatments[sample((1+(i-1)*orthoSize):(i*orthoSize)), ,drop=FALSE]}))) # randomize
       colnames(TF)=fnames
       for ( i in 1:strata) {
-        if (!isrowcol && rows[i]>1)    TF=blocksOpt(TF,rowDesign[,i],rowDesign[,i+1],rowDesign[,i],NULL)
-        if ( isrowcol && rows[i]>1)    TF=blocksOpt(TF,blkDesign[,i],rowDesign[,i+1],Mean,NULL)
-        if ( isrowcol && columns[i]>1) TF=blocksOpt(TF,blkDesign[,i],colDesign[,i+1],rowDesign[,i+1],blkDesign[,i+1])
+        if (!isrowcol && rows[i]>1)    TF=blocksOpt(TF,rowDesign[,i],rowDesign[,i+1],rowDesign[,i])
+        if ( isrowcol && rows[i]>1)    TF=blocksOpt(TF,blkDesign[,i],rowDesign[,i+1],blkDesign[,i])
+        if ( isrowcol && columns[i]>1) TF=blocksOpt(TF,blkDesign[,i],colDesign[,i+1],rowDesign[,i+1])
       }
       if (!is.null(TF)) break
     }
