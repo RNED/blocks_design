@@ -54,9 +54,7 @@
 #' of the design are all equal in each stratum of the design.
 #' 
 #'  For row-and-column designs, the algorithm will unconditionally optimize the rows stratum and will then optimise the columns stratum conditional on the row blocks remaining 
-#'  unchanged. Row-and-column designs contain nested blocks in the row-by-column intersections and these blocks may contain two or more plots. If the row-by-column intersection 
-#'  blocks contain useful treatment information and the \code{weighted} option is TRUE (default) the algorithm will optimize the column design conditional on improving swaps 
-#'  between columns also being improving swaps between blocks. If the \code{weighted} option is FALSE the column blocks are optimized ignoring blocks.           
+#'  unchanged. Row-and-column designs contain nested blocks in the row-by-column intersections and these blocks may contain two or more plots.           
 #'  
 #'  For 2 x 2 row-and-column designs with complete replicate rows and complete replicate columns, however, one treatment contrast will always be confounded
 #'   with the row-by-column interaction and for these designs, it is impossible to nest blocks in the row-by-column intersections. 
@@ -91,9 +89,6 @@
 #' 
 #' @param jumps  the number of pairwise random treatment swaps used to escape a local maxima. The default is a single swap.
 #' 
-#' @param weighted  an option for row-and-column designs with two or more plot in the row.column blocks. \code{weighted}=TRUE
-#' improves the row.columns blocks efficiency but may decrease the columns blocks efficiency. \code{weighted}=FALSE gives the best column
-#' blocks efficiency but may give poor row.columns blocks efficiency. The default is weighted=TRUE.   
 #' 
 #' @return  
 #' \item{Treatments}{The treatment factors defined by the \code{treatments} inputs in standard factorial order.}
@@ -180,17 +175,12 @@
 #' blocks(treatments=64,replicates=2,rows=c(2,8),columns=c(1,8)) 
 #' 
 #' # 64 treatments x 2 replicates with two main blocks and a 4 x 4 row-and-column design  
-#' # nested in each main block and weighted = TRUE by default.
+#' # nested in each main block
 #' blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=12) 
 #' 
-#' # Four replicates of 36 treatments in a 4 x 4 row-and-column design. Use weighted=FALSE for
-#' # optimum efficiency n row and column blocks or weighted=TRUE for improved row_column
-#' # intersection block efficiencies at the cost of reduced column block efficiencies    
-#' blocks(36,4,4,4,weighted=FALSE)
-#' 
 #' # 64 treatments x 2 replicates with two main blocks and a 4 x 4 row-and-column design  
-#' # nested in each main block. weighted = FALSE
-#' blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),weighted=FALSE,searches=12)
+#' # nested in each main block.
+#' blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=12)
 #' 
 #' # 2**9 treatments x 2 replicates in 2**9 blocks giving a fully saturated block design 
 #' # (requires a considerable time to run!)
@@ -199,7 +189,7 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,searches=NULL,seed=sample(10000,1),jumps=1,weighted=TRUE,tol=.Machine$double.eps^0.5) { 
+blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,searches=NULL,seed=sample(10000,1),jumps=1,tol=.Machine$double.eps^0.5) { 
   options(contrasts=c('contr.SAS','contr.poly'))
   # ******************************************************************************************************************************************************** 
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)
@@ -415,104 +405,6 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     }
     globTF
   } 
-  
-  # ******************************************************************************************************************************************************** 
-  #  Searches for an optimization with selected number of searches and selected number of junps to escape local optima
-  # ********************************************************************************************************************************************************
-  oldOptimise=function(TF,Main,Rows,Columns,Blocks,MTT,MBB,MTB,Mtt,Mbb,Mtb,weighted,TM,BM,RCM)  {
-    
-    if (is.null(Rows)) {
-      Restrict=rep(1,length(Main)) 
-      BF=Main 
-    } else if (is.null(Columns)) {
-      Restrict=Main
-      BF=Rows 
-    } else {
-      Restrict=Rows
-      BF=Columns
-    }
-    globrelD=0
-    relD=1
-    globTF=TF
-    breps=tabulate(BF)   
-    if ( regReps && identical(max(breps),min(breps))  && ncol(treatments)==1)
-      bound=upper_bounds( nrow(TF), nlevels(TF[,1]), nlevels(BF) ) else bound=NA
-    for (r in 1:searches) {
-      if (ncol(treatments)>1 || !is.factor(treatments[,1])) 
-        dmax =factDMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks,TM,BM,RCM) 
-      else
-        dmax =DMax(MTT,MBB,MTB,Mtt,Mbb,Mtb,TF,weighted,Restrict,BF,Blocks)
-      if (dmax$relD>(1+tol)) {
-        relD=relD*dmax$relD
-        TF=dmax$TF
-        TM=dmax$TM
-        MTT=dmax$MTT
-        MBB=dmax$MBB
-        MTB=dmax$MTB 
-        Mtt=dmax$Mtt
-        Mbb=dmax$Mbb
-        Mtb=dmax$Mtb 
-        if (!isTRUE(all.equal(relD,globrelD)) && relD>globrelD) {
-          globTF=TF
-          globrelD=relD
-          if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF[,1],BF)[2]))) break
-        }
-      }
-      if (r==searches) break
-      for (iswap in 1:jumps) {
-        counter=0
-        repeat {  
-          counter=counter+1
-          s1=sample(seq_len(nunits),1)
-          altTF=apply(  sapply(1:ncol(TF),function(i) {TF[,i]==TF[s1,i]}),1,prod)==0 
-          z= seq_len(nunits)[ Main==Main[s1] & Restrict==Restrict[s1] & BF!=BF[s1] & altTF==TRUE ]     
-          if (length(z)==0) next
-          if (length(z)>1) s=c(s1,sample(z,1))  else s=c(s1,z[1])
-          
-          if (ncol(treatments)>1 || !is.factor(treatments[,1])) {
-            TMB=crossprod(t(crossprod(TM[s[1],]-TM[s[2],],MTB)),BM[s[2],]-BM[s[1],] )
-            TMT=crossprod(t(crossprod(TM[s[1],]-TM[s[2],],MTT)),TM[s[2],]-TM[s[1],])
-            BMB=crossprod(t(crossprod(BM[s[1],]-BM[s[2],],MBB)),BM[s[2],]-BM[s[1],])
-            Dswap=(1+TMB)**2-TMT*BMB
-          } else 
-            Dswap = (1+MTB[TF[s[1],],BF[s[2]]]+MTB[TF[s[2],],BF[s[1]]]-MTB[TF[s[1],],BF[s[1]]]-MTB[TF[s[2],],BF[s[2]]])**2-
-            (2*MTT[TF[s[1],],TF[s[2],]]-MTT[TF[s[1],],TF[s[1],]]-MTT[TF[s[2],],TF[s[2],]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
-          
-          if (!is.null(Mbb)&&isTRUE(weighted)) 
-            dswap = (1+Mtb[TF[s[1],],Blocks[s[2]]]+Mtb[TF[s[2],],Blocks[s[1]]]-Mtb[TF[s[1],],Blocks[s[1]]]-Mtb[TF[s[2],],Blocks[s[2]]])**2-
-            (2*Mtt[TF[s[1],],TF[s[2],]]-Mtt[TF[s[1],],TF[s[1],]]-Mtt[TF[s[2],],TF[s[2],]])*(2*Mbb[Blocks[s[1]],Blocks[s[2]]]-Mbb[Blocks[s[1]],Blocks[s[1]]]-Mbb[Blocks[s[2]],Blocks[s[2]]])  
-          else
-            dswap=1
-          if (Dswap>.1 & dswap>.1 | counter>1000) break
-        }
-        
-        if (counter>1000) return(globTF) # no non-singular swaps
-        relD=relD*Dswap 
-        if (ncol(treatments)>1 || !is.factor(treatments[,1])) {
-          t=TM[s[1],]-TM[s[2],]
-          b=BM[s[2],]-BM[s[1],]
-          up=factUpDate(MTT,MBB,MTB,t,b)
-        } else {
-          up=UpDate(MTT,MBB,MTB,TF[s[1],],TF[s[2],], BF[s[1]], BF[s[2]])
-        }
-        MTT=up$MTT
-        MBB=up$MBB
-        MTB=up$MTB
-        
-        if (!is.null(Mbb)&&isTRUE(weighted)) {
-          up=UpDate(Mtt,Mbb,Mtb,TF[s[1],],TF[s[2],],Blocks[s[1]],Blocks[s[2]])
-          Mtt=up$MTT
-          Mbb=up$MBB
-          Mtb=up$MTB
-        }
-        TF[c(s[1],s[2]),]=TF[c(s[2],s[1]),]  
-        TM[c(s[1],s[2]),]=TM[c(s[2],s[1]),]  
-      } 
-    }
-    
-    globTF
-  } 
-  
   # ******************************************************************************************************************************************************** 
   # Random swaps
   # ********************************************************************************************************************************************************    
@@ -823,7 +715,6 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   if (is.na(seed) || !is.finite(seed) || is.nan(seed) || seed%%1!=0 || seed<0 ) stop(" seed parameter invalid  ") 
   if (is.na(jumps) || !is.finite(jumps) || is.nan(jumps) || jumps<1 || jumps%%1!=0 || jumps>10) stop(" number of jumps parameter is invalid (max is 10) ") 
   if (!is.null(searches) && ( is.na(searches) || !is.finite(searches) || is.nan(searches) || searches<1 || searches%%1!=0 )) stop(" number of searches parameter is invalid") 
-  if (!is.logical(weighted)) stop(" weighting parameter is not valid (must be either TRUE or FALSE") 
   if (is.na(tol) || !is.finite(tol) || is.nan(tol) || tol<0 || tol>.9999 ) stop(" tolerance parameter is invalid (must be a small positive number less than one) ") 
   if (max(rows*columns)==1) { rows=1; columns=1} else {index=rows*columns>1; rows=rows[index]; columns=columns[index]}
   if (!is.data.frame(treatments)){
