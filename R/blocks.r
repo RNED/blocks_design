@@ -538,7 +538,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
             eigen((diag(k)-tcrossprod(t(table(TF, BF)*(1/sqrt(tabulate(TF))) ) * (1/sqrt(tabulate(BF))))), symmetric=TRUE, only.values = TRUE)$values[1:(k-1)])  
       return(round(c(mean(e)*prod(e/mean(e))^(1/length(e)),1/mean(1/e)),6))
   }
-  
+  # ******************************************************************************************************************************************************** 
   # Calculates D and A-efficiency factors for treatment factors TF assuming block factor BF
   # ********************************************************************************************************************************************************
   factEffics=function(Design) { 
