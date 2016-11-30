@@ -114,15 +114,37 @@ TF=data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl
 model=" ~ (F1+F2+F3+F4+F5)"
 blocks(treatments=TF,replicates=1,model=model,rows=4)
 
+linear regression model for six level factor in 2 randomized blocks
+TF=data.frame(X=c(1:6) )
+model=" ~ (X)"
+blocks(treatments=TF,replicates=1,model=model,rows=2)
+
+linear regression model for six level factor in 2 randomized blocks
+TF=data.frame(X=c(1:6) )
+model=" ~ (X + I(X^2)+ I(X^3))"
+
+blocks(treatments=TF,replicates=1,model=model,rows=2) 
+
 # Second-order model for five qualitative two level factors in 4 randomized blocks
 TF=data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32)  )
 model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)"
 blocks(treatments=TF,replicates=1,model=model,rows=4)
+blocks(treatments=TF,replicates=1,model=model,rows=c(2,2))
+
+# Second-order design for four qualitative three level factors in 9 randomized blocks
+TF=data.frame( F1=gl(3,27), F2=gl(3,9,81),  F3=gl(3,3,81), F4=gl(3,1,81)  )
+model=" ~ (F1+F2+F3+F4)*(F1+F2+F3+F4)" # main effects and 2-factor interactions
+blocks(treatments=TF,replicates=1,model=model,rows=9)
 
 # Second-order model for two qualitative and two quantitative factors in 4 randomized blocks
 TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
 model=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
 blocks(treatments=TF,replicates=1,model=model,rows=4)
+
+Explicit factorial model for 4 replicates of 13 treatments arranged in a 13 x 4 Youden rectangle 
+TF=data.frame( Treatments=as.factor(1:13) )
+model=" ~ Treatments"
+blocks(treatments=TF,replicates=4,model=model,rows=13)
 
 # 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates  
 # the hcf of the replication numbers is 1 therefore the default design is completely randomized 
