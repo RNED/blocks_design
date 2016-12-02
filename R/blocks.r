@@ -189,8 +189,10 @@
 #' @export
 #' @importFrom stats anova lm
 #' 
-blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,searches=NULL,seed=sample(10000,1),jumps=1,tol=.Machine$double.eps^0.5) { 
+blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,searches=NULL,seed=sample(10000,1),jumps=1) { 
   options(contrasts=c('contr.SAS','contr.poly'))
+  tol=.Machine$double.eps^0.5
+  
   # ******************************************************************************************************************************************************** 
   # Finds the highest common factor (hcf) of a set of numbers omitting any zero values (Euclidean algorithm)
   # ********************************************************************************************************************************************************
@@ -349,9 +351,11 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     relD=1
     globTF=TF
     breps=tabulate(BF)  
-    if ( regReps && identical(max(breps),min(breps))  && ncol(treatments)==1)
+    
+    if ( regReps && max(breps)==min(breps)  && ncol(treatments)==1)
       bound=upper_bounds( nrow(TF), nlevels(TF[,1]), nlevels(BF) ) else bound=NA
     if ( !is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF[,1],BF)[2]))) return(globTF)
+    
     for (r in 1:searches) {
       if (ncol(treatments)>1 || !is.factor(treatments[,1])) 
         dmax =factDMax(MTT,MBB,MTB,TF,Restrict,BF,TM,BM) 
@@ -367,10 +371,10 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
         if (relD>(globrelD+tol)) {
           globTF=TF
           globrelD=relD
-          if (!is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF[,1],BF)[2]))) break 
+          if (!is.na(bound) && isTRUE(all.equal(bound,optEffics(globTF[,1],BF)[2]))) return(globTF)
         }
       }
-      if (r==searches) break
+      if (r==searches) return(globTF)
       for (iswap in 1:jumps) {
         counter=0
         repeat {  
@@ -387,8 +391,8 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
             Dswap=(1+TMB)**2-TMT*BMB
           } else 
             Dswap = (1+MTB[TF[s[1],],BF[s[2]]]+MTB[TF[s[2],],BF[s[1]]]-MTB[TF[s[1],],BF[s[1]]]-MTB[TF[s[2],],BF[s[2]]])**2-
-            (2*MTT[TF[s[1],],TF[s[2],]]-MTT[TF[s[1],],TF[s[1],]]-MTT[TF[s[2],],TF[s[2],]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]])  
-          if (Dswap>tol | counter>1000) break
+            (2*MTT[TF[s[1],],TF[s[2],]]-MTT[TF[s[1],],TF[s[1],]]-MTT[TF[s[2],],TF[s[2],]])*(2*MBB[BF[s[1]],BF[s[2]]]-MBB[BF[s[1]],BF[s[1]]]-MBB[BF[s[2]],BF[s[2]]]) 
+          if (Dswap>.1| counter>1000) break
         }
         if (counter>1000) return(globTF) # finish with no non-singular swaps
         relD=relD*Dswap 
@@ -412,7 +416,8 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     candidates=NULL
     while (is.null(candidates)) {
       if (rank<(nunits-1)) s1=sample(pivot[(1+rank):nunits],1) else s1=pivot[nunits]
-      candidates = (1:nunits)[ MF==MF[s1] & restrict==restrict[s1] & BF!=BF[s1] ]
+      available=!apply( sapply(1:ncol(TF),function(i) {TF[,i]==TF[s1,i]}),1,all)
+      candidates = (1:nunits)[ MF==MF[s1] & restrict==restrict[s1] & BF!=BF[s1] & available==TRUE]
     }
     if ( length(candidates)>1 ) s2=sample(candidates,1) else s2=candidates[1] 
     return(c(s1,s2))
@@ -442,7 +447,6 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     if (times>999) stop(" Unable to find an initial non-singular choice of treatment design for this choice of block design") 
     list(TF=TF,TM=TM)
   }  
-  
   # *******************************************************************************************************************************************************
   # Information matrix for single treatment factor design 
   # ******************************************************************************************************************************************************** 
