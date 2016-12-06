@@ -117,27 +117,27 @@
 #' 
 #' @examples
 #' 
-#' # First-order model for five qualitative two level factors in 4 randomized blocks
+#' # First-order model for five qualitative 2-level factors in 4 randomized blocks
 #' treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32)  )
 #' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
 #' 
-#' # Full factorial model for two 2-level treatment factors with three replicates of each treatment and 6 randomized blocks 
+#' # Full factorial for two 2-level factors with three replicates in 6 randomized blocks 
 #' treatments =data.frame( f1=gl(2,6,12), f2=gl(2,3,12))
 #' blocks(treatments=treatments,rows=6,searches=5) # incomplete blocks with .6667 efficiency
 #' 
-#' # Linear regression model for a six level numeric factor in 2 randomized blocks
+#' # Linear regression model for one 6-level numeric factor in 2 randomized blocks
 #' TF=data.frame(X=c(1:6))
 #' blocks(treatments=TF,model=" ~ (X)",rows=2,searches=5)
 #' 
-#' # Quadratic regression model for a six level numeric factor in 2 randomized blocks
+#' # Quadratic regression model for a 6-level numeric factor in 2 randomized blocks
 #' TF=data.frame(X=c(1:6))
 #' blocks(treatments=TF,model=" ~ (X + I(X^2))",rows=2,searches=5) 
 #' 
-#' # Second-order model for five qualitative two level factors in 4 randomized blocks with main effects and 2-factor interactions
+#' # Second-order model for five qualitative 2-level factors in 4 blocks
 #' TF=data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32) )
 #' blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",rows=4,searches=5)
 #' 
-#' # Second-order design for four qualitative three level factors in 9 randomized blocks main effects and 2-factor interactions
+#' # Second-order design for four qualitative 3-level factors in 9 randomized blocks
 #' # may need many more searches to ensure orthogonal blocks 
 #' TF=data.frame( F1=gl(3,27), F2=gl(3,9,81),  F3=gl(3,3,81), F4=gl(3,1,81)  )
 #' blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)*(F1+F2+F3+F4)",rows=9, searches=10)
@@ -145,7 +145,8 @@
 #' # Second-order model for two qualitative and two quantitative factors in 4 randomized blocks 
 #'  # may need many more searches to ensure optimal design
 #' TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
-#' blocks(treatments=TF,model=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2",rows=4,searches=10)
+#' modform=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
+#' blocks(treatments=TF,model=modform,rows=4,searches=10)
 #' 
 #' # 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates  
 #' # the hcf of the replication numbers is 1 therefore the default design is completely randomized 
