@@ -7,7 +7,8 @@
 #' @details
 #' 
 #' \code{blocksdesign} constructs nested block designs with arbitrary depth of nesting. The top or zero-level stratum is assumed to be a single super-block 
-#' and the blocks of each succesive strata are nested hierarchically within the blocks of each preceding stratum. Blocks are optimized hierarchically with the blocks of each stratum optimized conditionally within the blocks of the immediately preceding stratum.
+#' and the blocks of each succesive strata are nested hierarchically within the blocks of each preceding stratum. Strata are optimized sequentially from the top
+#' down with the blocks of each stratum optimized conditionally within the blocks of the immediately preceding stratum.
 #' 
 #' The treatment design can be either a single unstructured treatment set with an arbitrary number of treatments
 #' and an arbitrary number of replications per treatment or a 
@@ -55,23 +56,25 @@
 #'  conditional on the blocks of any immediately preceding stratum, and then optimise the columns blocks, if any,
 #'  conditional on the rows blocks within the same stratum. 
 #'  
-#' Trojan designs are a special class of efficient row-and-column designs that have p replicates of v*p treatments arranged in p-rows
+#' Trojan designs are special efficient row-and-column designs that have p replicates of v*p treatments arranged in p-rows
 #' and p-columns where p is a prime or prime-power, v<p and each treatment is replicated p times. 
 #' \code{blocksdesign} constructs these designs algebraically from mutually orthogonal Latin squares (MOLS).  
 #'  
-#' Square lattice designs are a special class of efficient incomplete block designs that have r replicates of p*p treatments 
+#' Square lattice designs are special efficient incomplete block designs that have r replicates of p*p treatments 
 #' in blocks of size p where r=2 or r=3 for general p or r < p+2 for any prime or prime power p. \code{blocksdesign} constructs
 #' these designs algebraically from Latin squares or MOLS.
-#'   
+#' 
+#'  Lattice designs and Trojan designs based on prime-power MOLS require the \code{\link[crossdes]{MOLS}} package.
+#'     
 #'  All other designs are constructed algorithmically.
 #'  
-#'  NB Row-and-column designs may contain useful treatment information in individual row-by-column intersection blocks but 
+#' Warnings:
+#'  
+#'  Row-and-column designs may contain useful treatment information in individual row-by-column intersection blocks but 
 #'  \code{blocksdesign} does not currently consider the efficiency of these intersection blocks except for the special case of Trojan 
 #'  designs.
-#'  
-#'  Lattice designs and Trojan designs based on prime-power MOLS require the \code{\link[crossdes]{MOLS}} package.
-#'  
-#'  Warning: For a 2-replicate row-and-column design with 2-complete rows and 2-complete columns, one treatment contrast 
+#'
+#'  For a 2-replicate row-and-column design with 2-complete rows and 2-complete columns, one treatment contrast 
 #'  will always be confounded in the row-by-column interaction and for these designs, it is impossible to nest a non-singular block 
 #'  design in the rows-by-columns intersections. Instead, we recommend a simple nested blocks design with two complete or four incomplete
 #'  main blocks. 
@@ -80,8 +83,9 @@
 #' \itemize{
 #'  \item  A data frame showing the allocation of treatments to blocks with successive nested strata arranged in standard block order. \cr
 #'  \item  A table showing the replication number of each treatment in the design. \cr
-#'  \item  A table showing the block levels and the achieved D- and A-efficiency factors for each blocks stratum together with A-efficiency upper bounds, 
-#'  where available. \cr
+#'  \item  A table showing the block levels and the achieved D- and A-efficiency factors for each stratum together with A-efficiency upper bounds, 
+#'  where available (A-efficiencies for simple unstructured treatment 
+#'  designs only). \cr
 #'  \item  A plan showing the allocation of treatments to blocks or to rows and to columns in the bottom stratum of the design (simple unstructured treatment 
 #'  designs only).\cr
 #' } 
@@ -90,16 +94,16 @@
 #' of the total required number of treatments into sets of equally replicated treatments.
 #' 
 #' @param replicates  either a single replication number if the \code{treatments} parameter is a data frame or a set of replication numbers, one
-#' for each replication set, if the \code{treatments} parameter is a partition into equally replicated treatment sets
+#' per replication set, if the \code{treatments} parameter is a partition into equally replicated treatment sets
 #' 
 #' @param rows  a set of nested row block levels for the row blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
-#' The default is a single set of main blocks equal to the hcf of the replication numbers.
+#' The default is the hcf of the replication numbers.
 #' 
 #' @param columns a set of nested column block levels for the column blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
-#' The \code{rows} and the \code{columns} parameters, if both present, must be of equal length. The null default gives a single column block for each nested stratum.  
+#' The \code{rows} and the \code{columns} parameters, if both present, must be of equal length. The null default is a single column block for each nested stratum.  
 #' 
-#' @param model  a model equation for the treatment factors in the design where the equation is defined by using the model.matrix notation
-#' in the {\link[stats]{model.matrix}} package. If undefined, the model is the full factorial model. 
+#' @param model  a model equation for the treatment factors in the design where the equation is defined by the model.matrix notation
+#' in the {\link[stats]{model.matrix}} package. If undefined, the model is a full factorial model. 
 #' 
 #' @param seed  an integer initializing the random number generator. The default is a random seed.
 #' 
@@ -112,7 +116,7 @@
 #' \item{model.matrix}{The model.matrix used to define the \code{treatments} design.}
 #' \item{Design}{Data frame giving the optimized block and treatment factors in plot order.}
 #' \item{Plan}{Data frame for single factor designs showing a plan view of the treatment design in the bottom stratum of the design. A NULL plan is returned for multi-factor designs.}
-#' \item{Efficiencies}{The achieved A- and D-efficiencies for each stratum of the design together with an A-efficiency upper-bound, where available}
+#' \item{Efficiencies}{The achieved D-efficiencies and A-efficiencies (unstructured treatment designs only) for each stratum of the design together with an A-efficiency upper-bound, where available}
 #' \item{seed}{Numerical seed for random number generator}
 #' \item{searches}{Maximum number of searches in each stratum}
 #' \item{jumps}{Number of random treatment swaps to escape a local maxima}
@@ -120,7 +124,9 @@
 #' @references
 #' 
 #' Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes
+#' 
 #' Edmondson R. N. (1998). Trojan square and incomplete Trojan square designs for crop research. Journal of Agricultural Science, Cambridge, 131, pp.135-142
+#' 
 #' Cochran, W.G., and G.M. Cox. 1957. Experimental Designs, 2nd ed., Wiley, New York.
 #' 
 #' @examples

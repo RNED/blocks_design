@@ -2,8 +2,8 @@ Package: blocksdesign
 Type: Package
 Title: Nested and Crossed Block Designs for Unstructured and Factorial Treatment
     Sets
-Version: 2.2
-Date: 2016-09-01
+Version: 2.3
+Date: 2016-12-08
 Author: R. N. Edmondson
 Maintainer: Rodney Edmondson <rodney.edmondson@gmail.com>
 Depends:
@@ -12,16 +12,16 @@ Description: Constructs randomized nested or crossed block designs for
     unstructured treatment sets or for factorial treatments sets. Where the 
     treatments are factorial, the treatments model can be defined by using the
     model formulation defined in the model.matrix {stats} base package. Blocks
-    are nested hierarchically in succesively nested blocks strata and the blocks
-    model in any particular stratum comprises either a simple nested blocks 
+    are nested hierarchically in succesive blocks strata and the blocks
+    model in any particular stratum can comprise either a simple nested blocks 
     design or a crossed row-and-column design. Block sizes in any one stratum 
     are either all equal or differ, at most, by one plot. The design outputs 
-    include a data frame showing the allocation of treatments to blocks and a table
-    showing the block levels, the achieved D- and the A-efficiency factors for
-    the design together with A-efficiency upper bounds, where available, for each 
-    stratum in the blocks design. For designs with simple unstructured treatments,
+    include a data frame showing the allocation of treatments to blocks, a table
+    showing block levels, the achieved D-efficiency, the achieved A-efficiency
+    (unstructured treatments only) and A-efficiency upper bounds, where available,
+    for each stratum in the design. For designs with simple unstructured treatments,
     a plan layout showing the allocation of treatments to blocks or to rows and
-    columns in the bottom stratum of the design is also shown.
+    columns in the bottom stratum of the design is also given.
 License: GPL(>= 2)
 Imports:
     crossdes
