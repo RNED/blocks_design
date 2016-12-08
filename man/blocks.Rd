@@ -11,17 +11,17 @@ blocks(treatments, replicates = 1, rows = NULL, columns = NULL,
 \item{treatments}{either a data frame with columns for the individual treatment factors or a set of cardinal numbers giving a partition 
 of the total required number of treatments into sets of equally replicated treatments.}
 
-\item{replicates}{either a single replication number if the \code{treatments} parameter is a data frame or a set of replication numbers, 
-one for each replication set, if the \code{treatments} parameter is a partition into equally replicated treatment sets}
+\item{replicates}{either a single replication number if the \code{treatments} parameter is a data frame or a set of replication numbers, one
+for each replication set, if the \code{treatments} parameter is a partition into equally replicated treatment sets}
 
 \item{rows}{a set of nested row block levels for the row blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
 The default is a single set of main blocks equal to the hcf of the replication numbers.}
 
 \item{columns}{a set of nested column block level for the column blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
 The \code{rows} and the \code{columns} parameters, if both present, must be of equal length. The null default defines a single column block for each nested stratum
- which results in a simple nested blocks design in every stratum.}
+ which gives a simple nested blocks design in every stratum.}
 
-\item{model}{a model equation for the treatment factors in the design where the model equation is defined by using the model.matrix notation
+\item{model}{a model equation for the treatment factors in the design where the model equation can be defined using the model.matrix notation
 in the {\link[stats]{model.matrix}} package. If undefined, the model is assumed to be a full factorial model.}
 
 \item{searches}{the maximum number of local optima searched for a design optimization. The default is 1 plus the floor of 10000 divided by the number of plots.}
@@ -44,45 +44,43 @@ in the {\link[stats]{model.matrix}} package. If undefined, the model is assumed 
 Constructs randomized nested and crossed block designs for factorial or unstructured treatment sets where blocks can have any feasible depth of nesting.
 }
 \details{
-\code{blocksdesign} constructs nested block designs with arbitrary depth of nesting. The top stratum is assumed to be a single super-block 
-and succesive strata are nested hierarchically down to any feasible depth of nesting. Blocks strata are optimized hierarchically from the
-top downwards with the blocks of each nested stratum optimized conditionally on the blocks of the preceding strata in the hierarchy. 
+\code{blocksdesign} constructs nested block designs with arbitrary depth of nesting. The top or zero-level stratum is assumed to be a single super-block 
+and the blocks of each succesive strata are nested hierarchically within the blocks of each preceding stratum. Blocks are optimized hierarchically with the blocks of each stratum optimized conditionally within the blocks of the immediately preceding stratum.
 
-The default block design in each stratum is a crossed row-and-column design but defaulting to a single column block in any stratum of the 
-design gives a simple nested blocks design in that stratum.
+The treatment design can be either a single unstructured treatment set with an arbitrary number of treatments
+and an arbitrary number of replications per treatment or a 
+factorial treatment set with an arbitrary combination of quantitative or qualitative level treatment factors and an arbitrary factorial model.
 
-The treatment design can be either a single unstructured treatment set for any arbitrary number of treatments
- each with any arbitrary number of replications or a 
-factorial treatment set with any arbitrary combination of quantitative or qualitative level treatment factors and any arbitrary factorial model.
+For an unstructured treatment set, the \code{treatments} parameter is a set of cardinal numbers partitioning the total number of treatments into
+sub-sets of equally replicated treatments. In this mode, the \code{replicates} parameter is a set of replication numbers with one replication 
+number for each equally replicated treatment set. 
 
-For unstructured treatment sets, the \code{treatments} parameter should be a set of cardinal numbers that partition the total number of treatments into
-sub-sets of equally replicated treatments. In this mode, the \code{replicates} parameter should be a set of replication numbers with one replication 
-number for each treatment set in the \code{treatments} parameter. 
+For a factorial treatment set, the \code{treatments} parameter is a data frame containing a suitable factorial treatment design where the rows 
+are individual treatment combinations and the columns are individual treatment factors, either qualitative or quantitative.
+In this mode, the \code{replicates} parameter is a single number gving the number of complete repeats of the data frame in the full treatment design. 
 
-For a factorial treatment set, the \code{treatments} parameter should be a data frame containing a suitable factorial treatment design where the rows 
-are the individual treatment combinations and the columns are the individual treatment factors, which can be either qualitative or quantitative.
-In this mode, the \code{replicates} parameter should be a single number for the number of complete repeats of the data frame design (usually one). 
+The factorial model for a factorial treatment design is defined by a model formula which is based on the notation used in the \code{\link[stats]{model.matrix}} package.
+The default model is a complete set of factorial effects but the \code{models} formula can be used to define any feasible reduced set of factorial effects. The \code{models} formula has no effect on single unstructured treatment sets.   
 
-The factorial model for a factorial treatment design is defined by a model formula based on the notation used in the \code{\link[stats]{model.matrix}} package.
-The default factorial model is a complete set of factorial effects but the \code{models} formula can be used to define any feasible reduced set of factorial effects
-for the treatment design. The \code{models} formula has no effect on single unstructured treatment sets.      
-
+  
 The \code{rows} parameter, if any, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
-The first number, if any, is the number of rows in the blocks of the top stratum, the second, if any, is the number of rows in the nested blocks of
- the second stratum, the third, if any, is the number of rows in the nested blocks of the third stratum and so on for all the required strata in the design. 
+The first number, if any, is the number of rows in the blocks of the first-level stratum, the second, if any, is the number of rows in the blocks of
+ the second-level stratum and so on for all the required strata in the design. 
  
 The \code{columns} parameter, if any, defines the nested column blocks in each nested stratum taken in order from the highest to the lowest. 
-The first number, if any, is the number of columns in the blocks of the top stratum, the second, if any, is the number of columns in the nested blocks of
- the second stratum, the third, if any, is the number of columns in the nested blocks of the third stratum and so on for all the required strata in the design. 
+The first number, if any, is the number of columns in the blocks of the first-level stratum, the second, if any, is the number of columns in the blocks of
+ the second-level stratum and so on for all the required strata in the design. 
+ 
+The default block design for any particular stratum is a crossed row-and-column design but if a single column block is selected for that stratum, the default design reduces to a simple nested blocks design with a single set of nested blocks. 
   
 The \code{rows} and \code{columns} parameters, if defined, must be of equal length and if a simple nested blocks design is required for 
-any particular stratum, the number of columns in that stratum should be set to unity.
+any particular stratum, the number of columns in that stratum should be set to unity. Any feasible combination of simple or crossed blocks can be nested in any stratified block design by appropriate choice of the levels of the \code{rows} and \code{columns} parameters.
 
 If both the \code{rows} parameter and the \code{columns} parameter are null, the default block design will be a single set of orthogonal
 main blocks equal in number to the highest common factor of the replication numbers. If the \code{rows} parameter is defined but the \code{columns} parameter
-is null, the design will comprise simple nested blocks in each stratum as defined by the \code{rows} parameter.
+is null, the design will comprise simple nested blocks in each stratum, as defined by the \code{rows} parameter.
 
-Block sizes are always as nearly equal as possible and will never differ by more than a single plot in any particular block stratum classification.
+Block sizes are always as nearly equal as possible and will never differ by more than a single plot in any particular block classification.
 Row blocks and column blocks must always contain at least two plots per block and this restriction will constrain the 
 permitted numbers of rows and columns in the various strata of a design.
 
@@ -91,15 +89,20 @@ blocks that never differ in size by more than a single plot. General crossed blo
 the algorithm will only accommodate single unreplicated treatments in a crossed block design if the block sizes of the replicated part 
 of the design are all equal in each stratum of the design.
 
- For nested row-and-column designs, the algorithm will optimize the rows stratum first, conditional on any higher order strata, and will then optimise the columns
- stratum conditional on the rows stratum. 
+ For any particular stratum, the algorithm first optimizes the row blocks in that stratum 
+ conditional on the blocks of any immediately preceding stratum, and then optimise the columns blocks, if any,
+ conditional on the rows blocks within the same stratum. 
  
- Row-and-column designs may contain nested blocks with two or more plots in some or all of the row-by-column intersections but,
- currently, the algorithm does not consider the efficiency of rows-by-columns intersection blocks except for the special case of Trojan designs
- which have optimal blocks and which are constructed algebraically by \code{blocksdesign} from mutually orthogonal Latin squares (MOLS), see Edmondson R. N. (1998).
+ Row-and-column designs may contain nested blocks with two or more plots in some or all of the row-by-column intersections but currently, 
+ \code{blocksdesign} does not consider the efficiency of rows-by-columns intersection blocks except for the special case of Trojan designs which have 
+ p replicates of v*p treatments arranged in p-rows and p-columns where p is a prime or prime-power, v<p and each treatment is replicated p times. 
+ Trojan designs have orthogonal row and column blocks and are optimal for the row-by-column intersection blocks and \code{blocksdesign} constructs 
+ these designs algebraically from mutually orthogonal Latin squares (MOLS).  
  
- The special class of balanced lattice designs are also constructed algebraically by \code{blocksdesign} from mutually orthogonal Latin squares (MOLS) and also have optimal blocks, 
- Cochran & Cox 1957.          
+ Similarly, square lattices are a special class of optimal resolvable incomplete block design for r replicates of p*p treatments in blocks of size p where r=2 or
+ r=3 for any general p or r < p+2 for prime or prime power p and \code{blocksdesign} constructs these designs algebraically from Latin squares or MOLS.
+          
+ All other row-and-column designs and all other nested block designs are constructed by an optimization search algorithm.
  
  For 2 x 2 row-and-column designs with complete replicate rows and complete replicate columns, one treatment contrast will always be confounded
  with the row-by-column interaction and for these designs, it is impossible to nest a non-singular block design in the rows-by-columns intersections. 
@@ -130,7 +133,7 @@ blocks(treatments=treatments,rows=6,searches=5) # incomplete blocks with .6667 e
 # Quadratic regression for one 6-level numeric factor in 2 randomized blocks
 blocks(treatments=data.frame(X=c(1:6)),model=" ~ (X + I(X^2))",rows=2,searches=5) 
 
-# Second-order model for five qualitative 2-level factors in 4 blocks
+# Second-order model for five qualitative 2-level factors in 4 randomized blocks
 TF=data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32) )
 blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",rows=4,searches=5)
 
@@ -143,20 +146,20 @@ TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4
 modform=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
 blocks(treatments=TF,model=modform,rows=4,searches=10) 
 
-# 3 treatments x 2 replicates, 2 treatments x 4 replicates and 4 treatments x 3 replicates  
-# the hcf of the replication numbers is 1 therefore the default design is completely randomized 
+# Unequal replication with hcf = 1 gives  default design with 1 fully randomised main block 
+# 3 treatments x 2 replicates + 2 treatments x 4 replicates + 4 treatments x 3 replicates  
 blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 
 # 4 treatments x 4 replicates with 2 main rows each containing two complete replicates  
 blocks(treatments=4,replicates=4,rows=2)
 
-# 50 treatments x 4 replicates with 4 main rows and 5 nested sub-rows in each main block 
+# 50 treatments x 4 replicates with 4 main blocks and 5 nested sub-blocks in each main block 
 blocks(treatments=50,replicates=4,rows=c(4,5))
 
 # as above but with 20 single replicate treatments giving one extra treatment per sub-block
 blocks(treatments=c(50,20),replicates=c(4,1),rows=c(4,5))
 
-# 6 replicates of 6 treatments in 4 rows of size 9 (non-binary block design)
+# 6 replicates of 6 treatments in 4 blocks of size 9 (non-binary block design)
 blocks(treatments=6,replicates=6,rows=4)
 
 # 4 replicates of 13 treatments arranged in a 13 x 4 Youden rectangle 
@@ -165,16 +168,12 @@ blocks(treatments=13,replicates=4,rows=13,columns=4)
 # 64 treatments x 2 replicates with nested 8 x 8 row-and-column designs in two main blocks 
 blocks(treatments=64,replicates=2,rows=c(2,8),columns=c(1,8)) 
 
-# 64 treatments x 2 replicates with two main blocks and a 4 x 4 row-and-column design  
-# nested in each main block
+# 64 treatments x 2 replicates with two main blocks and a 4 x 4 row-and-column in each main block
 blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=12) 
 
-# 64 treatments x 2 replicates with two main blocks and a 4 x 4 row-and-column design  
-# nested in each main block.
-blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=12)
-
-\dontrun{ blocks(treatments=64,replicates=2,rows=c(2,2,2,2,2,2)) }
-       
+\dontrun{ blocks(treatments=64,replicates=4,rows=c(2,2,2,2),colums=c(2,2,2,2) }
+     
+                 
 }
 \references{
 Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. http://CRAN.R-project.org/package=crossdes
