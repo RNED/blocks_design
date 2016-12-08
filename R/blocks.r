@@ -21,7 +21,7 @@
 #' are individual treatment combinations and the columns are individual treatment factors, either qualitative or quantitative.
 #' In this mode, the \code{replicates} parameter is a single number gving the number of complete repeats of the data frame in the full treatment design. 
 #' 
-#' The factorial model for a factorial treatment design is defined by a model formula which is based on the notation used in the \code{\link[stats]{model.matrix}} package.
+#' The model for a factorial treatment design is defined by a model formula which is based on the notation used in the \code{\link[stats]{model.matrix}} package.
 #' The default model is a complete set of factorial effects but the \code{models} formula can be used to define any feasible reduced set of factorial effects. The \code{models} formula has no effect on single unstructured treatment sets.   
 #' 
 #'   
@@ -33,10 +33,10 @@
 #' The first number, if any, is the number of columns in the blocks of the first-level stratum, the second, if any, is the number of columns in the blocks of
 #'  the second-level stratum and so on for all the required strata in the design. 
 #'  
-#' The default block design for any particular stratum is a crossed row-and-column design but if a single column block is selected for that stratum, the default design reduces to a simple nested blocks design with a single set of nested blocks. 
+#' The default block design for any particular stratum is a crossed row-and-column design but if a single column block is selected for that stratum, the stratum design reduces to a nested blocks design with a single set of nested blocks. 
 #'   
 #' The \code{rows} and \code{columns} parameters, if defined, must be of equal length and if a simple nested blocks design is required for 
-#' any particular stratum, the number of columns in that stratum should be set to unity. Any feasible combination of simple or crossed blocks can be nested in any stratified block design by appropriate choice of the levels of the \code{rows} and \code{columns} parameters.
+#' any particular stratum, the number of columns for that stratum should be set to unity. Any required combination of simple or crossed blocks can be obtained by appropriate choice of the levels of the \code{rows} and \code{columns} parameters.
 #' 
 #' If both the \code{rows} parameter and the \code{columns} parameter are null, the default block design will be a single set of orthogonal
 #' main blocks equal in number to the highest common factor of the replication numbers. If the \code{rows} parameter is defined but the \code{columns} parameter
@@ -55,24 +55,27 @@
 #'  conditional on the blocks of any immediately preceding stratum, and then optimise the columns blocks, if any,
 #'  conditional on the rows blocks within the same stratum. 
 #'  
-#'  Row-and-column designs may contain nested blocks in individual row-by-column intersections but 
-#'  \code{blocksdesign} does not consider the efficiency of these intersection blocks except for the special case of Trojan designs which have 
-#'  p replicates of v*p treatments arranged in p-rows and p-columns where p is a prime or prime-power, v<p and each treatment is replicated p times. 
-#'  Trojan designs have orthogonal row and column blocks and are optimal for the row-by-column intersection blocks and \code{blocksdesign} constructs 
-#'  these designs algebraically from mutually orthogonal Latin squares (MOLS).  
+#' Trojan designs are a special class of efficient row-and-column designs that have p replicates of v*p treatments arranged in p-rows
+#' and p-columns where p is a prime or prime-power, v<p and each treatment is replicated p times. 
+#' \code{blocksdesign} constructs these designs algebraically from mutually orthogonal Latin squares (MOLS).  
 #'  
-#'  Similarly, square lattices are a special class of resolvable incomplete block design for r replicates of p*p treatments in blocks of size p where r=2 or
-#'  r=3 for general p or r < p+2 for prime or prime power p that have optimal or near-optimal blocks.
-#'   \code{blocksdesign} also constructs these designs algebraically from Latin squares or MOLS.
-         
-#'  All other row-and-column designs and all other nested block designs are constructed algorithmically.
+#' Square lattice designs are a special class of efficient incomplete block designs that have r replicates of p*p treatments 
+#' in blocks of size p where r=2 or r=3 for general p or r < p+2 for any prime or prime power p. \code{blocksdesign} constructs
+#' these designs algebraically from Latin squares or MOLS.
+#'   
+#'  All other designs are constructed algorithmically.
 #'  
-#'  For 2 x 2 row-and-column designs with complete replicate rows and complete replicate columns, one treatment contrast will always be confounded
-#'  with the row-by-column interaction and for these designs, it is impossible to nest a non-singular block design in the rows-by-columns intersections. 
-#'  Instead, we recommend a simple nested blocks design with two complete or four incomplete main blocks. 
+#'  NB Row-and-column designs may contain useful treatment information in individual row-by-column intersection blocks but 
+#'  \code{blocksdesign} does not currently consider the efficiency of these intersection blocks except for the special case of Trojan 
+#'  designs.
 #'  
 #'  Lattice designs and Trojan designs based on prime-power MOLS require the \code{\link[crossdes]{MOLS}} package.
-#' 
+#'  
+#'  Warning: For a 2-replicate row-and-column design with 2-complete rows and 2-complete columns, one treatment contrast 
+#'  will always be confounded in the row-by-column interaction and for these designs, it is impossible to nest a non-singular block 
+#'  design in the rows-by-columns intersections. Instead, we recommend a simple nested blocks design with two complete or four incomplete
+#'  main blocks. 
+#'  
 #'  The principle design outputs comprise:
 #' \itemize{
 #'  \item  A data frame showing the allocation of treatments to blocks with successive nested strata arranged in standard block order. \cr
@@ -92,12 +95,11 @@
 #' @param rows  a set of nested row block levels for the row blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
 #' The default is a single set of main blocks equal to the hcf of the replication numbers.
 #' 
-#' @param columns a set of nested column block level for the column blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
-#' The \code{rows} and the \code{columns} parameters, if both present, must be of equal length. The null default defines a single column block for each nested stratum
-#'  which gives a simple nested blocks design in every stratum.  
+#' @param columns a set of nested column block levels for the column blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
+#' The \code{rows} and the \code{columns} parameters, if both present, must be of equal length. The null default gives a single column block for each nested stratum.  
 #' 
-#' @param model  a model equation for the treatment factors in the design where the model equation can be defined using the model.matrix notation
-#' in the {\link[stats]{model.matrix}} package. If undefined, the model is assumed to be a full factorial model. 
+#' @param model  a model equation for the treatment factors in the design where the equation is defined by using the model.matrix notation
+#' in the {\link[stats]{model.matrix}} package. If undefined, the model is the full factorial model. 
 #' 
 #' @param seed  an integer initializing the random number generator. The default is a random seed.
 #' 
