@@ -12,7 +12,7 @@ Description: Constructs randomized nested or crossed block designs for
     unstructured treatment sets or for factorial treatments sets. Where the 
     treatments are factorial, the treatments model can be defined by using the
     model formulation defined in the model.matrix {stats} base package. Blocks
-    are nested hierarchically in succesive blocks strata and the blocks
+    are nested hierarchically in successive blocks strata and the blocks
     model in any particular stratum can comprise either a simple nested blocks 
     design or a crossed row-and-column design. Block sizes in any one stratum 
     are either all equal or differ, at most, by one plot. The design outputs 
