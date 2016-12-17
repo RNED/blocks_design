@@ -134,6 +134,10 @@
 #' treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
 #' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
 #' 
+#' # First-order model for five 2-level factors with 2 main and 2 x 2 nested row-and-column blocks 
+#' treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
+#' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=4,searches=5)
+#' 
 #' # Full factorial model for two 2-level factors with three replicates in 6 randomized blocks 
 #' treatments =data.frame( f1=gl(2,6,12), f2=gl(2,3,12))
 #' blocks(treatments=treatments,rows=6,searches=5) # incomplete blocks with .6667 efficiency
@@ -557,7 +561,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     for (i in seq_len(strata)) 
       effics=c(effics,FactEstEffics(TF,Design[,i],Design[,i+1]))
     names =unlist(lapply(1:strata, function(j) {paste0("Stratum_",j)}))
-    blocks=unlist(lapply(1:strata, function(j) {nlevels(Design[,j])}))
+    blocks=unlist(lapply(2:(strata+1), function(j) {nlevels(Design[,j])}))
     efficiencies=data.frame(cbind(names,blocks,effics))
     colnames(efficiencies)=c("Strata","Blocks","D-Efficiencies")
     efficiencies
@@ -706,22 +710,49 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     colnames(coldesign)=unlist(lapply(1:ncol(coldesign), function(j) {paste0("Stratum_",j,":Cols")}))
     list(blkdesign=blkdesign,rowdesign=rowdesign,coldesign=coldesign)
   }
+  
+  # ******************************************************************************************************************************************************** 
+  # Fractional factorials
+  # ********************************************************************************************************************************************************     
+  factorial=function(treatments,replicates) {
+    intgr=floor(replicates)
+    fulln=nrow(treatments)
+    fracr=replicates-floor(replicates)
+    fracn=round(fracr*fulln)
+    treatments=treatments[sample(fulln),]
+    fractreats=treatments[1:fracn,]
+    candidates=treatments[ ((fracn+1):fulln),]
+
+    print(fractreats)
+    print(candidates)
+    print(nrow(fractreats))
+    print(nrow(candidates))
+    print(aaa)
+  }
+  
+  # ******************************************************************************************************************************************************** 
+  # modelnames
+  # ********************************************************************************************************************************************************     
+  modelnames=function (treatments) {unlist(lapply(1:ncol(treatments), function(i) {
+    if (!is.factor(treatments[,i])) paste0("poly(",colnames(treatments)[i],",",length(unique(treatments[,i]))-1,")") else colnames(treatments)[i]})) }
+  
+  
   # ******************************************************************************************************************************************************** 
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
   # ********************************************************************************************************************************************************     
-  if (missing(treatments)|is.null(treatments)) stop(" Treatments missing or not defined ") 
-  if (anyNA(replicates)|any(is.nan(replicates))|any(!is.finite(replicates))|any(replicates%%1!=0)|any(replicates<1)|is.null(replicates)) stop(" replicates invalid") 
-  
-  if (!is.data.frame(treatments)){
+  if (missing(treatments)||is.null(treatments)) stop(" Treatments missing or not defined ") 
+  if (is.null(replicates)||anyNA(replicates)||any(is.nan(replicates))||any(!is.finite(replicates))) stop(" replicates invalid")
+
+  if (!is.data.frame(treatments)) {
+    if (any(replicates%%1!=0)|any(replicates<1)) stop(" replicates invalid") 
     if (anyNA(treatments)|any(is.nan(treatments))|any(!is.finite(treatments))|any(treatments%%1!=0)|any(treatments<1)) stop(" treatments parameter invalid") 
     if (length(replicates)!=length(treatments)) stop("treatments and replicates parameters must both be the same length")
     hcf=HCF(replicates)
-    treatments=data.frame( Treatments=as.factor(rep(rep(1:sum(treatments), rep(replicates/hcf,treatments)), hcf)))
-  } else {
-    hcf=1
-    treatments=treatments[rep(seq_len(nrow(treatments)), replicates), ,drop=FALSE]
-  }
+    treatments=data.frame(Treatments=factor(unlist(lapply(1:hcf,function(i){sample(rep(1:sum(treatments), rep(replicates/hcf,treatments)))})))) 
+  } else if (round(replicates)==replicates)  treatments=treatments[unlist(lapply(1:replicates,function(i) { sample( 1 : nrow(treatments)) })),,drop=FALSE] else 
+    treatments=factorial(treatments,replicates) 
+  
   if (is.null(rows)) rows=hcf
   if (anyNA(rows)|any(is.nan(rows))|any(!is.finite(rows))|any(rows%%1!=0)|any(rows<1)|is.null(rows)) stop(" rows invalid") 
   if (is.null(columns)) columns=rep(1,length(rows))
@@ -744,6 +775,8 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   cumcols=cumprod(columns)
   cumblocks=c(1,cumprod(rows*columns))
   isrowcol=(max(rows)>1 & max(columns)>1)
+  
+
   # omit any single replicate treatments for unstructured factorial designs and find hcf for factor replicates 
   fulltreatments=treatments
   fullreplicates=replicates
@@ -756,11 +789,8 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   }
   nunits=nrow(treatments)
   regReps=isTRUE(all.equal(max(replicates), min(replicates))) 
-  
-  # default model formula
-  modelnames=function (treatments) {unlist(lapply(1:ncol(treatments), function(i) {
-    if (!is.factor(treatments[,i])) paste0("poly(",colnames(treatments)[i],",",length(unique(treatments[,i]))-1,")") else colnames(treatments)[i]})) }
   if (is.null(model)) model=paste0("~ ",paste0(modelnames(treatments), collapse="*"))
+ 
   # tests for viable design sizes
   
   if (cumrows[strata]*2>nunits) stop("Too many row blocks for the available plots  - every row block must contain at least two plots")

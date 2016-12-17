@@ -132,6 +132,10 @@ Warnings:
 treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
 blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
 
+# First-order model for five 2-level factors with 2 main and 2 x 2 nested row-and-column blocks 
+treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
+blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=4,searches=5)
+
 # Full factorial model for two 2-level factors with three replicates in 6 randomized blocks 
 treatments =data.frame( f1=gl(2,6,12), f2=gl(2,3,12))
 blocks(treatments=treatments,rows=6,searches=5) # incomplete blocks with .6667 efficiency
