@@ -711,30 +711,51 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     list(blkdesign=blkdesign,rowdesign=rowdesign,coldesign=coldesign)
   }
   
-  # ******************************************************************************************************************************************************** 
-  # Fractional factorials
-  # ********************************************************************************************************************************************************     
-  factorial=function(treatments,replicates) {
-    intgr=floor(replicates)
-    fulln=nrow(treatments)
-    fracr=replicates-floor(replicates)
-    fracn=round(fracr*fulln)
-    treatments=treatments[sample(fulln),]
-    fractreats=treatments[1:fracn,]
-    candidates=treatments[ ((fracn+1):fulln),]
 
-    print(fractreats)
-    print(candidates)
-    print(nrow(fractreats))
-    print(nrow(candidates))
-    print(aaa)
-  }
-  
   # ******************************************************************************************************************************************************** 
   # modelnames
   # ********************************************************************************************************************************************************     
   modelnames=function (treatments) {unlist(lapply(1:ncol(treatments), function(i) {
     if (!is.factor(treatments[,i])) paste0("poly(",colnames(treatments)[i],",",length(unique(treatments[,i]))-1,")") else colnames(treatments)[i]})) }
+  
+  
+  # ******************************************************************************************************************************************************** 
+  # Fractional factorials
+  # ********************************************************************************************************************************************************     
+  factorial=function(treatments,model,replicates) {
+    intgr=replicates%/%1
+    fracr=replicates%%1
+    fracn=(fracr*nrow(treatments))%/%1
+    if (intgr>0) index1=unlist(lapply(1:intgr,function(i){sample(1:fulln)})) else index1=NULL
+    if (fracn>0) index2=1:fracn else index2=NULL
+    if (fracn>0) index3=(fracn+1):fulln else index3=NULL
+    if (fracr==0) return(treatments[c(index2,index1),,drop=FALSE])
+    TX=model.matrix(as.formula(model),treatments)[,-1,drop=FALSE] # drops mean contrast
+    TC=TX[index3,,drop=FALSE]
+    TX=TX[index2,,drop=FALSE]
+    repeat{
+    D=chol2inv(chol(crossprod(TX)))
+    print(1/det(D))
+    TDT=crossprod(t(crossprod(t(TX),D)),t(TX))
+    CDC=crossprod(t(crossprod(t(TC),D)),t(TC))
+    TDC=crossprod(t(crossprod(t(TX),D)),t(TC))
+    dTDT=diag(TDT)-rep(1,nrow(TDT))
+    dCDC=diag(CDC)+rep(1,nrow(CDC))
+    dMat=TDC**2-tcrossprod(dTDT,dCDC)
+    #if ( max(dMat, na.rm = TRUE)<1+tol ) next
+    sampn=which.max(dMat)
+    i=1+(sampn-1)%%nrow(dMat)
+    j=1+(sampn-1)%/%nrow(dMat)
+    print(dMat[i,j])
+    if (dMat[i,j]<1+tol) break
+    iTX=TX[i,]
+    jTC=TC[j,]
+    TX[i,]=jTC
+    TC[j,]=iTX
+    }
+print(aaaa)
+  }
+  
   
   
   # ******************************************************************************************************************************************************** 
@@ -750,8 +771,14 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     if (length(replicates)!=length(treatments)) stop("treatments and replicates parameters must both be the same length")
     hcf=HCF(replicates)
     treatments=data.frame(Treatments=factor(unlist(lapply(1:hcf,function(i){sample(rep(1:sum(treatments), rep(replicates/hcf,treatments)))})))) 
-  } else if (round(replicates)==replicates)  treatments=treatments[unlist(lapply(1:replicates,function(i) { sample( 1 : nrow(treatments)) })),,drop=FALSE] else 
-    treatments=factorial(treatments,replicates) 
+  } else {
+    fulln=nrow(treatments)
+    treatments=treatments[sample(fulln),]
+    if (replicates!=1) treatments=factorial(treatments,model,replicates) 
+    hcf=HCF(replicates)
+  }
+
+  if (is.null(model)) model=paste0("~ ",paste0(modelnames(treatments), collapse="*"))
   
   if (is.null(rows)) rows=hcf
   if (anyNA(rows)|any(is.nan(rows))|any(!is.finite(rows))|any(rows%%1!=0)|any(rows<1)|is.null(rows)) stop(" rows invalid") 
@@ -789,7 +816,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   }
   nunits=nrow(treatments)
   regReps=isTRUE(all.equal(max(replicates), min(replicates))) 
-  if (is.null(model)) model=paste0("~ ",paste0(modelnames(treatments), collapse="*"))
+
  
   # tests for viable design sizes
   
