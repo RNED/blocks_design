@@ -722,23 +722,21 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   # ******************************************************************************************************************************************************** 
   # Fractional factorials
   # ********************************************************************************************************************************************************     
-  factorial=function(treatments,model,replicates) {
+  factorial=function(TF,model,replicates) {
     intgr=replicates%/%1
     fracr=replicates%%1
-    fracn=(fracr*nrow(treatments))%/%1
-    if (intgr>0) index1=unlist(lapply(1:intgr,function(i){sample(1:fulln)})) else index1=NULL
-    if (fracn>0) index2=1:fracn else index2=NULL
-    if (fracn>0) index3=(fracn+1):fulln else index3=NULL
-    if (fracr==0) return(treatments[c(index2,index1),,drop=FALSE])
-    TX=model.matrix(as.formula(model),treatments)[,-1,drop=FALSE] # drops mean contrast
-    TC=TX[index3,,drop=FALSE]
-    TX=TX[index2,,drop=FALSE]
+    repln=nrow(TF)
+    fracn=(fracr*repln)%/%1
+    if (fracr==0 & fracn==0 & intgr==0)  stop(" no valid fractional factorial design")
+    if (intgr>0) fulln=unlist(lapply(1:intgr,function(i){sample(1:fulln)})) else fulln=NULL
+    if (fracr==0|fracn==0) return(TF[c(fulln),,drop=FALSE])
+    TM=model.matrix(as.formula(model),TF)[,-1,drop=FALSE] # drops mean contrast
     repeat{
-    D=chol2inv(chol(crossprod(TX)))
+    D=chol2inv(chol(crossprod(TM[c(1:fracn,fulln),,drop=FALSE])))
     print(1/det(D))
-    TDT=crossprod(t(crossprod(t(TX),D)),t(TX))
-    CDC=crossprod(t(crossprod(t(TC),D)),t(TC))
-    TDC=crossprod(t(crossprod(t(TX),D)),t(TC))
+    TDT=crossprod(t(crossprod(t(TM[c(1:fracn,fulln),,drop=FALSE]),D)),t(TM[c(1:fracn,fulln),,drop=FALSE]))
+    CDC=crossprod(t(crossprod(t(TM[(1+fracn):repln,,drop=FALSE]),D)),t(TM[(1+fracn):repln,,drop=FALSE]))
+    TDC=crossprod(t(crossprod(t(TM[c(1:fracn,fulln),,drop=FALSE]),D)),t(TM[(1+fracn):repln,,drop=FALSE]))
     dTDT=diag(TDT)-rep(1,nrow(TDT))
     dCDC=diag(CDC)+rep(1,nrow(CDC))
     dMat=TDC**2-tcrossprod(dTDT,dCDC)
@@ -748,10 +746,9 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     j=1+(sampn-1)%/%nrow(dMat)
     print(dMat[i,j])
     if (dMat[i,j]<1+tol) break
-    iTX=TX[i,]
-    jTC=TC[j,]
-    TX[i,]=jTC
-    TC[j,]=iTX
+    j=j+fracn
+    TM[c(i,j),]=TM[c(j,i),]
+    TF[c(i,j),]=TF[c(j,i),]
     }
 print(aaaa)
   }
