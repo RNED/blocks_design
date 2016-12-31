@@ -128,13 +128,26 @@ Warnings:
 }
 \examples{
 
+# Plackett and Burman design for eleven 2-level factors in 12 runs  
+treatments =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),F6=gl(2,32,2048),
+F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
+ blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))
+
+
+blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
+blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=c(2,2),columns=c(1,2),searches=5) 
+
+
 # First-order model for five 2-level factors with 2 main and 2 x 2 nested row-and-column blocks 
 treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
 blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
+blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=c(2,2),columns=c(1,2),searches=5)
 
 # First-order model for five 2-level factors with 2 main and 2 x 2 nested row-and-column blocks 
 treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
 blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=4,searches=5)
+blocks(treatments=treatments,model="~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",replicates=.5,rows=4,searches=5)
+
 
 # Full factorial model for two 2-level factors with three replicates in 6 randomized blocks 
 treatments =data.frame( f1=gl(2,6,12), f2=gl(2,3,12))
@@ -149,7 +162,10 @@ blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",rows=4,searche
 
 # Second-order model for four qualitative 3-level factors in 9 randomized blocks
 TF=data.frame( F1=gl(3,27), F2=gl(3,9,81),  F3=gl(3,3,81), F4=gl(3,1,81)  )
-\dontrun{blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)*(F1+F2+F3+F4)",rows=9)}
+\dontrun{blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)*(F1+F2+F3+F4)",replicates=(1/3),rows=9)}
+blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)",replicates=(1/3),rows=9)
+
+
 
 # Second-order model for two qualitative and two quantitative factors in 4 randomized blocks 
 TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))

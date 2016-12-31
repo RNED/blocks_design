@@ -130,13 +130,26 @@
 #' 
 #' @examples
 #' 
+#' # Plackett and Burman design for eleven 2-level factors in 12 runs  
+#' treatments =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),F6=gl(2,32,2048),
+#' F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
+#'  blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))
+#' 
+#' 
+#' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
+#' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=c(2,2),columns=c(1,2),searches=5) 
+#' 
+#' 
 #' # First-order model for five 2-level factors with 2 main and 2 x 2 nested row-and-column blocks 
 #' treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
 #' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
+#' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=c(2,2),columns=c(1,2),searches=5)
 #' 
 #' # First-order model for five 2-level factors with 2 main and 2 x 2 nested row-and-column blocks 
 #' treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
 #' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=4,searches=5)
+#' blocks(treatments=treatments,model="~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",replicates=.5,rows=4,searches=5)
+#' 
 #' 
 #' # Full factorial model for two 2-level factors with three replicates in 6 randomized blocks 
 #' treatments =data.frame( f1=gl(2,6,12), f2=gl(2,3,12))
@@ -151,7 +164,10 @@
 #' 
 #' # Second-order model for four qualitative 3-level factors in 9 randomized blocks
 #' TF=data.frame( F1=gl(3,27), F2=gl(3,9,81),  F3=gl(3,3,81), F4=gl(3,1,81)  )
-#' \dontrun{blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)*(F1+F2+F3+F4)",rows=9)}
+#' \dontrun{blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)*(F1+F2+F3+F4)",replicates=(1/3),rows=9)}
+#' blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)",replicates=(1/3),rows=9)
+#' 
+#' 
 #' 
 #' # Second-order model for two qualitative and two quantitative factors in 4 randomized blocks 
 #' TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
@@ -710,15 +726,24 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     colnames(coldesign)=unlist(lapply(1:ncol(coldesign), function(j) {paste0("Stratum_",j,":Cols")}))
     list(blkdesign=blkdesign,rowdesign=rowdesign,coldesign=coldesign)
   }
-  
-
   # ******************************************************************************************************************************************************** 
   # modelnames
   # ********************************************************************************************************************************************************     
   modelnames=function (treatments) {unlist(lapply(1:ncol(treatments), function(i) {
     if (!is.factor(treatments[,i])) paste0("poly(",colnames(treatments)[i],",",length(unique(treatments[,i]))-1,")") else colnames(treatments)[i]})) }
-  
-  
+
+  # ******************************************************************************************************************************************************** 
+  # Updates variance matrix for swapped rows where y is swapped out and x is swapped in
+  # ********************************************************************************************************************************************************
+  fractUpDate=function(iD,x,y) { 
+    w=crossprod(iD,x)
+    v=crossprod(iD,y)
+    a=as.numeric(crossprod(x,w))
+    b=as.numeric(crossprod(y,v))
+    c=as.numeric(crossprod(x,v))
+    d=(1+a)*(1-b)+c*c
+    D= iD - (tcrossprod(w)*d - tcrossprod(v*(1+a)-w*c))/d/(1+a) 
+  }
   # ******************************************************************************************************************************************************** 
   # Fractional factorials
   # ********************************************************************************************************************************************************     
@@ -730,27 +755,39 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     if (fracr==0 & fracn==0 & intgr==0)  stop(" no valid fractional factorial design")
     if (intgr>0) fulln=unlist(lapply(1:intgr,function(i){sample(1:fulln)})) else fulln=NULL
     if (fracr==0|fracn==0) return(TF[c(fulln),,drop=FALSE])
-    TM=model.matrix(as.formula(model),TF)[,-1,drop=FALSE] # drops mean contrast
+    TM=model.matrix(as.formula(model),TF) 
+    maxDeff=det(crossprod(TM))**(1/ncol(TM))*fracr
+    counter=0
+    if (length(fulln)>0) nunits=fracn+fulln else nunits=fracn
+    if (is.null(searches)) searches=1+10000%/%nunits
+    while (counter<searches) {
+      counter=counter+1
+      rand=sample(1:nrow(TM))
+      TM=TM[rand,]
+      TF=TF[rand,]
+      if (qr(TM[c(1:fracn,fulln),])$rank<ncol(TM)) next
+      D=chol2inv(chol(crossprod(TM[c(1:fracn,fulln),,drop=FALSE])))
     repeat{
-    D=chol2inv(chol(crossprod(TM[c(1:fracn,fulln),,drop=FALSE])))
-    print(1/det(D))
-    TDT=crossprod(t(crossprod(t(TM[c(1:fracn,fulln),,drop=FALSE]),D)),t(TM[c(1:fracn,fulln),,drop=FALSE]))
-    CDC=crossprod(t(crossprod(t(TM[(1+fracn):repln,,drop=FALSE]),D)),t(TM[(1+fracn):repln,,drop=FALSE]))
-    TDC=crossprod(t(crossprod(t(TM[c(1:fracn,fulln),,drop=FALSE]),D)),t(TM[(1+fracn):repln,,drop=FALSE]))
-    dTDT=diag(TDT)-rep(1,nrow(TDT))
-    dCDC=diag(CDC)+rep(1,nrow(CDC))
-    dMat=TDC**2-tcrossprod(dTDT,dCDC)
-    #if ( max(dMat, na.rm = TRUE)<1+tol ) next
-    sampn=which.max(dMat)
-    i=1+(sampn-1)%%nrow(dMat)
-    j=1+(sampn-1)%/%nrow(dMat)
-    print(dMat[i,j])
-    if (dMat[i,j]<1+tol) break
-    j=j+fracn
-    TM[c(i,j),]=TM[c(j,i),]
-    TF[c(i,j),]=TF[c(j,i),]
+      TDT=crossprod(t(crossprod(t(TM[c(1:fracn,fulln),,drop=FALSE]),D)),t(TM[c(1:fracn,fulln),,drop=FALSE]))
+      CDC=crossprod(t(crossprod(t(TM[(1+fracn):repln,,drop=FALSE]),D)),t(TM[(1+fracn):repln,,drop=FALSE]))
+      TDC=crossprod(t(crossprod(t(TM[c(1:fracn,fulln),,drop=FALSE]),D)),t(TM[(1+fracn):repln,,drop=FALSE]))
+      dTDT=diag(TDT)-rep(1,nrow(TDT))
+      dCDC=diag(CDC)+rep(1,nrow(CDC))
+      dMat=TDC**2-tcrossprod(dTDT,dCDC)
+      if ( max(dMat, na.rm = TRUE)<1+tol ) break
+      sampn=which.max(dMat)
+      i=1+(sampn-1)%%nrow(dMat)
+      j=1+(sampn-1)%/%nrow(dMat) 
+      if (dMat[i,j]<1+tol) break
+      D=fractUpDate(D,TM[j+fracn,],TM[i,])
+      TM[c(i,j+fracn),]=TM[c(j+fracn,i),,drop=FALSE]
+      TF[c(i,j+fracn),]=TF[c(j+fracn,i),,drop=FALSE]
     }
-print(aaaa)
+    fracDeff=det(crossprod(TM[c(1:fracn,fulln),]))**(1/ncol(TM))
+    eff=(fracDeff/maxDeff)
+    if (eff>1-tol) break
+    }
+    print(eff)
   }
   
   
@@ -761,7 +798,12 @@ print(aaaa)
   # ********************************************************************************************************************************************************     
   if (missing(treatments)||is.null(treatments)) stop(" Treatments missing or not defined ") 
   if (is.null(replicates)||anyNA(replicates)||any(is.nan(replicates))||any(!is.finite(replicates))) stop(" replicates invalid")
-
+  if (is.na(seed) | !is.finite(seed) | is.nan(seed) | seed%%1!=0 | seed<0 ) stop(" seed parameter invalid  ") 
+  set.seed(seed)
+  if (is.na(jumps) | !is.finite(jumps) | is.nan(jumps) | jumps<1 | jumps%%1!=0 | jumps>10) stop(" number of jumps parameter is invalid (max is 10) ") 
+  if (!is.null(searches) && ( is.na(searches) | !is.finite(searches) | is.nan(searches) | searches<1 | searches%%1!=0 )) stop(" number of searches parameter is invalid") 
+  
+  
   if (!is.data.frame(treatments)) {
     if (any(replicates%%1!=0)|any(replicates<1)) stop(" replicates invalid") 
     if (anyNA(treatments)|any(is.nan(treatments))|any(!is.finite(treatments))|any(treatments%%1!=0)|any(treatments<1)) stop(" treatments parameter invalid") 
@@ -786,9 +828,8 @@ print(aaaa)
     rows=rows[rows*columns>1] 
     columns=columns[rows*columns>1] 
   }
-  if (is.na(seed) | !is.finite(seed) | is.nan(seed) | seed%%1!=0 | seed<0 ) stop(" seed parameter invalid  ") 
-  if (is.na(jumps) | !is.finite(jumps) | is.nan(jumps) | jumps<1 | jumps%%1!=0 | jumps>10) stop(" number of jumps parameter is invalid (max is 10) ") 
-  if (!is.null(searches) && ( is.na(searches) | !is.finite(searches) | is.nan(searches) | searches<1 | searches%%1!=0 )) stop(" number of searches parameter is invalid") 
+ 
+  
   if (max(rows*columns)==1) { rows=1; columns=1} else {index=rows*columns>1; rows=rows[index]; columns=columns[index]}
 
   for (i in 1:ncol(treatments))
@@ -825,7 +866,7 @@ print(aaaa)
   if ( (trtdf+blockdf+2) > nunits) stop(paste("Too many model parameters: plots df = ", nunits-1," treatments df = ",trtdf," blocks df = ", blockdf ))
   if (is.null(searches)) searches=1+10000%/%nunits
   Plots=factor(1:nunits)
-  set.seed(seed)
+
 
   blocksizes=nunits
   for (i in 1:strata) 
