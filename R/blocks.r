@@ -133,7 +133,7 @@
 #' # Plackett and Burman design for eleven 2-level factors in 12 runs  
 #' treatments =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),F6=gl(2,32,2048),
 #' F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
-#'  blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))
+#' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))
 #' 
 #' 
 #' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
@@ -750,15 +750,15 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   factorial=function(TF,model,replicates) {
     intgr=replicates%/%1
     fracr=replicates%%1
-    repln=nrow(TF)
-    fracn=(fracr*repln)%/%1
+    fracn=(fracr*nrow(TF))%/%1
+    nunits=intgr*nrow(TF)+fracn
     if (fracr==0 & fracn==0 & intgr==0)  stop(" no valid fractional factorial design")
-    if (intgr>0) fulln=unlist(lapply(1:intgr,function(i){sample(1:fulln)})) else fulln=NULL
-    if (fracr==0|fracn==0) return(TF[c(fulln),,drop=FALSE])
+    if (intgr>0) fulln=unlist(lapply(1:intgr,function(i){sample(1:ncol(TF))})) else fulln=NULL
+    if (fracn==0) return(TF[fulln,,drop=FALSE])
     TM=model.matrix(as.formula(model),TF) 
+    if (ncol(TM)>nunits) stop("Fractional factorial design too small to estimate all the required model parameters ")
     maxDeff=det(crossprod(TM))**(1/ncol(TM))*fracr
     counter=0
-    if (length(fulln)>0) nunits=fracn+fulln else nunits=fracn
     if (is.null(searches)) searches=1+10000%/%nunits
     while (counter<searches) {
       counter=counter+1
@@ -768,9 +768,9 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
       if (qr(TM[c(1:fracn,fulln),])$rank<ncol(TM)) next
       D=chol2inv(chol(crossprod(TM[c(1:fracn,fulln),,drop=FALSE])))
     repeat{
-      TDT=crossprod(t(crossprod(t(TM[c(1:fracn,fulln),,drop=FALSE]),D)),t(TM[c(1:fracn,fulln),,drop=FALSE]))
-      CDC=crossprod(t(crossprod(t(TM[(1+fracn):repln,,drop=FALSE]),D)),t(TM[(1+fracn):repln,,drop=FALSE]))
-      TDC=crossprod(t(crossprod(t(TM[c(1:fracn,fulln),,drop=FALSE]),D)),t(TM[(1+fracn):repln,,drop=FALSE]))
+      TDT=crossprod(t(crossprod(t(TM[1:fracn,,drop=FALSE]),D)),            t(TM[1:fracn,,drop=FALSE]))
+      CDC=crossprod(t(crossprod(t(TM[(1+fracn):nrow(TM),, drop=FALSE]),D)),t(TM[(1+fracn):nrow(TM),,drop=FALSE]))
+      TDC=crossprod(t(crossprod(t(TM[1:fracn,,drop=FALSE]),D))            ,t(TM[(1+fracn):nrow(TM),,drop=FALSE]))
       dTDT=diag(TDT)-rep(1,nrow(TDT))
       dCDC=diag(CDC)+rep(1,nrow(CDC))
       dMat=TDC**2-tcrossprod(dTDT,dCDC)
@@ -787,11 +787,8 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     eff=(fracDeff/maxDeff)
     if (eff>1-tol) break
     }
-    print(eff)
+    TF[c(1:fracn,fulln),]
   }
-  
-  
-  
   # ******************************************************************************************************************************************************** 
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
@@ -814,9 +811,9 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     fulln=nrow(treatments)
     treatments=treatments[sample(fulln),]
     if (replicates!=1) treatments=factorial(treatments,model,replicates) 
-    hcf=HCF(replicates)
+    if (replicates%%1==0) hcf=replicates else hcf=1
   }
-
+  
   if (is.null(model)) model=paste0("~ ",paste0(modelnames(treatments), collapse="*"))
   
   if (is.null(rows)) rows=hcf
@@ -828,10 +825,8 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     rows=rows[rows*columns>1] 
     columns=columns[rows*columns>1] 
   }
- 
-  
   if (max(rows*columns)==1) { rows=1; columns=1} else {index=rows*columns>1; rows=rows[index]; columns=columns[index]}
-
+  
   for (i in 1:ncol(treatments))
     if (isTRUE(all.equal(treatments[,i], rep(treatments[1,i], length(treatments[,i]))))) stop("One or more treatment factors is a constant which is not valid")
   fnames=colnames(treatments)
@@ -855,19 +850,17 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   nunits=nrow(treatments)
   regReps=isTRUE(all.equal(max(replicates), min(replicates))) 
 
- 
   # tests for viable design sizes
   
   if (cumrows[strata]*2>nunits) stop("Too many row blocks for the available plots  - every row block must contain at least two plots")
   if (cumcols[strata]*2>nunits) stop("Too many column blocks for the available plots  - every column block must contain at least two plots")
   if (cumblocks[strata+1]>nunits && cumrows[strata]>1 && cumcols[strata]>1) stop("Too many blocks - every row-by-column intersection must contain at least one plot")
-  trtdf=ncol(model.matrix(as.formula(model),treatments))-1
-  blockdf=sum( (rows+columns-2)*cumblocks[-length(cumblocks)] )
-  if ( (trtdf+blockdf+2) > nunits) stop(paste("Too many model parameters: plots df = ", nunits-1," treatments df = ",trtdf," blocks df = ", blockdf ))
+  ntrts=ncol(model.matrix(as.formula(model),treatments))
+  nblocks=cumblocks[length(cumblocks)] 
+ 
+  if ( (ntrts+nblocks-1) > nunits) stop(paste("Too many model parameters: plots = ", nunits," treatments = ",ntrts," blocks = ", nblocks ))
   if (is.null(searches)) searches=1+10000%/%nunits
   Plots=factor(1:nunits)
-
-
   blocksizes=nunits
   for (i in 1:strata) 
     blocksizes=Sizes(blocksizes,i)
@@ -878,11 +871,13 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   if (isrowcol) 
     df1=dataframesRowCol(cumrows,cumblocks,rows,columns,strata) else 
       df1=dataframesBlocks(cumrows,cumblocks,rows,columns,strata)
+
   blkdesign=df1$blkdesign
   rowdesign=df1$rowdesign
   coldesign=df1$coldesign
   Mean=factor(rep(1,sum(blocksizes)))
   rowDesign=data.frame(Mean, rowdesign[rep(1:length(blocksizes),blocksizes),]) 
+  
   if (isrowcol) colDesign=data.frame(Mean, coldesign[rep(1:length(blocksizes),  blocksizes ),])
   if (isrowcol) blkDesign=data.frame(blkdesign[rep(1:length(blocksizes),  blocksizes ),])  
   TF=NULL
