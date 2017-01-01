@@ -162,12 +162,13 @@
 #' TF=data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32) )
 #' blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",rows=4,searches=5)
 #' 
-#' # Second-order model for four qualitative 3-level factors in 9 randomized blocks
+#' # First-order model for four qualitative 3-level factors in 9 randomized blocks
 #' TF=data.frame( F1=gl(3,27), F2=gl(3,9,81),  F3=gl(3,3,81), F4=gl(3,1,81)  )
-#' \dontrun{blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)*(F1+F2+F3+F4)",replicates=(1/3),rows=9)}
 #' blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)",replicates=(1/3),rows=9)
 #' 
-#' 
+#' # Second-order model for four qualitative 3-level factors in 9 randomized blocks
+#' TF=data.frame( F1=gl(3,81), F2=gl(3,27,243),  F3=gl(3,9,243), F4=gl(3,3,243), F5=gl(3,1,243) )
+#' \dontrun{blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",replicates=(1/3))}
 #' 
 #' # Second-order model for two qualitative and two quantitative factors in 4 randomized blocks 
 #' TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
@@ -759,6 +760,8 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     if (ncol(TM)>nunits) stop("Fractional factorial design too small to estimate all the required model parameters ")
     maxDeff=det(crossprod(TM))**(1/ncol(TM))*fracr
     counter=0
+    geff=0
+    gTF=NULL
     if (is.null(searches)) searches=1+10000%/%nunits
     while (counter<searches) {
       counter=counter+1
@@ -785,9 +788,10 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     }
     fracDeff=det(crossprod(TM[c(1:fracn,fulln),]))**(1/ncol(TM))
     eff=(fracDeff/maxDeff)
+    if (eff>geff) {gTF=TF[c(1:fracn,fulln),] ;geff=eff}
     if (eff>1-tol) break
     }
-    TF[c(1:fracn,fulln),]
+    list(TF=gTF,eff=geff)
   }
   # ******************************************************************************************************************************************************** 
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
@@ -810,7 +814,11 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   } else {
     fulln=nrow(treatments)
     treatments=treatments[sample(fulln),]
-    if (replicates!=1) treatments=factorial(treatments,model,replicates) 
+    if (replicates!=1) {
+      Z=factorial(treatments,model,replicates) 
+      treatments=Z$TF
+      fractEff  =Z$eff
+    } else fractEff=NULL
     if (replicates%%1==0) hcf=replicates else hcf=1
   }
   
@@ -1007,5 +1015,5 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     colnames(TreatmentsTable)=c(colnames(treatments),"Replicates")
   }
   
-  list(Treatments=TreatmentsTable,model=model,Efficiencies=Efficiencies,Plan=Plan,Design=Design,seed=seed,searches=searches,jumps=jumps) 
+  list(Treatments=TreatmentsTable,model=model,fractEff=fractEff,Efficiencies=Efficiencies,Plan=Plan,Design=Design,seed=seed,searches=searches,jumps=jumps) 
 } 
