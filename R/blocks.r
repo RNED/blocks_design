@@ -770,26 +770,30 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
       TF=TF[rand,]
       if (qr(TM[c(1:fracn,fulln),])$rank<ncol(TM)) next
       D=chol2inv(chol(crossprod(TM[c(1:fracn,fulln),,drop=FALSE])))
+      FDF=tcrossprod(tcrossprod(TM,D),TM)
     repeat{
-      TDT=crossprod(t(crossprod(t(TM[1:fracn,,drop=FALSE]),D)),            t(TM[1:fracn,,drop=FALSE]))
-      CDC=crossprod(t(crossprod(t(TM[(1+fracn):nrow(TM),, drop=FALSE]),D)),t(TM[(1+fracn):nrow(TM),,drop=FALSE]))
-      TDC=crossprod(t(crossprod(t(TM[1:fracn,,drop=FALSE]),D))            ,t(TM[(1+fracn):nrow(TM),,drop=FALSE]))
-      dTDT=diag(TDT)-rep(1,nrow(TDT))
-      dCDC=diag(CDC)+rep(1,nrow(CDC))
-      dMat=TDC**2-tcrossprod(dTDT,dCDC)
-      if ( max(dMat, na.rm = TRUE)<1+tol ) break
+      TDT=diag(FDF[1:fracn,1:fracn,drop=FALSE])-rep(1,fracn)
+      CDC=diag(FDF[(1+fracn):nrow(TM),(1+fracn):nrow(TM),drop=FALSE])+rep(1,(nrow(TM)-fracn))
+      dMat=FDF[(1:fracn),(1+fracn):nrow(TM),drop=FALSE]**2-tcrossprod(TDT,CDC)
       sampn=which.max(dMat)
       i=1+(sampn-1)%%nrow(dMat)
       j=1+(sampn-1)%/%nrow(dMat) 
+      if ( dMat[i,j]<(1+tol) ) break
       upV=fractUpDate(D,TM[j+fracn,],TM[i,])
+      TW=crossprod(t(TM),upV$w)
+      TZ=crossprod(t(TM),upV$z)
+      FDF=FDF-tcrossprod(TW) + tcrossprod(TZ)
+      FDF[c(i,j+fracn),]=FDF[c(j+fracn,i),]
+      FDF[,c(i,j+fracn)]=FDF[,c(j+fracn,i)]
       D= D - tcrossprod(upV$w) + tcrossprod(upV$z)
       TM[c(i,j+fracn),]=TM[c(j+fracn,i),,drop=FALSE]
       TF[c(i,j+fracn),]=TF[c(j+fracn,i),,drop=FALSE]
     }
     fracDeff=det(crossprod(TM[c(1:fracn,fulln),]))**(1/ncol(TM))
     eff=(fracDeff/maxDeff)
+    print(eff)
     if (eff>geff) {gTF=TF[c(1:fracn,fulln),] ;geff=eff}
-    if (eff>1-tol) break
+    if (eff>(1-tol)) break
     }
     list(TF=gTF,eff=geff,fraction=intgr+fracr)
   }
