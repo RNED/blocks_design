@@ -160,12 +160,13 @@ blocks(treatments=data.frame(X=c(1:6)),model=" ~ (X + I(X^2))",rows=2,searches=5
 TF=data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32) )
 blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",rows=4,searches=5)
 
-# Second-order model for four qualitative 3-level factors in 9 randomized blocks
+# First-order model for four qualitative 3-level factors in 9 randomized blocks
 TF=data.frame( F1=gl(3,27), F2=gl(3,9,81),  F3=gl(3,3,81), F4=gl(3,1,81)  )
-\dontrun{blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)*(F1+F2+F3+F4)",replicates=(1/3),rows=9)}
 blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)",replicates=(1/3),rows=9)
 
-
+# Second-order model for four qualitative 3-level factors in 9 randomized blocks
+TF=data.frame( F1=gl(3,81), F2=gl(3,27,243),  F3=gl(3,9,243), F4=gl(3,3,243), F5=gl(3,1,243) )
+\dontrun{blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",replicates=(1/3))}
 
 # Second-order model for two qualitative and two quantitative factors in 4 randomized blocks 
 TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))

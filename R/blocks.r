@@ -742,8 +742,9 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     a=as.numeric(crossprod(x,w))
     b=as.numeric(crossprod(y,v))
     c=as.numeric(crossprod(x,v))
-    d=(1+a)*(1-b)+c*c
-    D= iD - (tcrossprod(w)*d - tcrossprod(v*(1+a)-w*c))/d/(1+a) 
+    z=(v*sqrt(1+a)-w*c/sqrt(1+a))/ sqrt((1+a)*(1-b)+c*c)
+    w=w/sqrt(1+a)
+    list(w=w,z=z)
   }
   # ******************************************************************************************************************************************************** 
   # Fractional factorials
@@ -752,17 +753,16 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     intgr=replicates%/%1
     fracr=replicates%%1
     fracn=(fracr*nrow(TF))%/%1
-    nunits=intgr*nrow(TF)+fracn
     if (fracr==0 & fracn==0 & intgr==0)  stop(" no valid fractional factorial design")
     if (intgr>0) fulln=unlist(lapply(1:intgr,function(i){sample(1:ncol(TF))})) else fulln=NULL
     if (fracn==0) return(TF[fulln,,drop=FALSE])
     TM=model.matrix(as.formula(model),TF) 
-    if (ncol(TM)>nunits) stop("Fractional factorial design too small to estimate all the required model parameters ")
+    if (ncol(TM)>(intgr*nrow(TF)+fracn)) stop("Fractional factorial design too small to estimate all the required model parameters ")
     maxDeff=det(crossprod(TM))**(1/ncol(TM))*fracr
     counter=0
     geff=0
     gTF=NULL
-    if (is.null(searches)) searches=1+10000%/%nunits
+    if (is.null(searches)) searches=1+10000%/%(intgr*nrow(TF)+fracn)
     while (counter<searches) {
       counter=counter+1
       rand=sample(1:nrow(TM))
@@ -781,8 +781,8 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
       sampn=which.max(dMat)
       i=1+(sampn-1)%%nrow(dMat)
       j=1+(sampn-1)%/%nrow(dMat) 
-      if (dMat[i,j]<1+tol) break
-      D=fractUpDate(D,TM[j+fracn,],TM[i,])
+      upV=fractUpDate(D,TM[j+fracn,],TM[i,])
+      D= D - tcrossprod(upV$w) + tcrossprod(upV$z)
       TM[c(i,j+fracn),]=TM[c(j+fracn,i),,drop=FALSE]
       TF[c(i,j+fracn),]=TF[c(j+fracn,i),,drop=FALSE]
     }
@@ -791,7 +791,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     if (eff>geff) {gTF=TF[c(1:fracn,fulln),] ;geff=eff}
     if (eff>1-tol) break
     }
-    list(TF=gTF,eff=geff)
+    list(TF=gTF,eff=geff,fraction=intgr+fracr)
   }
   # ******************************************************************************************************************************************************** 
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
@@ -803,8 +803,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   set.seed(seed)
   if (is.na(jumps) | !is.finite(jumps) | is.nan(jumps) | jumps<1 | jumps%%1!=0 | jumps>10) stop(" number of jumps parameter is invalid (max is 10) ") 
   if (!is.null(searches) && ( is.na(searches) | !is.finite(searches) | is.nan(searches) | searches<1 | searches%%1!=0 )) stop(" number of searches parameter is invalid") 
-  
-  
+  fractionalEff=data.frame("Full",1)
   if (!is.data.frame(treatments)) {
     if (any(replicates%%1!=0)|any(replicates<1)) stop(" replicates invalid") 
     if (anyNA(treatments)|any(is.nan(treatments))|any(!is.finite(treatments))|any(treatments%%1!=0)|any(treatments<1)) stop(" treatments parameter invalid") 
@@ -817,13 +816,13 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     if (replicates!=1) {
       Z=factorial(treatments,model,replicates) 
       treatments=Z$TF
-      fractEff  =Z$eff
-    } else fractEff=NULL
+      fractionalEff=data.frame(Z$fraction,Z$eff)
+    }
     if (replicates%%1==0) hcf=replicates else hcf=1
   }
+  colnames(fractionalEff)=c("Fraction","D-Efficiency")
   
   if (is.null(model)) model=paste0("~ ",paste0(modelnames(treatments), collapse="*"))
-  
   if (is.null(rows)) rows=hcf
   if (anyNA(rows)|any(is.nan(rows))|any(!is.finite(rows))|any(rows%%1!=0)|any(rows<1)|is.null(rows)) stop(" rows invalid") 
   if (is.null(columns)) columns=rep(1,length(rows))
@@ -996,13 +995,13 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   }
   
   # efficiencies
-
   if (simpleTF && isrowcol) Efficiencies=RowColEfficiencies(Design)
   else if (simpleTF && max(replicates)==1) Efficiencies=UnrepEfficiencies()
   else if (simpleTF)  Efficiencies=BlockEfficiencies(Design)
   else if ( isrowcol) Efficiencies=FactRowColEffics(Design)
   else if ( !isrowcol) Efficiencies=FactBlocksEffics(Design)
   row.names(Efficiencies)=NULL
+  
   # treatment replications
   if(simpleTF) {
   TreatmentsTable=data.frame(table(Design[,ncol(Design)]))
@@ -1010,10 +1009,17 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   TreatmentsTable[]=lapply(TreatmentsTable, as.factor) 
   colnames(TreatmentsTable)=c("Treatments","Replicates")
   rownames(TreatmentsTable)=1:nrow(TreatmentsTable)
-  } else {
+  } else if (replicates%%1==0) {
     TreatmentsTable=data.frame(treatments,rep(replicates,nrow(treatments)))
     colnames(TreatmentsTable)=c(colnames(treatments),"Replicates")
+    TreatmentsTable=TreatmentsTable[ do.call(order, TreatmentsTable), ]
+  } else {
+    TreatmentsTable=data.frame(treatments)
+    colnames(TreatmentsTable)=colnames(treatments)
+    TreatmentsTable=TreatmentsTable[ do.call(order, TreatmentsTable), ]
   }
+  rownames(TreatmentsTable)=NULL
   
-  list(Treatments=TreatmentsTable,model=model,fractEff=fractEff,Efficiencies=Efficiencies,Plan=Plan,Design=Design,seed=seed,searches=searches,jumps=jumps) 
+
+  list(Treatments=TreatmentsTable,model=model,fractionalEff=fractionalEff,Efficiencies=Efficiencies,Plan=Plan,Design=Design,seed=seed,searches=searches,jumps=jumps) 
 } 
