@@ -135,7 +135,6 @@
 #' F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
 #' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))
 #' 
-#' 
 #' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
 #' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=c(2,2),columns=c(1,2),searches=5) 
 #' 
@@ -750,6 +749,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   # Fractional factorials
   # ********************************************************************************************************************************************************     
   factorial=function(TF,model,replicates) {
+    allfactors=all(unlist(lapply(TF, class))=="factor")
     intgr=replicates%/%1
     fracr=replicates%%1
     fracn=(fracr*nrow(TF))%/%1
@@ -758,45 +758,48 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     if (fracn==0) return(TF[fulln,,drop=FALSE])
     TM=model.matrix(as.formula(model),TF) 
     if (ncol(TM)>(intgr*nrow(TF)+fracn)) stop("Fractional factorial design too small to estimate all the required model parameters ")
-    maxDeff=det(crossprod(TM))**(1/ncol(TM))*fracr
-    counter=0
+    maxDeff=det(crossprod(TM))**(1/ncol(TM))/nrow(TM)
     geff=0
     gTF=NULL
     if (is.null(searches)) searches=1+10000%/%(intgr*nrow(TF)+fracn)
-    while (counter<searches) {
-      counter=counter+1
+    for (counts in seq(searches)) {
       rand=sample(1:nrow(TM))
-      TM=TM[rand,]
-      TF=TF[rand,]
+      TM=TM[rand,,drop=FALSE]
+      TF=TF[rand,,drop=FALSE]
       if (qr(TM[c(1:fracn,fulln),])$rank<ncol(TM)) next
       D=chol2inv(chol(crossprod(TM[c(1:fracn,fulln),,drop=FALSE])))
       FDF=tcrossprod(tcrossprod(TM,D),TM)
+      nSamp=min(16,(nrow(TM)-fracn))
     repeat{
-      TDT=diag(FDF[1:fracn,1:fracn,drop=FALSE])-rep(1,fracn)
-      CDC=diag(FDF[(1+fracn):nrow(TM),(1+fracn):nrow(TM),drop=FALSE])+rep(1,(nrow(TM)-fracn))
-      dMat=FDF[(1:fracn),(1+fracn):nrow(TM),drop=FALSE]**2-tcrossprod(TDT,CDC)
+      s=sort(sample((1+fracn):nrow(TM),nSamp)) 
+      TDT=diag(FDF[1:fracn,1:fracn,drop=FALSE])-1
+      CDC=diag(FDF[s,s,drop=FALSE])+1
+      dMat=FDF[(1:fracn),s,drop=FALSE]**2-tcrossprod(TDT,CDC)
       sampn=which.max(dMat)
       i=1+(sampn-1)%%nrow(dMat)
       j=1+(sampn-1)%/%nrow(dMat) 
-      if ( dMat[i,j]<(1+tol) ) break
-      upV=fractUpDate(D,TM[j+fracn,],TM[i,])
+      if ( dMat[i,j]<(1+tol) && nSamp<(nrow(TM)-fracn) ) {
+        nSamp=min(2*nSamp,(nrow(TM)-fracn))
+        next
+      } else if ( dMat[i,j]<(1+tol) && nSamp==(nrow(TM)-fracn) ) break
+      upV=fractUpDate(D,TM[s[j],],TM[i,])
       TW=crossprod(t(TM),upV$w)
       TZ=crossprod(t(TM),upV$z)
       FDF=FDF-tcrossprod(TW) + tcrossprod(TZ)
-      FDF[c(i,j+fracn),]=FDF[c(j+fracn,i),]
-      FDF[,c(i,j+fracn)]=FDF[,c(j+fracn,i)]
+      FDF[c(i,s[j]),]=FDF[c(s[j],i),]
+      FDF[,c(i,s[j])]=FDF[,c(s[j],i)]
       D= D - tcrossprod(upV$w) + tcrossprod(upV$z)
-      TM[c(i,j+fracn),]=TM[c(j+fracn,i),,drop=FALSE]
-      TF[c(i,j+fracn),]=TF[c(j+fracn,i),,drop=FALSE]
+      TM[c(i,s[j]),]=TM[c(s[j],i),,drop=FALSE]
+      TF[c(i,s[j]),]=TF[c(s[j],i),,drop=FALSE]
     }
-    fracDeff=det(crossprod(TM[c(1:fracn,fulln),]))**(1/ncol(TM))
+    fracDeff=det(crossprod(TM[c(1:fracn,fulln),]))**(1/ncol(TM))/length(c(1:fracn,fulln))
     eff=(fracDeff/maxDeff)
-    print(eff)
-    if (eff>geff) {gTF=TF[c(1:fracn,fulln),] ;geff=eff}
-    if (eff>(1-tol)) break
+    if (eff>geff) {gTF=TF[c(1:fracn,fulln),,drop=FALSE] ;geff=eff}
+    if (eff>(1-tol) && allfactors) break
     }
     list(TF=gTF,eff=geff,fraction=intgr+fracr)
   }
+ 
   # ******************************************************************************************************************************************************** 
   # Main body of rows design function which tests inputs, omits any single replicate treatments, optimizes design, replaces single replicate
   # treatments, randomizes design and prints design outputs including design plans, incidence matrices and efficiency factors
@@ -808,6 +811,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   if (is.na(jumps) | !is.finite(jumps) | is.nan(jumps) | jumps<1 | jumps%%1!=0 | jumps>10) stop(" number of jumps parameter is invalid (max is 10) ") 
   if (!is.null(searches) && ( is.na(searches) | !is.finite(searches) | is.nan(searches) | searches<1 | searches%%1!=0 )) stop(" number of searches parameter is invalid") 
   fractionalEff=data.frame("Full",1)
+
   if (!is.data.frame(treatments)) {
     if (any(replicates%%1!=0)|any(replicates<1)) stop(" replicates invalid") 
     if (anyNA(treatments)|any(is.nan(treatments))|any(!is.finite(treatments))|any(treatments%%1!=0)|any(treatments<1)) stop(" treatments parameter invalid") 
@@ -816,7 +820,7 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     treatments=data.frame(Treatments=factor(unlist(lapply(1:hcf,function(i){sample(rep(1:sum(treatments), rep(replicates/hcf,treatments)))})))) 
   } else {
     fulln=nrow(treatments)
-    treatments=treatments[sample(fulln),]
+    treatments=treatments[sample(fulln),,drop=FALSE]
     if (replicates!=1) {
       Z=factorial(treatments,model,replicates) 
       treatments=Z$TF
@@ -824,8 +828,8 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     }
     if (replicates%%1==0) hcf=replicates else hcf=1
   }
+
   colnames(fractionalEff)=c("Fraction","D-Efficiency")
-  
   if (is.null(model)) model=paste0("~ ",paste0(modelnames(treatments), collapse="*"))
   if (is.null(rows)) rows=hcf
   if (anyNA(rows)|any(is.nan(rows))|any(!is.finite(rows))|any(rows%%1!=0)|any(rows<1)|is.null(rows)) stop(" rows invalid") 
@@ -837,7 +841,6 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
     columns=columns[rows*columns>1] 
   }
   if (max(rows*columns)==1) { rows=1; columns=1} else {index=rows*columns>1; rows=rows[index]; columns=columns[index]}
-  
   for (i in 1:ncol(treatments))
     if (isTRUE(all.equal(treatments[,i], rep(treatments[1,i], length(treatments[,i]))))) stop("One or more treatment factors is a constant which is not valid")
   fnames=colnames(treatments)
@@ -846,8 +849,6 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   cumcols=cumprod(columns)
   cumblocks=c(1,cumprod(rows*columns))
   isrowcol=(max(rows)>1 & max(columns)>1)
-  
-
   # omit any single replicate treatments for unstructured factorial designs and find hcf for factor replicates 
   fulltreatments=treatments
   fullreplicates=replicates
@@ -860,7 +861,6 @@ blocks = function(treatments,replicates=1,rows=NULL,columns=NULL,model=NULL,sear
   }
   nunits=nrow(treatments)
   regReps=isTRUE(all.equal(max(replicates), min(replicates))) 
-
   # tests for viable design sizes
   
   if (cumrows[strata]*2>nunits) stop("Too many row blocks for the available plots  - every row block must contain at least two plots")

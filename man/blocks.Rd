@@ -133,7 +133,6 @@ treatments =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2
 F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
 blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))
 
-
 blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
 blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=c(2,2),columns=c(1,2),searches=5) 
 
