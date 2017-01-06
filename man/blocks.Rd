@@ -8,17 +8,17 @@ blocks(treatments, replicates = 1, rows = NULL, columns = NULL,
   model = NULL, searches = NULL, seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
-\item{treatments}{either a data frame with columns for the individual treatment factors or a set of cardinal numbers giving a partition 
+\item{treatments}{either a data frame with columns for individual treatment factors or a partition 
 of the total required number of treatments into sets of equally replicated treatments.}
 
-\item{replicates}{either a single replication number if the \code{treatments} parameter is a data frame or a set of replication numbers, one
-per replication set, if the \code{treatments} parameter is a partition into equally replicated treatment sets}
+\item{replicates}{either a single replication number, not necessarily integral, if the \code{treatments} parameter is a data frame or a set of replication numbers, one
+per replication set, if the \code{treatments} parameter is a partition}
 
-\item{rows}{a set of nested row block levels for the row blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
+\item{rows}{the nested levels of the row blocks of the nested strata of the design taken in order from the highest to the lowest. 
 The default is the hcf of the replication numbers.}
 
-\item{columns}{a set of nested column block levels for the column blocks in each succesive stratum of the blocks design taken in order from the highest to the lowest. 
-The \code{rows} and the \code{columns} parameters, if both present, must be of equal length. The null default is a single column block for each nested stratum.}
+\item{columns}{the nested levels of the column blocks of the nested strata of the design taken in order from the highest to the lowest. 
+The default is a single column block for each nested strata.}
 
 \item{model}{a model equation for the treatment factors in the design where the equation is defined by the model.matrix notation
 in the {\link[stats]{model.matrix}} package. If undefined, the model is a full factorial model.}
@@ -34,33 +34,40 @@ in the {\link[stats]{model.matrix}} package. If undefined, the model is a full f
 \item{model.matrix}{The model.matrix used to define the \code{treatments} design.}
 \item{Design}{Data frame giving the optimized block and treatment factors in plot order.}
 \item{Plan}{Data frame for single factor designs showing a plan view of the treatment design in the bottom stratum of the design. A NULL plan is returned for multi-factor designs.}
-\item{Efficiencies}{The achieved D-efficiencies and A-efficiencies (unstructured treatment designs only) for each stratum of the design together with an A-efficiency upper-bound, where available}
+\item{BlocksEfficiency}{The D-efficiencies and the A-efficiencies (unstructured designs) of the blocks in each stratum of the design together with A-efficiency upper-bounds, where available}
+\item{DesignEfficiency}{The determinant of the information matrix of the treatment design relative to the determinant of the information matrix of a full factorial design where each matrix is inversely weighted by the size of the corresponding design}
 \item{seed}{Numerical seed for random number generator}
 \item{searches}{Maximum number of searches in each stratum}
 \item{jumps}{Number of random treatment swaps to escape a local maxima}
 }
 \description{
-Constructs randomized nested and crossed block designs for factorial or unstructured treatment sets where blocks can have any feasible depth of nesting.
+Constructs randomized nested blocks for factorial or fractional factorial treatment designs with any 
+feasible depth of nesting and up to two crossed block structures in each level of nesting.
 }
 \details{
-\code{blocksdesign} constructs nested block designs with arbitrary depth of nesting. The top or zero-level stratum is assumed to be a single super-block 
-and the blocks of each succesive strata are nested hierarchically within the blocks of each preceding stratum. Strata are optimized sequentially from the top
-down with the blocks of each stratum optimized conditionally within the blocks of the immediately preceding stratum.
+Constructs randomized nested block designs with arbitrary depth of nesting for arbitrary factorial or fractional factorial treatment designs.
 
-The treatment design can be either a single unstructured treatment set with an arbitrary number of treatments and an arbitrary number of replications per
- treatment or a factorial treatment set with an arbitrary combination of quantitative or qualitative level treatment factors and an arbitrary factorial model.
+The top or zero-level stratum is a single super-block and the blocks of all succesive strata are nested hierarchically within
+the blocks of the preceding strata. The blocks strata are optimized sequentially from the top down with the blocks of the succesive strata optimized conditionally
+within the blocks of the preceding strata. The blocks design comprises row-and-column blocks nested 
+within the succesive strata of the design and strata with a single column block have a single set of nested row blocks.
 
-For an unstructured treatment set, the \code{treatments} parameter is a set of cardinal numbers that partition the total number of treatments into
-sub-sets of equally replicated treatments. In this mode, the \code{replicates} parameter is a set of replication numbers with one replication 
-number for each equally replicated treatment set. 
+The treatment design can be any arbitrary factorial model for any combination of qualitative or quantitative factor levels. For general factorial designs, the \code{treatments} parameter is a data frame for the design factors where the rows 
+are individual treatment combinations and the columns are individual treatment factors. For a single treatment factor, 
+the \code{treatments} parameter can be a partition of the individual treatments into sets of equally replicated treatments.
 
-For a factorial treatment set, the \code{treatments} parameter is a data frame containing a suitable factorial treatment design where the rows 
-are individual treatment combinations and the columns are individual treatment factors, either qualitative or quantitative.
-In this mode, the \code{replicates} parameter is a single number gving the number of complete repeats of the data frame in the full treatment design. 
+The factorial treatment model can be defined by a \code{model} formula based on the notation used by the \code{\link[stats]{model.matrix}}
+package. The \code{models} formula can be used to define any feasible factorial model containing any required combination of quantitative or qualitative
+factorial effects. The default model is a complete factorial design. 
+  
+If the \code{treatments} parameter is a data frame, the   
+\code{replicates} parameter is a real number where the integral part of the number 
+defines the number of complete replicates of the data frame and the fractional part, if
+any, defines the fraction of the data frame required for the treatment design. 
+Where a fractional design is required, a D-optimal swapping routine finds an optimal or near optimal fraction, assuming non-singularity of the design. 
 
-The model for a factorial treatment design is defined by a model formula which is based on the notation used in the \code{\link[stats]{model.matrix}} package.
-The default model is a complete set of factorial effects but the \code{models} formula can be used to define any feasible reduced set of factorial effects. 
-The \code{models} formula has no effect on single unstructured treatment sets.   
+If the \code{treatments} parameter is a partition of the total required number of treatments into sets of equally replicated treatments
+ then the \code{replicates} parameter must be a matching set of replication numbers for each set of equally replicated treatments.
 
 The \code{rows} parameter, if any, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
 The first number, if any, is the number of rows in the blocks of the first-level stratum, the second, if any, is the number of rows in the blocks of
@@ -131,11 +138,7 @@ Warnings:
 # Plackett and Burman design for eleven 2-level factors in 12 runs  
 treatments =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),F6=gl(2,32,2048),
 F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
-blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))
-
-blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
-blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=c(2,2),columns=c(1,2),searches=5) 
-
+\dontrun{blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))}
 
 # First-order model for five 2-level factors with 2 main and 2 x 2 nested row-and-column blocks 
 treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
@@ -147,7 +150,6 @@ treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32
 blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=4,searches=5)
 blocks(treatments=treatments,model="~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",replicates=.5,rows=4,searches=5)
 
-
 # Full factorial model for two 2-level factors with three replicates in 6 randomized blocks 
 treatments =data.frame( f1=gl(2,6,12), f2=gl(2,3,12))
 blocks(treatments=treatments,rows=6,searches=5) # incomplete blocks with .6667 efficiency
@@ -157,7 +159,7 @@ blocks(treatments=data.frame(X=c(1:6)),model=" ~ (X + I(X^2))",rows=2,searches=5
 
 # Second-order model for five qualitative 2-level factors in 4 randomized blocks
 TF=data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32) )
-blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",rows=4,searches=5)
+blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",searches=5)
 
 # First-order model for four qualitative 3-level factors in 9 randomized blocks
 TF=data.frame( F1=gl(3,27), F2=gl(3,9,81),  F3=gl(3,3,81), F4=gl(3,1,81)  )
@@ -197,7 +199,7 @@ blocks(treatments=64,replicates=2,rows=c(2,8),columns=c(1,8))
 # 64 treatments x 2 replicates with two main blocks and a 4 x 4 row-and-column in each main block
 blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=12) 
 
-\dontrun{ blocks(treatments=64,replicates=4,rows=c(2,2,2,2),colums=c(2,2,2,2) }
+\dontrun{ blocks(treatments=64,replicates=4,rows=c(2,2,2,2),columns=c(2,2,2,2)) }
      
                  
 }
