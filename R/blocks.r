@@ -2,35 +2,31 @@
 #' 
 #' @description
 #' 
-#' Constructs randomized nested blocks for factorial or fractional factorial treatment designs with any 
+#' Constructs randomized nested block designs for factorial or fractional factorial treatment designs with any 
 #' feasible depth of nesting and up to two crossed block structures in each level of nesting.
 #' 
 #' @details
 #' 
-#' Constructs randomized nested block designs with arbitrary depth of nesting for arbitrary factorial or fractional factorial treatment designs.
+#' Constructs randomized nested row-and-column type block designs with arbitrary depth of nesting for arbitrary factorial or fractional 
+#' factorial treatment designs. The factorial treatment model is defined by a \code{models} formula   
+#' for a \code{\link[stats]{model.matrix}} from the \code{\link[stats-package]{stats}} package and 
+#' can be any feasible combination of quantitative or qualitative model terms. The default model is a complete factorial design. 
 #' 
-#' The top or zero-level stratum is a single super-block and the blocks of all succesive strata are nested hierarchically within
-#' the blocks of the preceding strata. The blocks strata are optimized sequentially from the top down with the blocks of the succesive strata optimized conditionally
-#' within the blocks of the preceding strata. The blocks design comprises row-and-column blocks nested 
-#' within the succesive strata of the design and strata with a single column block have a single set of nested row blocks.
+#' The top level stratum of the blocks design is a single super-block and the blocks of each succesive stratum are nested hierarchically within
+#' the blocks of each preceding stratum. The blocks are optimized sequentially from the top down with the blocks of  each succesive stratum optimized conditionally
+#' within the blocks of each immediately preceding stratum.
 #' 
-#' The treatment design can be any arbitrary factorial model for any combination of qualitative or quantitative factor levels. For general factorial designs, the \code{treatments} parameter is a data frame for the design factors where the rows 
-#' are individual treatment combinations and the columns are individual treatment factors. For a single treatment factor, 
-#' the \code{treatments} parameter can be a partition of the individual treatments into sets of equally replicated treatments.
+#' A general factorial treatment design can be defined by equating the \code{treatments} parameter to a data frame with columns equal to the required set of 
+#' treatment factors and rows equal to the complete set of factor combinations. Alternatively, a design with a single qualitative treatment factor 
+#' can be defined by equating the \code{treatments} parameter to a vector containing a partion of the individual treatments into sets of equally replicated treatments. 
 #' 
-#' The factorial treatment model can be defined by a \code{model} formula based on the notation used by the \code{\link[stats]{model.matrix}}
-#' package. The \code{models} formula can be used to define any feasible factorial model containing any required combination of quantitative or qualitative
-#' factorial effects. The default model is a complete factorial design. 
+#' If the \code{treatments} parameter is a general data frame, the \code{replicates} parameter must be a multiplier, not necessarily integral,
+#' for the required number of multiples of the data frame. If the \code{treatments} parameter is a vector partition, the \code{replicates} parameter must be a matching set of replication numbers for the 
+#' individual treatment sets of the partition.
+#' 
+#' Where the design is a non-integral multiple of a treatment data frame, a D-optimal swapping routine automatically finds the best 
+#' optimal or near optimal fraction for the assumed \code{\link[stats]{model.matrix}}, provided the design is non-singular.  
 #'   
-#' If the \code{treatments} parameter is a data frame, the   
-#' \code{replicates} parameter can be any real number where the integral part of the number 
-#' defines the number of complete replicates of the data frame and the fractional part, if
-#' any, defines the fraction of the data frame required for the treatment design. 
-#' Where a fractional design is required, a D-optimal swapping routine finds an optimal or near optimal fraction, assuming non-singularity of the design. 
-#' 
-#' If the \code{treatments} parameter is a partition of the total required number of treatments into sets of equally replicated treatments
-#'  then the \code{replicates} parameter must be a matching set of replication numbers for each set of equally replicated treatments.
-#' 
 #' The \code{rows} parameter, if any, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
 #' The first number, if any, is the number of rows in the blocks of the first-level stratum, the second, if any, is the number of rows in the blocks of
 #'  the second-level stratum and so on for all the required strata in the design. 
@@ -51,15 +47,15 @@
 #' is null, the design will comprise a set of nested blocks in each stratum, as defined by the \code{rows} parameter.
 #' 
 #' Block sizes are always as nearly equal as possible and will never differ by more than a single plot in any particular block classification. Row blocks and 
-#' column blocks must always contain at least two plots per block and this restriction will constrain the permitted numbers of rows and columns in the various 
+#' column blocks will always contain at least two plots per block and this restriction will constrain the permitted numbers of rows and columns in the various 
 #' strata of a design.
 #' 
 #' Unreplicated treatments are allowed and any simple nested block design can be augmented by any number of single unreplicated treatments to give augmented 
 #' blocks that never differ in size by more than a single plot. General crossed block designs are more complex and currently the algorithm will only accommodate 
 #' single unreplicated treatments in a crossed block design if the block sizes of the replicated part of the design are all equal in each stratum of the design.
 #' 
-#'  For any particular stratum, the algorithm will first optimize the row blocks in that stratum conditional on the blocks of any immediately preceding stratum, 
-#'  and will then optimise the columns blocks, if any, conditional on the rows blocks. 
+#'  For any particular stratum, the algorithm first optimizes the row blocks in that stratum conditional on the blocks of any immediately preceding stratum, 
+#'  and then optimizes the columns blocks, if any, conditional on the rows blocks. 
 #'  
 #'  Special designs:
 #'  
@@ -74,7 +70,7 @@
 #'     
 #'  All other designs are constructed algorithmically.
 #'  
-#' Warnings:
+#' Comment:
 #'  
 #'  Row-and-column designs may contain useful treatment information in the individual row-by-column intersection blocks but \code{blocksdesign} does not currently 
 #'  optimize the efficiency of these blocks in row-and-column designs except for the special case of Trojan designs.
@@ -101,14 +97,14 @@
 #' @param replicates  either a single replication number, not necessarily integral, if the \code{treatments} parameter is a data frame or a set of replication numbers, one
 #' per replication set, if the \code{treatments} parameter is a partition
 #' 
-#' @param rows the nested levels of the row blocks of the nested strata of the design taken in order from the highest to the lowest. 
-#' The default is the hcf of the replication numbers.
+#' @param rows the levels of the row blocks for each stratum of the design taken in order from the highest to the lowest. 
+#' The default is a single stratum blocks design with number of blocks equal to the hcf of the replication numbers.
 #' 
-#' @param columns the nested levels of the column blocks of the nested strata of the design taken in order from the highest to the lowest. 
-#' The default is a single column block for each nested strata.  
+#' @param columns the levels of the column blocks for each stratum of the design taken in order from the highest to the lowest. 
+#' The default is a single column block for each nested stratum.  
 #' 
-#' @param model  a model equation for the treatment factors in the design where the equation is defined by the model.matrix notation
-#' in the {\link[stats]{model.matrix}} package. If undefined, the model is a full factorial model. 
+#' @param model  a model equation for the treatment factors in the design where the equation is defined using the model.matrix notation
+#' in the {\link[stats]{model.matrix}} package. If undefined, the model is a full factorial design. 
 #' 
 #' @param seed  an integer initializing the random number generator. The default is a random seed.
 #' 
