@@ -16,16 +16,15 @@
 #' the blocks of each preceding stratum. The blocks are optimized sequentially from the top down with the blocks of  each succesive stratum optimized conditionally
 #' within the blocks of each immediately preceding stratum.
 #' 
-#' A general factorial treatment design can be defined by equating the \code{treatments} parameter to a data frame with columns equal to the required set of 
-#' treatment factors and rows equal to the complete set of factor combinations. Alternatively, a design with a single qualitative treatment factor 
-#' can be defined by equating the \code{treatments} parameter to a vector containing a partion of the individual treatments into sets of equally replicated treatments. 
+#' The treatments are defined by a \code{treatments} parameter which is either a data frame with columns equal 
+#' to the required set of treatment factors or a vector containing a partion of the individual treatments into sets of equally replicated treatments.
 #' 
-#' If the \code{treatments} parameter is a general data frame, the \code{replicates} parameter must be a multiplier, not necessarily integral,
-#' for the required number of multiples of the data frame. If the \code{treatments} parameter is a vector partition, the \code{replicates} parameter must be a matching set of replication numbers for the 
-#' individual treatment sets of the partition.
+#' If the \code{treatments} parameter is a data frame, the \code{replicates} parameter can be a multiplier, not necessarily integral,
+#' for any required number of multiples of the data frame. If the \code{treatments} parameter is a vector partition, 
+#' the \code{replicates} parameter must be a matching set of replication numbers for the individual treatment sets of the partition.
 #' 
-#' Where the design is a non-integral multiple of a treatment data frame, a D-optimal swapping routine automatically finds the best 
-#' optimal or near optimal fraction for the assumed \code{\link[stats]{model.matrix}}, provided the design is non-singular.  
+#' If the treatments design is a non-integral multiple of a treatment data frame, a D-optimal swapping routine automatically finds the best 
+#' optimal or near optimal fraction for the assumed \code{\link[stats]{model.matrix}}, assuming the design is non-singular.  
 #'   
 #' The \code{rows} parameter, if any, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
 #' The first number, if any, is the number of rows in the blocks of the first-level stratum, the second, if any, is the number of rows in the blocks of
@@ -133,20 +132,10 @@
 #' 
 #' @examples
 #' 
-#' # Plackett and Burman design for eleven 2-level factors in 12 runs  
-#' treatments =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),F6=gl(2,32,2048),
-#' F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
-#' \dontrun{blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))}
-#' 
-#' # First-order model for five 2-level factors with 2 main and 2 x 2 nested row-and-column blocks 
+#' # Main effects of five 2-level factors in a half-fraction 4 x 4 row-and column design
+#' # a fully orthogonal design is possible but the number of searches may need to be increased 
 #' treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
-#' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",rows=c(2,2),columns=c(1,2),searches=5)
-#' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=c(2,2),columns=c(1,2),searches=5)
-#' 
-#' # First-order model for five 2-level factors with 2 main and 2 x 2 nested row-and-column blocks 
-#' treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
-#' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=4,searches=5)
-#' blocks(treatments=treatments,model="~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",replicates=.5,rows=4,searches=5)
+#' blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=4,columns=4)
 #' 
 #' # Full factorial model for two 2-level factors with three replicates in 6 randomized blocks 
 #' treatments =data.frame( f1=gl(2,6,12), f2=gl(2,3,12))
@@ -171,6 +160,11 @@
 #' TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
 #' modform=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
 #' blocks(treatments=TF,model=modform,rows=4,searches=10) 
+#' 
+#' # Plackett and Burman design for eleven 2-level factors in 12 runs  
+#' treatments =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),F6=gl(2,32,2048),
+#' F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
+#' \dontrun{blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))}
 #' 
 #' # Unequal replication with hcf = 1 gives  default design with 1 fully randomised main block 
 #' # 3 treatments x 2 replicates + 2 treatments x 4 replicates + 4 treatments x 3 replicates  
