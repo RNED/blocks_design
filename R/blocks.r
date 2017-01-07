@@ -8,7 +8,7 @@
 #' @details
 #' 
 #' Constructs randomized nested row-and-column type block designs with arbitrary depth of nesting for arbitrary factorial or fractional 
-#' factorial treatment designs. The factorial treatment model is defined by a \code{models} formula   
+#' factorial treatment designs. The treatment model is defined by a \code{models} formula   
 #' for a \code{\link[stats]{model.matrix}} from the \code{\link[stats-package]{stats}} package and 
 #' can be any feasible combination of quantitative or qualitative model terms. The default model is a complete factorial design. 
 #' 
@@ -17,14 +17,15 @@
 #' within the blocks of each immediately preceding stratum.
 #' 
 #' The treatments are defined by a \code{treatments} parameter which is either a data frame with columns equal 
-#' to the required set of treatment factors or a vector containing a partion of the individual treatments into sets of equally replicated treatments.
+#' to the required set of treatment factors or a vector containing a partition of the individual treatments into sets of equally replicated treatments.
 #' 
-#' If the \code{treatments} parameter is a data frame, the \code{replicates} parameter can be a multiplier, not necessarily integral,
-#' for any required number of multiples of the data frame. If the \code{treatments} parameter is a vector partition, 
-#' the \code{replicates} parameter must be a matching set of replication numbers for the individual treatment sets of the partition.
+#' If the \code{treatments} parameter is a data frame, the \code{replicates} parameter is a multiplier, not necessarily integral,
+#' for the required number of multiples of the data frame. If the \code{treatments} parameter is a vector, 
+#' the \code{replicates} parameter must be a vector of equal length containing the replication numbers of the individual treatment sets in the partition.
 #' 
-#' If the treatments design is a non-integral multiple of a treatment data frame, a D-optimal swapping routine automatically finds the best 
-#' optimal or near optimal fraction for the assumed \code{\link[stats]{model.matrix}}, assuming the design is non-singular.  
+#' If the \code{treatments} parameter is a data frame and the \code{replicates} parameter is non-integral, 
+#' a D-optimal swapping routine will finds the best 
+#' choice of treatments for the fractional part of the design, assuming the design is non-singular.  
 #'   
 #' The \code{rows} parameter, if any, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
 #' The first number, if any, is the number of rows in the blocks of the first-level stratum, the second, if any, is the number of rows in the blocks of
