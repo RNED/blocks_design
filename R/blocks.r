@@ -12,7 +12,7 @@
 #' defined by a \code{models} formula for the \code{\link[stats]{model.matrix}} package. 
 #' 
 #' The top level stratum of the blocks design is a single super-block and the blocks of each succesive stratum are nested hierarchically within
-#' the blocks of each preceding stratum. The blocks are optimized sequentially from the top down with the blocks of  each succesive stratum optimized conditionally
+#' the blocks of each preceding stratum. The blocks are optimized sequentially from the top down with the blocks of  each successive stratum optimized conditionally
 #' within the blocks of each immediately preceding stratum.
 #' 
 #' The treatments are defined by a \code{treatments} parameter which is either a data frame with columns equal 
@@ -136,16 +136,16 @@
 #' ## General factorial designs
 #' 
 #' # Main effects of five 2-level factors in a half-fraction 4 x 4 row-and column design
-#' # a fully orthogonal design is possible but the number of searches may need to be increased 
+#' # a fully orthogonal design is possible but the number of searches may need to be increased
 #' TF = data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
 #' blocks(treatments=TF,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=4,columns=4,searches=10)
 #' 
-#' # Full factorial model for two 2-level factors with three replicates in 6 randomized blocks 
+#' # Full factorial model for two 2-level factors with three replicates in 6 randomized blocks
 #' TF = data.frame( f1=gl(2,6,12), f2=gl(2,3,12))
 #' blocks(treatments=TF,rows=6,searches=5) # incomplete blocks with .6667 efficiency
 #' 
 #' # Quadratic regression for one 6-level numeric factor in 2 randomized blocks
-#' blocks(treatments=data.frame(X=c(1:6)),model=" ~ (X + I(X^2))",rows=2,searches=5) 
+#' blocks(treatments=data.frame(X=c(1:6)),model=" ~ (X + I(X^2))",rows=2,searches=5)
 #' 
 #' # Second-order model for five qualitative 2-level factors in 4 randomized blocks
 #' TF=data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32) )
@@ -159,26 +159,26 @@
 #' TF=data.frame( F1=gl(3,81), F2=gl(3,27,243),  F3=gl(3,9,243), F4=gl(3,3,243), F5=gl(3,1,243) )
 #' \dontrun{blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",replicates=(1/3))}
 #' 
-#' # Second-order model for two qualitative and two quantitative factors in 4 randomized blocks 
+#' # Second-order model for two qualitative and two quantitative factors in 4 randomized blocks
 #' TF=data.frame(F1=gl(2,36), F2=gl(3,12,72), V1=rep(rep(1:3,each=4),6), V2=rep(1:4,18))
 #' modform=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
-#' blocks(treatments=TF,model=modform,rows=4,searches=10) 
+#' blocks(treatments=TF,model=modform,rows=4,searches=10)
 #' 
-#' # Plackett and Burman design for eleven 2-level factors in 12 runs  
+#' # Plackett and Burman design for eleven 2-level factors in 12 runs
 #' TF =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),
 #' F6=gl(2,32,2048),F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
 #' \dontrun{blocks(treatments=TF,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))}
 #' 
 #' ## Single factor designs with unstructured treatments
 #' 
-#' # Unequal replication with hcf = 1 gives  default design with 1 fully randomised main block 
-#' # 3 treatments x 2 replicates + 2 treatments x 4 replicates + 4 treatments x 3 replicates  
+#' # Unequal replication with hcf = 1 gives default design with 1 fully randomised main block
+#' # 3 treatments x 2 replicates + 2 treatments x 4 replicates + 4 treatments x 3 replicates
 #' blocks(treatments=c(3,2,4),replicates=c(2,4,3))
 #' 
-#' # 4 treatments x 4 replicates with 2 main rows each containing two complete replicates  
+#' # 4 treatments x 4 replicates with 2 main rows each containing two complete replicates
 #' blocks(treatments=4,replicates=4,rows=2)
 #' 
-#' # 50 treatments x 4 replicates with 4 main blocks and 5 nested sub-blocks in each main block 
+#' # 50 treatments x 4 replicates with 4 main blocks and 5 nested sub-blocks in each main block
 #' blocks(treatments=50,replicates=4,rows=c(4,5))
 #' 
 #' # as above but with 20 single replicate treatments giving one extra treatment per sub-block
@@ -187,14 +187,14 @@
 #' # 6 replicates of 6 treatments in 4 blocks of size 9 (non-binary block design)
 #' blocks(treatments=6,replicates=6,rows=4)
 #' 
-#' # 4 replicates of 13 treatments arranged in a 13 x 4 Youden rectangle 
+#' # 4 replicates of 13 treatments arranged in a 13 x 4 Youden rectangle
 #' blocks(treatments=13,replicates=4,rows=13,columns=4)
 #' 
-#' # 64 treatments x 2 replicates with nested 8 x 8 row-and-column designs in two main blocks 
-#' blocks(treatments=64,replicates=2,rows=c(2,8),columns=c(1,8)) 
+#' # 64 treatments x 2 replicates with nested 8 x 8 row-and-column designs in two main blocks
+#' blocks(treatments=64,replicates=2,rows=c(2,8),columns=c(1,8))
 #' 
 #' # 64 treatments x 2 replicates with two main blocks and a 4 x 4 row-and-column in each main block
-#' blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=10) 
+#' blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=10)
 #' 
 # # 64 treatments x 4 replicates with succesively nested 2 x 2 row-and-column blocks
 #' \dontrun{ blocks(treatments=64,replicates=4,rows=c(2,2,2,2),columns=c(2,2,2,2)) }
