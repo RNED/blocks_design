@@ -9,7 +9,7 @@
 #' 
 #' Constructs randomized nested row-and-column type block designs with arbitrary depth of nesting for arbitrary factorial or fractional 
 #' factorial treatment designs. The treatment model can be any feasible combination of quantitative or qualitative model terms and can be 
-#' defined by a \code{models} formula for a \code{\link[stats]{model.matrix}} using the \code{\link[stats-package]{stats}} package. 
+#' defined by a \code{models} formula for the \code{\link[stats]{model.matrix}} package. 
 #' 
 #' The top level stratum of the blocks design is a single super-block and the blocks of each succesive stratum are nested hierarchically within
 #' the blocks of each preceding stratum. The blocks are optimized sequentially from the top down with the blocks of  each succesive stratum optimized conditionally

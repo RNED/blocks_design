@@ -47,7 +47,7 @@ feasible depth of nesting and up to two crossed block structures in each level o
 \details{
 Constructs randomized nested row-and-column type block designs with arbitrary depth of nesting for arbitrary factorial or fractional 
 factorial treatment designs. The treatment model can be any feasible combination of quantitative or qualitative model terms and can be 
-defined by a \code{models} formula for a \code{\link[stats]{model.matrix}} using the \code{\link[stats-package]{stats}} package. 
+defined by a \code{models} formula for the \code{\link[stats]{model.matrix}} package. 
 
 The top level stratum of the blocks design is a single super-block and the blocks of each succesive stratum are nested hierarchically within
 the blocks of each preceding stratum. The blocks are optimized sequentially from the top down with the blocks of  each succesive stratum optimized conditionally
@@ -163,8 +163,8 @@ modform=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
 blocks(treatments=TF,model=modform,rows=4,searches=10) 
 
 # Plackett and Burman design for eleven 2-level factors in 12 runs  
-TF =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),F6=gl(2,32,2048),
-F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
+TF =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),
+F6=gl(2,32,2048),F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
 \dontrun{blocks(treatments=TF,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))}
 
 ## Single factor designs with unstructured treatments
