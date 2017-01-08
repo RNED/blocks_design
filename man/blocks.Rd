@@ -46,9 +46,8 @@ feasible depth of nesting and up to two crossed block structures in each level o
 }
 \details{
 Constructs randomized nested row-and-column type block designs with arbitrary depth of nesting for arbitrary factorial or fractional 
-factorial treatment designs. The treatment model is defined by a \code{models} formula   
-for a \code{\link[stats]{model.matrix}} from the \code{\link[stats-package]{stats}} package and 
-can be any feasible combination of quantitative or qualitative model terms. The default model is a complete factorial design. 
+factorial treatment designs. The treatment model can be any feasible combination of quantitative or qualitative model terms and can be 
+defined by a \code{models} formula for a \code{\link[stats]{model.matrix}} using the \code{\link[stats-package]{stats}} package. 
 
 The top level stratum of the blocks design is a single super-block and the blocks of each succesive stratum are nested hierarchically within
 the blocks of each preceding stratum. The blocks are optimized sequentially from the top down with the blocks of  each succesive stratum optimized conditionally
@@ -57,12 +56,12 @@ within the blocks of each immediately preceding stratum.
 The treatments are defined by a \code{treatments} parameter which is either a data frame with columns equal 
 to the required set of treatment factors or a vector containing a partition of the individual treatments into sets of equally replicated treatments.
 
-If the \code{treatments} parameter is a data frame, the \code{replicates} parameter is a multiplier, not necessarily integral,
-for the required number of multiples of the data frame. If the \code{treatments} parameter is a vector, 
-the \code{replicates} parameter must be a vector of equal length containing the replication numbers of the individual treatment sets in the partition.
+If the \code{treatments} parameter is a data frame, the \code{replicates} parameter must be a single multiplier, not necessarily integral,
+for any required multiple and any required fraction of the data frame. If the \code{treatments} parameter is a partition, then 
+the \code{replicates} parameter must be a vector of replication numbers, one for each treatment set in the partition.
 
 If the \code{treatments} parameter is a data frame and the \code{replicates} parameter is non-integral, 
-a D-optimal swapping routine will finds the best 
+a D-optimal swapping routine finds the best 
 choice of treatments for the fractional part of the design, assuming the design is non-singular.  
   
 The \code{rows} parameter, if any, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
@@ -98,7 +97,7 @@ single unreplicated treatments in a crossed block design if the block sizes of t
  Special designs:
  
 Trojan designs are row-and-column designs for p replicates of v*p treatments arranged in p-rows and p-columns where v<p and where every row x column intersection 
-block contain v plots. Trojan designs have orthogonal rows and columns and optimal rows x columns intersection  blocks and exist whenever p is prime or prime-power. 
+block contains v plots. Trojan designs have orthogonal rows and columns and optimal rows x columns intersection  blocks and exist whenever p is prime or prime-power. 
 \code{blocksdesign} constructs these designs algebraically from mutually orthogonal Latin squares (MOLS).  
  
 Square lattice designs are efficient resolvable incomplete block designs for r replicates of p*p treatments arranged in blocks of size p where r < p+2
@@ -111,11 +110,11 @@ for prime or prime power p or r < 4 for general p. \code{blocksdesign} construct
 Comment:
  
  Row-and-column designs may contain useful treatment information in the individual row-by-column intersection blocks but \code{blocksdesign} does not currently 
- optimize the efficiency of these blocks in row-and-column designs except for the special case of Trojan designs.
+ optimize the efficiency of these intersection blocks except for the special case of Trojan designs.
 
  Row-and-column design with 2 complete treatment replicates, 2 complete rows and 2 complete columns will always confound one treatment contrast in the 
- rows-by-columns interaction and for these designs, it is impossible to nest a non-singular block design in the rows-by-columns intersections. 
- Instead, we recommend a randomized nested blocks design with four incomplete main blocks. 
+ rows-by-columns interaction. For these designs, it is impossible to nest a non-singular block design in the rows-by-columns intersections and instead  
+we suggest a randomized nested blocks design with four incomplete main blocks. 
  
  Outputs:
  
@@ -123,6 +122,7 @@ Comment:
 \itemize{
  \item  A data frame showing the allocation of treatments to blocks with successive nested strata arranged in standard block order. \cr
  \item  A table showing the replication number of each treatment in the design. \cr
+ \item A fractional efficiency factor for the treatment design. \cr 
  \item  A table showing the block levels and the achieved D-efficiency and A-efficiency (unstructured treatment 
  designs only) factors for each stratum together with A-efficiency upper bounds, where available . \cr
  \item  A plan showing the allocation of treatments to blocks or to rows and to columns in the bottom stratum of the design (unstructured treatment 
@@ -131,14 +131,16 @@ Comment:
 }
 \examples{
 
+## General factorial designs
+
 # Main effects of five 2-level factors in a half-fraction 4 x 4 row-and column design
 # a fully orthogonal design is possible but the number of searches may need to be increased 
-treatments =data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
-blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=4,columns=4)
+TF = data.frame( F1=gl(2,16), F2=gl(2,8,32),  F3=gl(2,4,32), F4=gl(2,2,32) , F5=gl(2,1,32))
+blocks(treatments=TF,model="~ F1+F2+F3+F4+F5",replicates=.5,rows=4,columns=4,searches=10)
 
 # Full factorial model for two 2-level factors with three replicates in 6 randomized blocks 
-treatments =data.frame( f1=gl(2,6,12), f2=gl(2,3,12))
-blocks(treatments=treatments,rows=6,searches=5) # incomplete blocks with .6667 efficiency
+TF = data.frame( f1=gl(2,6,12), f2=gl(2,3,12))
+blocks(treatments=TF,rows=6,searches=5) # incomplete blocks with .6667 efficiency
 
 # Quadratic regression for one 6-level numeric factor in 2 randomized blocks
 blocks(treatments=data.frame(X=c(1:6)),model=" ~ (X + I(X^2))",rows=2,searches=5) 
@@ -149,7 +151,7 @@ blocks(treatments=TF,model=" ~ (F1+F2+F3+F4+F5)*(F1+F2+F3+F4+F5)",searches=5)
 
 # First-order model for four qualitative 3-level factors in 9 randomized blocks
 TF=data.frame( F1=gl(3,27), F2=gl(3,9,81),  F3=gl(3,3,81), F4=gl(3,1,81)  )
-blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)",replicates=(1/3),rows=9)
+blocks(treatments=TF,model=" ~ (F1+F2+F3+F4)",replicates=(1/3),rows=9,searches=5)
 
 # Second-order model for four qualitative 3-level factors in 9 randomized blocks
 TF=data.frame( F1=gl(3,81), F2=gl(3,27,243),  F3=gl(3,9,243), F4=gl(3,3,243), F5=gl(3,1,243) )
@@ -161,9 +163,11 @@ modform=" ~ F1*F2 + V1*V2 + I(V1^2) + I(V2^2) + F1:V1 + F1:V2 + F2:V1 + F2:V2"
 blocks(treatments=TF,model=modform,rows=4,searches=10) 
 
 # Plackett and Burman design for eleven 2-level factors in 12 runs  
-treatments =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),F6=gl(2,32,2048),
+TF =data.frame(F1=gl(2,1024),F2=gl(2,512,2048),F3=gl(2,256,2048),F4=gl(2,128,2048),F5=gl(2,64,2048),F6=gl(2,32,2048),
 F7=gl(2,16,2048),F8=gl(2,8,2048),F9=gl(2,4,2048),F10=gl(2,2,2048),F11=gl(2,1,2048))
-\dontrun{blocks(treatments=treatments,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))}
+\dontrun{blocks(treatments=TF,model="~ F1+F2+F3+F4+F5+F6+F7+F8+F9+F10+F11",replicates=(12/2048))}
+
+## Single factor designs with unstructured treatments
 
 # Unequal replication with hcf = 1 gives  default design with 1 fully randomised main block 
 # 3 treatments x 2 replicates + 2 treatments x 4 replicates + 4 treatments x 3 replicates  
@@ -188,7 +192,7 @@ blocks(treatments=13,replicates=4,rows=13,columns=4)
 blocks(treatments=64,replicates=2,rows=c(2,8),columns=c(1,8)) 
 
 # 64 treatments x 2 replicates with two main blocks and a 4 x 4 row-and-column in each main block
-blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=12) 
+blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=10) 
 
 \dontrun{ blocks(treatments=64,replicates=4,rows=c(2,2,2,2),columns=c(2,2,2,2)) }
      
