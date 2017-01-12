@@ -8,16 +8,16 @@ blocks(treatments, replicates = 1, rows = NULL, columns = NULL,
   model = NULL, searches = NULL, seed = sample(10000, 1), jumps = 1)
 }
 \arguments{
-\item{treatments}{either a data frame with columns for individual treatment factors or a partition 
+\item{treatments}{either a data frame with columns for individual treatment factors or a partition
 of the total required number of treatments into sets of equally replicated treatments.}
 
 \item{replicates}{either a single replication number, not necessarily integral, if the \code{treatments} parameter is a data frame or a set of replication numbers, one
 per replication set, if the \code{treatments} parameter is a partition}
 
-\item{rows}{the levels of the row blocks for each stratum of the design taken in order from the highest to the lowest. 
+\item{rows}{the levels of the row blocks for each stratum of the design taken in order from the highest to the lowest.
 The default is a single stratum blocks design with number of blocks equal to the hcf of the replication numbers.}
 
-\item{columns}{the levels of the column blocks for each stratum of the design taken in order from the highest to the lowest. 
+\item{columns}{the levels of the column blocks for each stratum of the design taken in order from the highest to the lowest.
 The default is a single column block for each nested stratum.}
 
 \item{model}{a model equation for the treatment factors in the design where the equation is defined using the model.matrix notation
@@ -41,91 +41,91 @@ in the {\link[stats]{model.matrix}} package. If undefined, the model is a full f
 \item{jumps}{Number of random treatment swaps to escape a local maxima}
 }
 \description{
-Constructs randomized nested block designs for factorial or fractional factorial treatment designs with any 
+Constructs randomized nested block designs for factorial or fractional factorial treatment designs with any
 feasible depth of nesting and up to two crossed block structures in each level of nesting.
 }
 \details{
-Constructs randomized nested row-and-column type block designs with arbitrary depth of nesting for arbitrary factorial or fractional 
-factorial treatment designs. The treatment model can be any feasible combination of quantitative or qualitative model terms and can be 
-defined by a \code{models} formula for the \code{\link[stats]{model.matrix}} package. 
+Constructs randomized nested row-and-column type block designs with arbitrary depth of nesting for arbitrary factorial or fractional
+factorial treatment designs. The treatment model can be any feasible combination of quantitative or qualitative model terms and can be
+defined by a \code{models} formula for the \code{\link[stats]{model.matrix}} package.
 
 The top level stratum of the blocks design is a single super-block and the blocks of each succesive stratum are nested hierarchically within
 the blocks of each preceding stratum. The blocks are optimized sequentially from the top down with the blocks of  each successive stratum optimized conditionally
 within the blocks of each immediately preceding stratum.
 
-The treatments are defined by a \code{treatments} parameter which is either a data frame with columns equal 
+The treatments are defined by a \code{treatments} parameter which is either a data frame with columns equal
 to the required set of treatment factors or a vector containing a partition of the individual treatments into sets of equally replicated treatments.
 
 If the \code{treatments} parameter is a data frame, the \code{replicates} parameter must be a single multiplier, not necessarily integral,
-for any required multiple and any required fraction of the data frame. If the \code{treatments} parameter is a partition, then 
+for any required multiple and any required fraction of the data frame. If the \code{treatments} parameter is a partition, then
 the \code{replicates} parameter must be a vector of replication numbers, one for each treatment set in the partition.
 
-If the \code{treatments} parameter is a data frame and the \code{replicates} parameter is non-integral, 
-a D-optimal swapping routine finds the best 
-choice of treatments for the fractional part of the design, assuming the design is non-singular.  
-  
+If the \code{treatments} parameter is a data frame and the \code{replicates} parameter is non-integral,
+a D-optimal swapping routine finds the best
+choice of treatments for the fractional part of the design, assuming the design is non-singular.
+
 The \code{rows} parameter, if any, defines the nested row blocks in each nested stratum taken in order from the highest to the lowest.
 The first number, if any, is the number of rows in the blocks of the first-level stratum, the second, if any, is the number of rows in the blocks of
- the second-level stratum and so on for all the required strata in the design. 
- 
-The \code{columns} parameter, if any, defines the nested column blocks in each nested stratum taken in order from the highest to the lowest. 
+ the second-level stratum and so on for all the required strata in the design.
+
+The \code{columns} parameter, if any, defines the nested column blocks in each nested stratum taken in order from the highest to the lowest.
 The first number, if any, is the number of columns in the blocks of the first-level stratum, the second, if any, is the number of columns in the blocks of
- the second-level stratum and so on for all the required strata in the design. 
- 
-The default block design for any particular stratum is a crossed row-and-column design but if a single column block is selected for that stratum, 
-the design will reduce to a nested blocks design with a single set of nested blocks in that stratum. 
-  
-The \code{rows} and \code{columns} parameters, if defined, must be of equal length and if a simple nested blocks design is required for 
-any particular choice of stratum, the number of columns for that stratum should be set to unity. Any required combination of simple or 
+ the second-level stratum and so on for all the required strata in the design.
+
+The default block design for any particular stratum is a crossed row-and-column design but if a single column block is selected for that stratum,
+the design will reduce to a nested blocks design with a single set of nested blocks in that stratum.
+
+The \code{rows} and \code{columns} parameters, if defined, must be of equal length and if a simple nested blocks design is required for
+any particular choice of stratum, the number of columns for that stratum should be set to unity. Any required combination of simple or
 crossed blocks can be obtained by appropriate choice of the levels of the \code{rows} and \code{columns} parameters.
 
 If both the \code{rows} parameter and the \code{columns} parameter are null, the default block design will be a single set of orthogonal
 main blocks equal in number to the highest common factor of the replication numbers. If the \code{rows} parameter is defined but the \code{columns} parameter
 is null, the design will comprise a set of nested blocks in each stratum, as defined by the \code{rows} parameter.
 
-Block sizes are always as nearly equal as possible and will never differ by more than a single plot in any particular block classification. Row blocks and 
-column blocks will always contain at least two plots per block and this restriction will constrain the permitted numbers of rows and columns in the various 
+Block sizes are always as nearly equal as possible and will never differ by more than a single plot in any particular block classification. Row blocks and
+column blocks will always contain at least two plots per block and this restriction will constrain the permitted numbers of rows and columns in the various
 strata of a design.
 
-Unreplicated treatments are allowed and any simple nested block design can be augmented by any number of single unreplicated treatments to give augmented 
-blocks that never differ in size by more than a single plot. General crossed block designs are more complex and currently the algorithm will only accommodate 
+Unreplicated treatments are allowed and any simple nested block design can be augmented by any number of single unreplicated treatments to give augmented
+blocks that never differ in size by more than a single plot. General crossed block designs are more complex and currently the algorithm will only accommodate
 single unreplicated treatments in a crossed block design if the block sizes of the replicated part of the design are all equal in each stratum of the design.
 
- For any particular stratum, the algorithm first optimizes the row blocks in that stratum conditional on the blocks of any immediately preceding stratum, 
- and then optimizes the columns blocks, if any, conditional on the rows blocks. 
- 
+ For any particular stratum, the algorithm first optimizes the row blocks in that stratum conditional on the blocks of any immediately preceding stratum,
+ and then optimizes the columns blocks, if any, conditional on the rows blocks.
+
  Special designs:
- 
-Trojan designs are row-and-column designs for p replicates of v*p treatments arranged in p-rows and p-columns where v<p and where every row x column intersection 
-block contains v plots. Trojan designs have orthogonal rows and columns and optimal rows x columns intersection  blocks and exist whenever p is prime or prime-power. 
-\code{blocksdesign} constructs these designs algebraically from mutually orthogonal Latin squares (MOLS).  
- 
+
+Trojan designs are row-and-column designs for p replicates of v*p treatments arranged in p-rows and p-columns where v<p and where every row x column intersection
+block contains v plots. Trojan designs have orthogonal rows and columns and optimal rows x columns intersection  blocks and exist whenever p is prime or prime-power.
+\code{blocksdesign} constructs these designs algebraically from mutually orthogonal Latin squares (MOLS).
+
 Square lattice designs are efficient resolvable incomplete block designs for r replicates of p*p treatments arranged in blocks of size p where r < p+2
 for prime or prime power p or r < 4 for general p. \code{blocksdesign} constructs these designs algebraically from Latin squares or MOLS.
 
  Lattice designs and Trojan designs based on prime-power MOLS require the \code{\link[crossdes]{MOLS}} package.
-    
+
  All other designs are constructed algorithmically.
- 
+
 Comment:
- 
- Row-and-column designs may contain useful treatment information in the individual row-by-column intersection blocks but \code{blocksdesign} does not currently 
+
+ Row-and-column designs may contain useful treatment information in the individual row-by-column intersection blocks but \code{blocksdesign} does not currently
  optimize the efficiency of these intersection blocks except for the special case of Trojan designs.
 
- Row-and-column design with 2 complete treatment replicates, 2 complete rows and 2 complete columns will always confound one treatment contrast in the 
- rows-by-columns interaction. For these designs, it is impossible to nest a non-singular block design in the rows-by-columns intersections and instead  
-we suggest a randomized nested blocks design with four incomplete main blocks. 
- 
+ Row-and-column design with 2 complete treatment replicates, 2 complete rows and 2 complete columns will always confound one treatment contrast in the
+ rows-by-columns interaction. For these designs, it is impossible to nest a non-singular block design in the rows-by-columns intersections and instead
+we suggest a randomized nested blocks design with four incomplete main blocks.
+
  Outputs:
- 
+
  The principle design outputs comprise:
 \itemize{
  \item  A data frame showing the allocation of treatments to blocks with successive nested strata arranged in standard block order. \cr
  \item  A table showing the replication number of each treatment in the design. \cr
- \item A fractional efficiency factor for the treatment design. \cr 
- \item  A table showing the block levels and the achieved D-efficiency and A-efficiency (unstructured treatment 
+ \item A fractional efficiency factor for the treatment design. \cr
+ \item  A table showing the block levels and the achieved D-efficiency and A-efficiency (unstructured treatment
  designs only) factors for each stratum together with A-efficiency upper bounds, where available . \cr
- \item  A plan showing the allocation of treatments to blocks or to rows and to columns in the bottom stratum of the design (unstructured treatment 
+ \item  A plan showing the allocation of treatments to blocks or to rows and to columns in the bottom stratum of the design (unstructured treatment
  designs only).\cr
 }
 }
@@ -195,8 +195,8 @@ blocks(treatments=64,replicates=2,rows=c(2,8),columns=c(1,8))
 blocks(treatments=64,replicates=2,rows=c(2,4),columns=c(1,4),searches=10)
 
 \dontrun{ blocks(treatments=64,replicates=4,rows=c(2,2,2,2),columns=c(2,2,2,2)) }
-     
-                 
+
+
 }
 \references{
 Sailer, M. O. (2013). crossdes: Construction of Crossover Designs. R package version 1.1-1. https://CRAN.R-project.org/package=crossdes
